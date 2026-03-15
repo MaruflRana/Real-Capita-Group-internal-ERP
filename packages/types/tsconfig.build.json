@@ -1,0 +1,9 @@
+{
+  "extends": "../../packages/tsconfig/library.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "../../dist/packages/types"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["dist", "node_modules"]
+}

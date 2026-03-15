@@ -1,0 +1,48 @@
+{
+  "name": "real-capita-erp",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "forwardPorts": [3000, 3333, 5432, 9000, 9001],
+  "portsAttributes": {
+    "3000": {
+      "label": "Next.js web"
+    },
+    "3333": {
+      "label": "NestJS api"
+    },
+    "5432": {
+      "label": "PostgreSQL"
+    },
+    "9000": {
+      "label": "MinIO API"
+    },
+    "9001": {
+      "label": "MinIO Console"
+    }
+  },
+  "postCreateCommand": "corepack enable && pnpm install --frozen-lockfile",
+  "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
+        "eslint.useFlatConfig": true
+      },
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "Prisma.prisma",
+        "ms-azuretools.vscode-docker",
+        "ms-ossdata.vscode-postgresql",
+        "ms-playwright.playwright",
+        "nrwl.angular-console"
+      ]
+    }
+  },
+  "remoteUser": "node"
+}

@@ -1,0 +1,14 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'tests/*'
+
+autoInstallPeers: true
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - '@prisma/client'
+  - '@swc/core'
+  - 'esbuild'
+  - 'nx'
+  - 'sharp'
+  - 'unrs-resolver'

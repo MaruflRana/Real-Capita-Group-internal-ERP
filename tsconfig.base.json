@@ -1,0 +1,15 @@
+{
+  "extends": "./packages/tsconfig/base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@api/*": ["apps/api/src/*"],
+      "@web/*": ["apps/web/src/*"],
+      "@real-capita/config": ["packages/config/src/index.ts"],
+      "@real-capita/types": ["packages/types/src/index.ts"],
+      "@real-capita/ui": ["packages/ui/src/index.ts"],
+      "@real-capita/ui/*": ["packages/ui/src/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist", "tmp"]
+}

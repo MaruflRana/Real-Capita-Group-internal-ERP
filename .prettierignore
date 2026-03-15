@@ -1,0 +1,9 @@
+dist
+coverage
+.next
+.nx/cache
+.nx/workspace-data
+node_modules
+playwright-report
+test-results
+apps/web/next-env.d.ts

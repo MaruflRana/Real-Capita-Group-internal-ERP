@@ -1,0 +1,24 @@
+{
+  "name": "web",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/web/src",
+  "projectType": "application",
+  "tags": ["type:app", "scope:web", "platform:web"],
+  "implicitDependencies": ["config", "types", "ui"],
+  "targets": {
+    "build": {
+      "executor": "@nx/next:build",
+      "outputs": ["{workspaceRoot}/apps/web/.next/**/*"],
+      "options": {
+        "outputPath": "apps/web",
+        "webpack": true
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --pretty false --noEmit --project apps/web/tsconfig.json"
+      }
+    }
+  }
+}
