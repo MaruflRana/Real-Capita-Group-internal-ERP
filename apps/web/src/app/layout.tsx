@@ -4,7 +4,6 @@ import { IBM_Plex_Mono, Source_Sans_3 } from 'next/font/google';
 import { APP_NAME } from '@real-capita/config';
 
 import './global.css';
-import { QueryProvider } from '../components/providers/query-provider';
 
 const sans = Source_Sans_3({
   subsets: ['latin'],
@@ -29,9 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html className={`${sans.variable} ${mono.variable}`} lang="en">
-      <body className="font-sans antialiased">
-        <QueryProvider>{children}</QueryProvider>
-      </body>
+      <body className="font-sans antialiased">{children}</body>
     </html>
   );
 }

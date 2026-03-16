@@ -1,22 +1,15 @@
-import { ValidationPipe, VersioningType } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Logger, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule } from './app/app.module';
-import type { ApiRuntimeConfig } from './app/config/runtime-config';
+import { createValidationPipe } from './app/common/validation/create-validation-pipe';
+import appConfig, { type AppConfig } from './app/config/app.config';
 
 const bootstrap = async () => {
-  const app = await NestFactory.create(AppModule, {
-    bufferLogs: true,
-  });
+  const app = await NestFactory.create(AppModule);
 
-  const configService = app.get(ConfigService);
-  const runtimeConfig = configService.get<ApiRuntimeConfig>('api');
-
-  if (!runtimeConfig) {
-    throw new Error('API runtime configuration is unavailable.');
-  }
+  const runtimeConfig = app.get<AppConfig>(appConfig.KEY);
 
   app.setGlobalPrefix(runtimeConfig.globalPrefix);
   app.enableVersioning({
@@ -28,15 +21,9 @@ const bootstrap = async () => {
     origin: runtimeConfig.corsOrigins,
   });
   app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      transform: true,
-      forbidNonWhitelisted: true,
-      transformOptions: {
-        enableImplicitConversion: false,
-      },
-    }),
+    createValidationPipe(),
   );
+  app.enableShutdownHooks();
 
   if (runtimeConfig.enableSwagger) {
     const document = SwaggerModule.createDocument(
@@ -44,9 +31,10 @@ const bootstrap = async () => {
       new DocumentBuilder()
         .setTitle(runtimeConfig.appName)
         .setDescription(
-          'REST API foundation for the Real Capita Group internal ERP.',
+          'REST API integration foundation for the Real Capita Group internal ERP.',
         )
         .setVersion(`v${runtimeConfig.apiVersion}`)
+        .addServer(runtimeConfig.urls.apiBaseUrl)
         .addBearerAuth()
         .build(),
     );
@@ -58,7 +46,22 @@ const bootstrap = async () => {
     });
   }
 
-  await app.listen(runtimeConfig.port);
+  await app.listen(runtimeConfig.port, '0.0.0.0');
+
+  const logger = new Logger('Bootstrap');
+
+  logger.log(
+    `API listening on ${runtimeConfig.urls.apiBaseUrl}/${runtimeConfig.globalPrefix}/v${runtimeConfig.apiVersion}`,
+  );
 };
 
-void bootstrap();
+void bootstrap().catch((error: unknown) => {
+  const logger = new Logger('Bootstrap');
+
+  logger.error(
+    'API bootstrap failed.',
+    error instanceof Error ? error.stack : undefined,
+  );
+
+  process.exit(1);
+});

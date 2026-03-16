@@ -8,6 +8,7 @@ onlyBuiltDependencies:
   - '@parcel/watcher'
   - '@prisma/client'
   - '@swc/core'
+  - 'argon2'
   - 'esbuild'
   - 'nx'
   - 'sharp'

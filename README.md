@@ -10,7 +10,7 @@ Production-minded Nx monorepo foundation for the Real Capita Group internal ERP.
 - Database: PostgreSQL 15
 - ORM: Prisma
 - Storage: S3-compatible object storage via MinIO in local development
-- Testing: Playwright
+- Testing: Playwright + Node test runner for backend integration units
 - Local orchestration: Docker Compose
 - Developer environment: VS Code devcontainer
 
@@ -27,7 +27,7 @@ packages/
   types/            Shared TypeScript contracts
   ui/               Shared non-business UI primitives
 prisma/
-  schema.prisma     Prisma initialization only, no models yet
+  schema.prisma     Auth/org-security foundation schema and migrations
 tests/
   e2e/              Playwright smoke coverage
 .devcontainer/
@@ -37,7 +37,7 @@ tests/
 ## Service Responsibilities
 
 - `web`: Next.js UI shell. API consumer only.
-- `api`: NestJS REST API, future auth owner, future business logic owner.
+- `api`: NestJS REST API, auth owner, and future business logic owner.
 - `postgres`: relational persistence target for Prisma.
 - `minio`: local S3-compatible object storage for development and test workflows.
 - No Next.js API routes exist under `apps/web`; all backend operations belong in the NestJS API.
@@ -45,10 +45,11 @@ tests/
 ## What Is Intentionally Not Built Yet
 
 - No ERP business domains or modules
-- No auth screens or auth flow implementation
-- No Prisma models, SQL DDL, or migrations
+- No frontend auth screens
+- No password-reset, MFA, invite, SSO, or broader org-management flows
 - No accounting, payroll, CRM, property, or workflow logic
 - No fake CRUD modules or sample business data
+- No file upload or document business flows on top of S3 yet
 
 ## Environment Files
 
@@ -56,7 +57,12 @@ Root:
 
 - `.env.example`: full-stack local defaults for direct runs and Docker Compose
 - `.env`: your local working copy for Compose and shared defaults
-- `NODE_ENV` is intentionally not stored in the root `.env`; Docker Compose and app processes set runtime mode explicitly per service
+- `NODE_ENV=development` is included in the root example so the API runtime validation can fail fast during direct local runs
+- In Docker Compose, `WEB_PORT`, `API_PORT`, `POSTGRES_PORT`, `MINIO_API_PORT`, and `MINIO_CONSOLE_PORT` are host-exposed ports; app containers keep stable internal ports
+- `WEB_APP_URL` and `API_BASE_URL` are backend-facing URLs consumed by `apps/api`; do not point the API at `NEXT_PUBLIC_*` variables
+- `CORS_ORIGIN` defaults to `WEB_APP_URL` if omitted, but keeping it explicit is recommended
+- `JWT_ACCESS_TOKEN_SECRET` and `JWT_REFRESH_TOKEN_SECRET` must each be at least 32 characters long
+- The root `build` scripts force `NODE_ENV=production` for Next.js builds so the shared local `.env` can stay on development settings for API work
 
 App-level examples:
 
@@ -101,6 +107,19 @@ Or run both app processes together:
 corepack pnpm dev
 ```
 
+Apply the auth schema locally:
+
+```powershell
+corepack pnpm prisma:generate
+corepack pnpm prisma:migrate:dev --name prompt_4_auth_core
+```
+
+Create the first company admin explicitly:
+
+```powershell
+corepack pnpm auth:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "change-me-secure-admin-password"
+```
+
 ## Local Setup With Docker Compose
 
 Create the root env file:
@@ -135,23 +154,63 @@ docker compose logs -f
 
 ## Developer URLs and Ports
 
-| Service       | URL / Port                            | Notes                         |
-| ------------- | ------------------------------------- | ----------------------------- |
-| Web           | `http://localhost:3000`               | Next.js app shell             |
-| API           | `http://localhost:3333`               | NestJS REST API               |
-| Swagger       | `http://localhost:3333/api/docs`      | OpenAPI UI                    |
-| Health        | `http://localhost:3333/api/v1/health` | API health check              |
-| PostgreSQL    | `localhost:5432`                      | Uses credentials from `.env`  |
-| MinIO API     | `http://localhost:9000`               | S3-compatible endpoint        |
-| MinIO Console | `http://localhost:9001`               | Local object storage admin UI |
+| Service       | URL / Port                                         | Notes                           |
+| ------------- | -------------------------------------------------- | ------------------------------- |
+| Web           | `http://localhost:3000`                            | Next.js app shell               |
+| API           | `http://localhost:3333`                            | NestJS REST API                 |
+| Swagger       | `http://localhost:3333/api/docs`                   | OpenAPI UI                      |
+| Auth Me       | `http://localhost:3333/api/v1/auth/me`             | Bearer-protected current user   |
+| Liveness      | `http://localhost:3333/api/v1/health`              | API runtime probe               |
+| Readiness     | `http://localhost:3333/api/v1/health/ready`        | Runtime + PostgreSQL + S3 check |
+| Dependencies  | `http://localhost:3333/api/v1/health/dependencies` | Structured dependency report    |
+| PostgreSQL    | `localhost:5432`                                   | Uses credentials from `.env`    |
+| MinIO API     | `http://localhost:9000`                            | S3-compatible endpoint          |
+| MinIO Console | `http://localhost:9001`                            | Local object storage admin UI   |
 
 ## MinIO In Local Development
 
 - MinIO exists only to emulate the intended S3-compatible storage boundary during development.
 - Application containers should treat object storage as an external service, not as a local disk write target.
 - Uploaded file strategies in later prompts should target the S3 API, not the app container filesystem.
-- Create the default development bucket (`real-capita-erp-dev`) once through the MinIO Console before wiring upload flows.
-- MinIO credentials come from the root `.env`; rotate them locally instead of keeping the example defaults.
+- The API readiness check verifies S3-compatible connectivity, not upload flows.
+- In Docker Compose, the API container uses the MinIO root credential pair from `.env`.
+- For direct non-Docker API runs, keep `S3_ACCESS_KEY` and `S3_SECRET_KEY` aligned with an actual MinIO access key pair.
+- The configured bucket (`real-capita-erp-dev` by default) remains the target bucket for future document features.
+
+## Auth Core Verification
+
+After `docker compose up -d`, verify the runtime and auth core:
+
+```powershell
+Invoke-WebRequest http://localhost:3333/api/v1/health
+Invoke-WebRequest http://localhost:3333/api/v1/health/ready
+Invoke-WebRequest http://localhost:3333/api/v1/health/dependencies
+Invoke-WebRequest http://localhost:3333/api/docs
+
+corepack pnpm prisma:migrate:deploy
+corepack pnpm auth:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "change-me-secure-admin-password"
+
+$loginBody = @{
+  email = 'admin@example.com'
+  password = 'change-me-secure-admin-password'
+} | ConvertTo-Json
+
+$session = Invoke-RestMethod -Method Post -Uri http://localhost:3333/api/v1/auth/login -ContentType 'application/json' -Body $loginBody
+$accessToken = $session.accessToken
+$refreshToken = $session.refreshToken
+
+Invoke-RestMethod -Headers @{ Authorization = "Bearer $accessToken" } -Uri http://localhost:3333/api/v1/auth/me
+
+$rotatedSession = Invoke-RestMethod -Method Post -Uri http://localhost:3333/api/v1/auth/refresh -ContentType 'application/json' -Body (@{
+  refreshToken = $refreshToken
+} | ConvertTo-Json)
+
+Invoke-RestMethod -Method Post -Uri http://localhost:3333/api/v1/auth/logout -ContentType 'application/json' -Body (@{
+  refreshToken = $rotatedSession.refreshToken
+} | ConvertTo-Json)
+```
+
+If the same user later belongs to multiple companies, include `companyId` in the login request body to choose the company-scoped session context.
 
 ## Docker Baseline
 
@@ -192,12 +251,13 @@ GitHub Actions currently validates:
 - lint
 - typecheck
 - build
-- Playwright smoke test
+- API unit tests plus Playwright smoke coverage
 
 ## Operational Notes
 
 - Docker Compose is the intended Phase 1 local and single-VM orchestration baseline.
 - Secrets are not embedded in Compose; they come from `.env`.
 - App containers keep Nx runtime state in container-specific named volumes so host Nx processes do not contend with Docker-based development runs.
-- The API currently exposes only the health endpoint and Swagger bootstrap.
-- The Prisma schema is intentionally empty beyond datasource/generator setup.
+- The API now exposes auth, liveness, readiness, dependency, and Swagger endpoints for backend verification.
+- Refresh tokens are stored as SHA-256 hashes with rotation and family-wide revocation support.
+- The bootstrap admin path is explicit only; no auth seed runs automatically during app startup.
