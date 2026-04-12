@@ -29,7 +29,7 @@ ENV NODE_ENV="development"
 
 EXPOSE 3000
 
-CMD ["pnpm", "exec", "nx", "dev", "web", "--hostname", "0.0.0.0", "--port", "3000"]
+CMD ["sh", "-c", "mkdir -p apps/web/.next && find apps/web/.next -mindepth 1 -maxdepth 1 -exec rm -rf {} + && CI=true pnpm install --frozen-lockfile && node ./node_modules/next/dist/bin/next dev ./apps/web --hostname 0.0.0.0 --port 3000"]
 
 FROM deps AS builder
 

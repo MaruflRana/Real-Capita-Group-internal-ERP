@@ -101,6 +101,16 @@ export class AuthRepository {
     userId: string,
     companyId: string,
   ): Promise<UserRoleWithRelationsRecord[] | null> {
+    return this.findUserCompanyAssignments(userId, companyId);
+  }
+
+  async findUserCompanyAssignments(
+    userId: string,
+    companyId: string,
+    options: {
+      allowInactiveCompany?: boolean;
+    } = {},
+  ): Promise<UserRoleWithRelationsRecord[] | null> {
     const assignments = await this.prisma.userRole.findMany({
       where: {
         userId,
@@ -109,12 +119,16 @@ export class AuthRepository {
         user: {
           isActive: true,
         },
-        company: {
-          isActive: true,
-        },
         role: {
           isActive: true,
         },
+        ...(options.allowInactiveCompany
+          ? {}
+          : {
+              company: {
+                isActive: true,
+              },
+            }),
       },
       include: {
         company: true,
@@ -215,6 +229,19 @@ export class AuthRepository {
     return client.company.findUnique({
       where: {
         slug,
+      },
+    });
+  }
+
+  async findCompanyById(
+    companyId: string,
+    transaction?: DatabaseTransactionClient,
+  ) {
+    const client = this.getClient(transaction);
+
+    return client.company.findUnique({
+      where: {
+        id: companyId,
       },
     });
   }

@@ -28,13 +28,13 @@ ENV NODE_ENV="development"
 
 EXPOSE 3333
 
-CMD ["pnpm", "exec", "nx", "dev", "api"]
+CMD ["sh", "-c", "CI=true pnpm install --frozen-lockfile && pnpm prisma generate --schema prisma/schema.prisma && pnpm build:api && node dist/apps/api/main.js"]
 
 FROM deps AS builder
 
 ENV NODE_ENV="production"
 
-RUN pnpm build:api
+RUN pnpm prisma generate --schema prisma/schema.prisma && pnpm build:api
 
 FROM base AS runner
 

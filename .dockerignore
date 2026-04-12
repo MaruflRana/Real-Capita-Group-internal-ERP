@@ -1,7 +1,10 @@
 node_modules
+**/node_modules
 dist
+**/.next
 .next
 .nx
+**/.nx
 .git
 .github
 .devcontainer
@@ -9,3 +12,4 @@ dist
 coverage
 playwright-report
 test-results
+.pnpm-store

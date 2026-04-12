@@ -4,12 +4,14 @@ import { PassportModule } from '@nestjs/passport';
 
 import { DatabaseModule } from '../database/database.module';
 import { AuthBootstrapService } from './auth-bootstrap.service';
+import { AuthCookieService } from './auth-cookie.service';
 import { AuthController } from './auth.controller';
 import { AuthRepository } from './auth.repository';
 import { AuthService } from './auth.service';
 import { AuthTokenService } from './auth-token.service';
 import { PasswordService } from './password.service';
 import { AccessTokenGuard } from './guards/access-token.guard';
+import { CompanyAssignmentGuard } from './guards/company-assignment.guard';
 import { CompanyScopeGuard } from './guards/company-scope.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { AccessTokenStrategy } from './strategies/access-token.strategy';
@@ -26,11 +28,13 @@ import { AccessTokenStrategy } from './strategies/access-token.strategy';
   controllers: [AuthController],
   providers: [
     AuthBootstrapService,
+    AuthCookieService,
     AuthRepository,
     AuthService,
     AuthTokenService,
     PasswordService,
     AccessTokenGuard,
+    CompanyAssignmentGuard,
     RolesGuard,
     CompanyScopeGuard,
     AccessTokenStrategy,
@@ -38,7 +42,11 @@ import { AccessTokenStrategy } from './strategies/access-token.strategy';
   exports: [
     AuthBootstrapService,
     AuthService,
+    AuthCookieService,
+    AuthRepository,
+    PasswordService,
     AccessTokenGuard,
+    CompanyAssignmentGuard,
     RolesGuard,
     CompanyScopeGuard,
   ],

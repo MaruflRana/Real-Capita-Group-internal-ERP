@@ -42,14 +42,27 @@ tests/
 - `minio`: local S3-compatible object storage for development and test workflows.
 - No Next.js API routes exist under `apps/web`; all backend operations belong in the NestJS API.
 
+## Current Frontend Coverage
+
+- authenticated application shell
+- login/logout/session handling against the NestJS auth API
+- company-aware protected routing
+- dashboard placeholder
+- Org & Security admin pages for companies, locations, departments, users, and company-scoped role assignments
+- accounting pages for chart of accounts and vouchers
+- project/property master pages for projects, cost centers, phases, blocks, zones, unit types, unit statuses, and units
+- CRM/property desk pages for customers, leads, bookings, sale contracts, installment schedules, and collections
+- HR Core pages for employees, attendance devices, device mappings, attendance logs, leave types, and leave requests
+- Payroll Core pages for salary structures, payroll runs, payroll run detail/line editing, and posting
+- Audit & Documents pages for attachments, attachment detail, secure upload/finalize/link/download/archive actions, and audit event browsing
+
 ## What Is Intentionally Not Built Yet
 
-- No ERP business domains or modules
-- No frontend auth screens
 - No password-reset, MFA, invite, SSO, or broader org-management flows
-- No accounting, payroll, CRM, property, or workflow logic
 - No fake CRUD modules or sample business data
-- No file upload or document business flows on top of S3 yet
+- No OCR/text extraction, virus scanning, approval workflow, e-signature, or public-sharing document flows
+- No report builder or dashboard-heavy audit/document analytics
+- No payslip PDF, bank payout/export, or broader reporting workflows
 
 ## Environment Files
 
@@ -62,6 +75,7 @@ Root:
 - `WEB_APP_URL` and `API_BASE_URL` are backend-facing URLs consumed by `apps/api`; do not point the API at `NEXT_PUBLIC_*` variables
 - `CORS_ORIGIN` defaults to `WEB_APP_URL` if omitted, but keeping it explicit is recommended
 - `JWT_ACCESS_TOKEN_SECRET` and `JWT_REFRESH_TOKEN_SECRET` must each be at least 32 characters long
+- `S3_PUBLIC_ENDPOINT` must stay browser-resolvable for direct-upload/download document flows; local Docker defaults use `http://localhost:9000`
 - The root `build` scripts force `NODE_ENV=production` for Next.js builds so the shared local `.env` can stay on development settings for API work
 
 App-level examples:
@@ -174,6 +188,7 @@ docker compose logs -f
 - Uploaded file strategies in later prompts should target the S3 API, not the app container filesystem.
 - The API readiness check verifies S3-compatible connectivity, not upload flows.
 - In Docker Compose, the API container uses the MinIO root credential pair from `.env`.
+- In Docker Compose, presigned document upload/download URLs must use `S3_PUBLIC_ENDPOINT`, not the internal `minio` container hostname, so browser-driven attachment flows continue to work from the host machine.
 - For direct non-Docker API runs, keep `S3_ACCESS_KEY` and `S3_SECRET_KEY` aligned with an actual MinIO access key pair.
 - The configured bucket (`real-capita-erp-dev` by default) remains the target bucket for future document features.
 

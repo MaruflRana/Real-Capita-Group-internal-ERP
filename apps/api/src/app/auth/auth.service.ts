@@ -4,6 +4,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 
+import { AUDIT_EVENT_TYPES } from '../audit/constants/audit.constants';
+import { AuditService } from '../audit/audit.service';
 import { DatabaseService } from '../database/database.service';
 import { AuthRepository, type UserRoleWithRelationsRecord } from './auth.repository';
 import { RefreshSessionDto } from './dto/refresh-session.dto';
@@ -25,9 +27,10 @@ export class AuthService {
     private readonly authTokenService: AuthTokenService,
     private readonly passwordService: PasswordService,
     private readonly databaseService: DatabaseService,
+    private readonly auditService: AuditService,
   ) {}
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto, requestId?: string) {
     const normalizedEmail = loginDto.email.trim().toLowerCase();
     const user = await this.authRepository.findUserByEmail(normalizedEmail);
 
@@ -72,6 +75,21 @@ export class AuthService {
         transaction,
       );
       await this.authRepository.updateUserLastLogin(user.id, transaction);
+      await this.auditService.recordEvent(
+        {
+          companyId,
+          actorUserId: user.id,
+          category: 'AUTH',
+          eventType: AUDIT_EVENT_TYPES.authLoginSucceeded,
+          targetEntityType: 'USER',
+          targetEntityId: user.id,
+          requestId,
+          metadata: {
+            roles: currentAssignment.roles,
+          },
+        },
+        transaction,
+      );
     });
 
     const profile = await this.getCurrentUserProfile(authenticatedUser);
@@ -79,7 +97,11 @@ export class AuthService {
     return this.buildSessionResponse(profile, tokenSet);
   }
 
-  async refresh(refreshDto: RefreshSessionDto) {
+  async refresh(refreshDto: RefreshSessionDto, requestId?: string) {
+    if (!refreshDto.refreshToken) {
+      throw new UnauthorizedException('Refresh token is required.');
+    }
+
     const refreshPayload = await this.authTokenService.verifyRefreshToken(
       refreshDto.refreshToken,
     );
@@ -186,6 +208,21 @@ export class AuthService {
         },
         transaction,
       );
+      await this.auditService.recordEvent(
+        {
+          companyId: authenticatedUser.companyId,
+          actorUserId: authenticatedUser.id,
+          category: 'AUTH',
+          eventType: AUDIT_EVENT_TYPES.authSessionRefreshed,
+          targetEntityType: 'USER',
+          targetEntityId: authenticatedUser.id,
+          requestId,
+          metadata: {
+            roles: authenticatedUser.roles,
+          },
+        },
+        transaction,
+      );
     });
 
     const profile = await this.getCurrentUserProfile(authenticatedUser);
@@ -193,7 +230,11 @@ export class AuthService {
     return this.buildSessionResponse(profile, tokenSet);
   }
 
-  async logout(logoutDto: LogoutDto) {
+  async logout(logoutDto: LogoutDto, requestId?: string) {
+    if (!logoutDto.refreshToken) {
+      throw new UnauthorizedException('Refresh token is required.');
+    }
+
     const refreshPayload = await this.authTokenService.verifyRefreshToken(
       logoutDto.refreshToken,
     );
@@ -210,6 +251,18 @@ export class AuthService {
         await this.authRepository.revokeRefreshTokenFamily(
           storedRefreshToken.familyId,
           'User requested logout.',
+          transaction,
+        );
+        await this.auditService.recordEvent(
+          {
+            companyId: storedRefreshToken.companyId,
+            actorUserId: storedRefreshToken.userId,
+            category: 'AUTH',
+            eventType: AUDIT_EVENT_TYPES.authSessionLoggedOut,
+            targetEntityType: 'USER',
+            targetEntityId: storedRefreshToken.userId,
+            requestId,
+          },
           transaction,
         );
       });
@@ -252,7 +305,14 @@ export class AuthService {
         slug: currentAssignment.companySlug,
       },
       roles: currentAssignment.roles,
-      assignments,
+      assignments: assignments.map((assignment) => ({
+        company: {
+          id: assignment.companyId,
+          name: assignment.companyName,
+          slug: assignment.companySlug,
+        },
+        roles: assignment.roles,
+      })),
     };
   }
 
@@ -335,7 +395,19 @@ export class AuthService {
 
     if (assignments.length > 1) {
       throw new BadRequestException(
-        'companyId is required when multiple active company memberships exist.',
+        {
+          error: 'Bad Request',
+          message:
+            'companyId is required when multiple active company memberships exist.',
+          details: {
+            availableCompanies: assignments.map((assignment) => ({
+              id: assignment.companyId,
+              name: assignment.companyName,
+              slug: assignment.companySlug,
+              roles: assignment.roles,
+            })),
+          },
+        },
       );
     }
 
@@ -414,14 +486,7 @@ export class AuthService {
           slug: profile.currentCompany.slug,
         },
         roles: profile.roles,
-        assignments: profile.assignments.map((assignment) => ({
-          company: {
-            id: assignment.companyId,
-            name: assignment.companyName,
-            slug: assignment.companySlug,
-          },
-          roles: assignment.roles,
-        })),
+        assignments: profile.assignments,
       },
     };
   }

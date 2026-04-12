@@ -34,8 +34,8 @@ const createUserRecord = ({
 const createTokenSet = (overrides = {}) => ({
   accessToken: 'access-token',
   refreshToken: 'refresh-token-value',
-  accessTokenExpiresAt: new Date('2026-03-16T01:00:00.000Z'),
-  refreshTokenExpiresAt: new Date('2026-03-23T01:00:00.000Z'),
+  accessTokenExpiresAt: new Date('2030-03-16T01:00:00.000Z'),
+  refreshTokenExpiresAt: new Date('2030-03-23T01:00:00.000Z'),
   refreshTokenId: 'refresh-token-id',
   familyId: 'refresh-family-id',
   ...overrides,
@@ -65,11 +65,15 @@ test('auth service logs in with a single active company assignment', async () =>
   const databaseService = {
     withTransaction: async (operation) => operation(transaction),
   };
+  const auditService = {
+    recordEvent: async () => undefined,
+  };
   const service = new AuthService(
     authRepository,
     authTokenService,
     passwordService,
     databaseService,
+    auditService,
   );
 
   const response = await service.login({
@@ -80,6 +84,16 @@ test('auth service logs in with a single active company assignment', async () =>
   assert.equal(response.tokenType, 'Bearer');
   assert.equal(response.user.email, 'admin@example.com');
   assert.equal(response.user.currentCompany.id, 'company-1');
+  assert.deepEqual(response.user.assignments, [
+    {
+      company: {
+        id: 'company-1',
+        name: 'real capita',
+        slug: 'real-capita',
+      },
+      roles: ['company_admin'],
+    },
+  ]);
   assert.equal(refreshTokenCreates.length, 1);
   assert.equal(
     refreshTokenCreates[0].data.tokenHash,
@@ -109,6 +123,9 @@ test('auth service rejects login when the password is invalid', async () => {
     {
       withTransaction: async (operation) => operation({}),
     },
+    {
+      recordEvent: async () => undefined,
+    },
   );
 
   await assert.rejects(
@@ -118,6 +135,64 @@ test('auth service rejects login when the password is invalid', async () => {
         password: 'wrong-password',
       }),
     /Invalid email or password/,
+  );
+});
+
+test('auth service returns available companies when login requires a company selection', async () => {
+  const service = new AuthService(
+    {
+      findUserByEmail: async () =>
+        createUserRecord({
+          userRoles: [
+            ...createAssignment('company-1', 'real-capita', ['company_admin']),
+            ...createAssignment('company-2', 'real-capita-holdings', ['company_admin']),
+          ],
+        }),
+    },
+    {
+      issueTokenSet: async () => createTokenSet(),
+      hashToken: (token) => token,
+    },
+    {
+      verifyPassword: async () => true,
+    },
+    {
+      withTransaction: async (operation) => operation({}),
+    },
+    {
+      recordEvent: async () => undefined,
+    },
+  );
+
+  await assert.rejects(
+    () =>
+      service.login({
+        email: 'admin@example.com',
+        password: 'correct-password',
+      }),
+    (error) => {
+      assert.equal(error.getStatus(), 400);
+      assert.equal(
+        error.getResponse().message,
+        'companyId is required when multiple active company memberships exist.',
+      );
+      assert.deepEqual(error.getResponse().details.availableCompanies, [
+        {
+          id: 'company-1',
+          name: 'real capita',
+          slug: 'real-capita',
+          roles: ['company_admin'],
+        },
+        {
+          id: 'company-2',
+          name: 'real capita holdings',
+          slug: 'real-capita-holdings',
+          roles: ['company_admin'],
+        },
+      ]);
+
+      return true;
+    },
   );
 });
 
@@ -133,7 +208,7 @@ test('auth service rotates refresh tokens and preserves the token family', async
       companyId: 'company-1',
       familyId: 'family-1',
       tokenHash: 'hashed:refresh-token-value',
-      expiresAt: new Date('2026-03-23T01:00:00.000Z'),
+      expiresAt: new Date('2030-03-23T01:00:00.000Z'),
       revokedAt: null,
     }),
     findUserCompanyAccess: async () => [
@@ -200,6 +275,9 @@ test('auth service rotates refresh tokens and preserves the token family', async
     {
       withTransaction: async (operation) => operation(transaction),
     },
+    {
+      recordEvent: async () => undefined,
+    },
   );
 
   const response = await service.refresh({
@@ -245,6 +323,9 @@ test('auth service revokes the refresh token family during logout', async () => 
     },
     {
       withTransaction: async (operation) => operation(transaction),
+    },
+    {
+      recordEvent: async () => undefined,
     },
   );
 

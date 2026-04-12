@@ -28,6 +28,7 @@ export interface ValidatedEnvironment {
   };
   storage: {
     endpoint: string;
+    publicEndpoint: string;
     region: string;
     bucket: string;
     accessKey: string;
@@ -267,6 +268,16 @@ const parseEnvironment = (environment: RawEnvironment): ValidatedEnvironment => 
     'CORS_ORIGIN',
     errors,
   );
+  const storageEndpoint = normalizeUrl(
+    readRequiredString(environment, 'S3_ENDPOINT', errors),
+    'S3_ENDPOINT',
+    errors,
+  );
+  const storagePublicEndpoint = normalizeUrl(
+    readOptionalString(environment, 'S3_PUBLIC_ENDPOINT') ?? storageEndpoint,
+    'S3_PUBLIC_ENDPOINT',
+    errors,
+  );
 
   if (!globalPrefix) {
     errors.push('API_GLOBAL_PREFIX must not be empty.');
@@ -300,11 +311,8 @@ const parseEnvironment = (environment: RawEnvironment): ValidatedEnvironment => 
       url: readRequiredString(environment, 'DATABASE_URL', errors),
     },
     storage: {
-      endpoint: normalizeUrl(
-        readRequiredString(environment, 'S3_ENDPOINT', errors),
-        'S3_ENDPOINT',
-        errors,
-      ),
+      endpoint: storageEndpoint,
+      publicEndpoint: storagePublicEndpoint,
       region: readRequiredString(environment, 'S3_REGION', errors),
       bucket: readRequiredString(environment, 'S3_BUCKET', errors),
       accessKey: readRequiredString(environment, 'S3_ACCESS_KEY', errors),
@@ -385,6 +393,7 @@ export const validateEnvironment = (
     CORS_ORIGIN: parsedEnvironment.urls.corsOrigins.join(','),
     DATABASE_URL: parsedEnvironment.database.url,
     S3_ENDPOINT: parsedEnvironment.storage.endpoint,
+    S3_PUBLIC_ENDPOINT: parsedEnvironment.storage.publicEndpoint,
     S3_REGION: parsedEnvironment.storage.region,
     S3_BUCKET: parsedEnvironment.storage.bucket,
     S3_ACCESS_KEY: parsedEnvironment.storage.accessKey,

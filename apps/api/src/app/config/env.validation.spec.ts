@@ -48,6 +48,10 @@ test('validateEnvironment normalizes route paths and versions', () => {
 
   assert.equal(normalizedEnvironment.API_VERSION, '2');
   assert.equal(normalizedEnvironment.SWAGGER_PATH, 'api/docs');
+  assert.equal(
+    normalizedEnvironment.S3_PUBLIC_ENDPOINT,
+    normalizedEnvironment.S3_ENDPOINT,
+  );
 });
 
 test('validateEnvironment rejects short JWT secrets', () => {

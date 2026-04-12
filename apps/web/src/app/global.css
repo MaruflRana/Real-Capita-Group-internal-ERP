@@ -4,24 +4,24 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222 47% 11%;
+    --background: 210 24% 97%;
+    --foreground: 222 38% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 222 38% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 191 91% 36%;
+    --popover-foreground: 222 38% 12%;
+    --primary: 205 84% 36%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 24% 92%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 24% 92%;
-    --muted-foreground: 215 16% 38%;
-    --accent: 184 46% 92%;
-    --accent-foreground: 222 47% 11%;
-    --border: 214 32% 86%;
-    --input: 214 32% 86%;
-    --ring: 191 91% 36%;
-    --radius: 1.5rem;
+    --secondary: 210 20% 92%;
+    --secondary-foreground: 222 38% 12%;
+    --muted: 210 18% 92%;
+    --muted-foreground: 215 14% 39%;
+    --accent: 201 74% 94%;
+    --accent-foreground: 222 38% 12%;
+    --border: 214 22% 84%;
+    --input: 214 22% 84%;
+    --ring: 205 84% 36%;
+    --radius: 1.35rem;
   }
 
   * {
@@ -35,16 +35,21 @@
   body {
     @apply min-h-screen bg-background text-foreground;
     background-image:
-      radial-gradient(circle at top, rgba(14, 165, 233, 0.12), transparent 34%),
-      radial-gradient(
-        circle at right,
-        rgba(20, 184, 166, 0.14),
-        transparent 30%
-      ),
-      linear-gradient(180deg, rgba(248, 250, 252, 1), rgba(240, 249, 255, 1));
+      radial-gradient(circle at top left, rgba(14, 116, 144, 0.09), transparent 30%),
+      radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.09), transparent 34%),
+      linear-gradient(180deg, rgba(246, 248, 251, 1), rgba(238, 243, 248, 1));
   }
 
   ::selection {
     background: rgba(6, 182, 212, 0.22);
+  }
+}
+
+@layer utilities {
+  .bg-admin-canvas {
+    background-image:
+      linear-gradient(180deg, rgba(246, 248, 251, 1), rgba(238, 243, 248, 1)),
+      radial-gradient(circle at top left, rgba(14, 116, 144, 0.08), transparent 28%),
+      radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.08), transparent 30%);
   }
 }

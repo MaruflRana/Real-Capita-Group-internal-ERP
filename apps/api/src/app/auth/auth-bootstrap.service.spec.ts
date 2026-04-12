@@ -53,7 +53,14 @@ test('bootstrap service creates the initial company admin context', async () => 
   assert.equal(result.createdCompany, true);
   assert.equal(result.createdUser, true);
   assert.equal(result.reusedExistingUser, false);
-  assert.deepEqual(ensuredRoles.sort(), ['company_admin', 'company_member']);
+  assert.deepEqual(ensuredRoles.sort(), [
+    'company_accountant',
+    'company_admin',
+    'company_hr',
+    'company_member',
+    'company_payroll',
+    'company_sales',
+  ]);
   assert.deepEqual(ensuredAssignments, [
     {
       userId: 'user-1',

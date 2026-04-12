@@ -74,6 +74,7 @@ services:
       JWT_REFRESH_TOKEN_SECRET: ${JWT_REFRESH_TOKEN_SECRET}
       JWT_REFRESH_TOKEN_TTL: ${JWT_REFRESH_TOKEN_TTL}
       S3_ENDPOINT: http://minio:9000
+      S3_PUBLIC_ENDPOINT: ${S3_PUBLIC_ENDPOINT:-http://localhost:9000}
       S3_REGION: ${S3_REGION}
       S3_BUCKET: ${S3_BUCKET}
       S3_ACCESS_KEY: ${MINIO_ROOT_USER}
@@ -82,7 +83,12 @@ services:
       CHOKIDAR_USEPOLLING: 'true'
       WATCHPACK_POLLING: 'true'
       NX_DAEMON: 'false'
-    command: ['pnpm', 'exec', 'nx', 'dev', 'api']
+    command:
+      [
+        'sh',
+        '-c',
+        'CI=true pnpm install --frozen-lockfile && pnpm prisma generate --schema prisma/schema.prisma && pnpm build:api && node dist/apps/api/main.js',
+      ]
     healthcheck:
       test:
         [
@@ -92,7 +98,7 @@ services:
       interval: 15s
       timeout: 5s
       retries: 10
-      start_period: 20s
+      start_period: 300s
     ports:
       - '${API_PORT:-3333}:3333'
     volumes:
@@ -124,15 +130,9 @@ services:
       NX_DAEMON: 'false'
     command:
       [
-        'pnpm',
-        'exec',
-        'next',
-        'dev',
-        'apps/web',
-        '--hostname',
-        '0.0.0.0',
-        '--port',
-        '3000',
+        'sh',
+        '-c',
+        'mkdir -p apps/web/.next && find apps/web/.next -mindepth 1 -maxdepth 1 -exec rm -rf {} + && CI=true pnpm install --frozen-lockfile && node ./node_modules/next/dist/bin/next dev ./apps/web --hostname 0.0.0.0 --port 3000',
       ]
     healthcheck:
       test:
@@ -143,7 +143,7 @@ services:
       interval: 15s
       timeout: 5s
       retries: 10
-      start_period: 25s
+      start_period: 360s
     ports:
       - '${WEB_PORT:-3000}:3000'
     volumes:

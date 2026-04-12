@@ -7,6 +7,15 @@ export interface CompanyAssignment {
   roles: string[];
 }
 
+export interface AuthAssignment {
+  company: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  roles: string[];
+}
+
 export interface AuthenticatedUser {
   id: string;
   email: string;
@@ -27,7 +36,7 @@ export interface AuthProfile {
     slug: string;
   };
   roles: string[];
-  assignments: CompanyAssignment[];
+  assignments: AuthAssignment[];
 }
 
 export interface AccessTokenPayload {

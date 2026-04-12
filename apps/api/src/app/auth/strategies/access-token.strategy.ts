@@ -1,9 +1,11 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import type { Request } from 'express';
 
 import authConfig, { type AuthConfig } from '../../config/auth.config';
 import { ACCESS_TOKEN_TYPE } from '../constants/auth.constants';
+import { AuthCookieService } from '../auth-cookie.service';
 import type {
   AccessTokenPayload,
   AuthenticatedUser,
@@ -15,9 +17,14 @@ export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
     @Inject(authConfig.KEY) config: AuthConfig,
     private readonly authService: AuthService,
+    private readonly authCookieService: AuthCookieService,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        (request: Request) =>
+          this.authCookieService.readAccessToken(request) ?? null,
+      ]),
       ignoreExpiration: false,
       secretOrKey: config.accessTokenSecret,
     });

@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -7,8 +16,11 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import type { Request, Response } from 'express';
 
+import { RequestId } from '../common/decorators/request-id.decorator';
 import { ApiErrorResponseDto } from '../common/dto/api-error-response.dto';
+import { AuthCookieService } from './auth-cookie.service';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { AuthSessionResponseDto } from './dto/auth-session-response.dto';
 import { CurrentUserDto } from './dto/current-user.dto';
@@ -23,7 +35,10 @@ import { AuthService } from './auth.service';
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly authCookieService: AuthCookieService,
+  ) {}
 
   @Post('login')
   @ApiOperation({
@@ -41,8 +56,16 @@ export class AuthController {
     description: 'Authentication failed.',
     type: ApiErrorResponseDto,
   })
-  login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(
+    @RequestId() requestId: string | undefined,
+    @Body() loginDto: LoginDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const session = await this.authService.login(loginDto, requestId);
+
+    this.authCookieService.setSessionCookies(response, session);
+
+    return session;
   }
 
   @Post('refresh')
@@ -57,8 +80,24 @@ export class AuthController {
     description: 'Refresh token verification failed.',
     type: ApiErrorResponseDto,
   })
-  refresh(@Body() refreshDto: RefreshSessionDto) {
-    return this.authService.refresh(refreshDto);
+  async refresh(
+    @RequestId() requestId: string | undefined,
+    @Body() refreshDto: RefreshSessionDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const refreshToken =
+      refreshDto.refreshToken ?? this.authCookieService.readRefreshToken(request);
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token is required.');
+    }
+
+    const session = await this.authService.refresh({ refreshToken }, requestId);
+
+    this.authCookieService.setSessionCookies(response, session);
+
+    return session;
   }
 
   @Post('logout')
@@ -73,8 +112,27 @@ export class AuthController {
     description: 'Refresh token verification failed.',
     type: ApiErrorResponseDto,
   })
-  logout(@Body() logoutDto: LogoutDto) {
-    return this.authService.logout(logoutDto);
+  async logout(
+    @RequestId() requestId: string | undefined,
+    @Body() logoutDto: LogoutDto,
+    @Req() request: Request,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const refreshToken =
+      logoutDto.refreshToken ?? this.authCookieService.readRefreshToken(request);
+
+    if (!refreshToken) {
+      throw new UnauthorizedException('Refresh token is required.');
+    }
+
+    const logoutResponse = await this.authService.logout(
+      { refreshToken },
+      requestId,
+    );
+
+    this.authCookieService.clearSessionCookies(response);
+
+    return logoutResponse;
   }
 
   @Get('me')

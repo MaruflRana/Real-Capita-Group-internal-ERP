@@ -7,6 +7,7 @@ export const storageConfig = registerAs('storage', () => {
 
   return {
     endpoint: environment.storage.endpoint,
+    publicEndpoint: environment.storage.publicEndpoint,
     region: environment.storage.region,
     bucket: environment.storage.bucket,
     accessKey: environment.storage.accessKey,
