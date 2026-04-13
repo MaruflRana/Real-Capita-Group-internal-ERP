@@ -75,3 +75,25 @@ test('validateEnvironment rejects invalid JWT duration strings', () => {
     /JWT_REFRESH_TOKEN_TTL must be a numeric duration/,
   );
 });
+
+test('validateEnvironment rejects mismatched web and api hosts for cookie auth', () => {
+  const environment = createValidEnvironment();
+
+  environment.API_BASE_URL = 'http://127.0.0.1:3333';
+
+  assert.throws(
+    () => validateEnvironment(environment),
+    /WEB_APP_URL and API_BASE_URL must share the same scheme and hostname/,
+  );
+});
+
+test('validateEnvironment rejects cors origins that omit the canonical web url', () => {
+  const environment = createValidEnvironment();
+
+  environment.CORS_ORIGIN = 'http://localhost:3100';
+
+  assert.throws(
+    () => validateEnvironment(environment),
+    /CORS_ORIGIN must include WEB_APP_URL exactly/,
+  );
+});

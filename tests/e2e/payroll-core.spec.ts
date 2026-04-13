@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const now = '2026-04-01T00:00:00.000Z';
-const sessionCookieUrl = 'http://127.0.0.1:3100';
+const sessionCookieUrl = 'http://localhost:3100';
 
 const baseSession = {
   tokenType: 'Bearer',

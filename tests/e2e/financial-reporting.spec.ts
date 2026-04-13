@@ -148,7 +148,7 @@ const setupFinancialReportingApiMocks = async (
         {
           name: 'rc_access_token',
           value: 'access-token',
-          url: 'http://127.0.0.1:3100',
+          url: 'http://localhost:3100',
         },
       ]);
       await fulfillJson(route, 200, baseSession);
@@ -602,7 +602,7 @@ test('renders the trial balance page and financial reports navigation', async ({
     {
       name: 'rc_access_token',
       value: 'dummy-token',
-      url: 'http://127.0.0.1:3100',
+      url: 'http://localhost:3100',
     },
   ]);
   await setupFinancialReportingApiMocks(page, { authenticated: true });
@@ -629,7 +629,7 @@ test('supports general ledger account selection and surfaces validation and back
     {
       name: 'rc_access_token',
       value: 'dummy-token',
-      url: 'http://127.0.0.1:3100',
+      url: 'http://localhost:3100',
     },
   ]);
   await setupFinancialReportingApiMocks(page, { authenticated: true });
@@ -672,7 +672,7 @@ test('renders the profit and loss statement', async ({ page, context }) => {
     {
       name: 'rc_access_token',
       value: 'dummy-token',
-      url: 'http://127.0.0.1:3100',
+      url: 'http://localhost:3100',
     },
   ]);
   await setupFinancialReportingApiMocks(page, { authenticated: true });
@@ -696,7 +696,7 @@ test('renders the balance sheet and discloses derived equity adjustments', async
     {
       name: 'rc_access_token',
       value: 'dummy-token',
-      url: 'http://127.0.0.1:3100',
+      url: 'http://localhost:3100',
     },
   ]);
   await setupFinancialReportingApiMocks(page, { authenticated: true });

@@ -324,7 +324,7 @@ const setupAccountingApiMocks = async (
         {
           name: 'rc_access_token',
           value: 'access-token',
-          url: 'http://127.0.0.1:3100',
+          url: 'http://localhost:3100',
         },
       ]);
       await fulfillJson(route, 200, baseSession);
@@ -614,7 +614,7 @@ test('renders accounting pages and completes an unbalanced-to-posted voucher flo
     {
       name: 'rc_access_token',
       value: 'dummy-token',
-      url: 'http://127.0.0.1:3100',
+      url: 'http://localhost:3100',
     },
   ]);
   await setupAccountingApiMocks(page, { authenticated: true });

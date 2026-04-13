@@ -42,10 +42,11 @@ ENV NODE_ENV="production"
 
 WORKDIR /app
 
-COPY --from=builder /workspace/dist/apps/api ./
-
-RUN pnpm install --prod --frozen-lockfile
+COPY --from=builder --chown=node:node /workspace/node_modules ./node_modules
+COPY --from=builder --chown=node:node /workspace/dist/apps/api ./dist/apps/api
 
 EXPOSE 3333
 
-CMD ["node", "main.js"]
+USER node
+
+CMD ["node", "dist/apps/api/main.js"]

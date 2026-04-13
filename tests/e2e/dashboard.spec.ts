@@ -767,7 +767,7 @@ test('renders dashboard summary, recent activity, pending work, and shortcuts', 
     {
       name: 'rc_access_token',
       value: 'dummy-token',
-      url: 'http://127.0.0.1:3100',
+      url: 'http://localhost:3100',
     },
   ]);
   await setupDashboardApiMocks(page, { authenticated: true });
@@ -795,7 +795,7 @@ test('opens a quick action into an existing module route', async ({
     {
       name: 'rc_access_token',
       value: 'dummy-token',
-      url: 'http://127.0.0.1:3100',
+      url: 'http://localhost:3100',
     },
   ]);
   await setupDashboardApiMocks(page, { authenticated: true });
@@ -815,7 +815,7 @@ test('surfaces dashboard section issues when summary data fails', async ({
     {
       name: 'rc_access_token',
       value: 'dummy-token',
-      url: 'http://127.0.0.1:3100',
+      url: 'http://localhost:3100',
     },
   ]);
   await setupDashboardApiMocks(page, {

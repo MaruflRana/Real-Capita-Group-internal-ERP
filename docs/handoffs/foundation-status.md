@@ -62,7 +62,17 @@
   - shared reporting hooks, filters, hierarchy tables, and page components in `apps/web/src/features/financial-reporting`
   - no NestJS endpoint changes
   - no Prisma schema change
-- The repo is now ready for Prompt 21.
+- Prompt 22 hardened the runtime and release-readiness path without adding new ERP business modules:
+  - `docker-compose.yml` now runs the production-minded `runner` stages for `api` and `web` instead of bind-mounted dev containers
+  - `docker-compose.yml` now includes `ops` profile helpers for migrations and admin bootstrap
+  - `apps/api/src/app/config/env.validation.ts` now enforces same-host browser origin rules across `WEB_APP_URL`, `API_BASE_URL`, and `CORS_ORIGIN`
+  - `apps/web/src/proxy.ts` now redirects non-canonical browser requests onto the configured canonical origin
+  - repo-root reliability helpers now exist for runtime smoke and containerized bootstrap:
+    - `corepack pnpm docker:migrate`
+    - `corepack pnpm docker:bootstrap -- --company-name ...`
+    - `corepack pnpm docker:smoke`
+  - GitHub Actions now validates Docker Compose boot plus runtime smoke after lint, typecheck, build, and test
+- The repo is now ready for Prompt 23.
 
 ## Frontend Routes
 
@@ -155,6 +165,12 @@ apps/web/src/
 - The web app uses cookie-backed auth compatibility with the existing backend token model:
   - backend still returns access/refresh tokens in the login/refresh payloads
   - backend also sets/clears `rc_access_token` and `rc_refresh_token` httpOnly cookies for browser-safe session continuity
+- The browser-facing origin is now explicit:
+  - `http://localhost:3000` is the canonical local browser origin
+  - `http://127.0.0.1:3000` redirects onto the canonical localhost origin for cookie consistency
+- The backend now validates cookie-origin compatibility:
+  - `WEB_APP_URL` and `API_BASE_URL` must share the same scheme and hostname
+  - every `CORS_ORIGIN` entry must use the same scheme and hostname as `WEB_APP_URL`
 - The frontend query layer sends credentialed requests and retries once through `POST /api/v1/auth/refresh` on eligible `401` responses.
 - Protected route gating happens in `apps/web/src/proxy.ts` using the auth cookies:
   - `/dashboard`, `/org-security/**`, `/accounting/**`, `/project-property/**`, `/crm-property-desk/**`, `/hr/**`, `/payroll/**`, and `/audit-documents/**` redirect unauthenticated requests to `/login?next=...`
@@ -236,6 +252,14 @@ apps/web/src/
 - Prompt 20 added no NestJS endpoints, Prisma changes, or environment changes.
 - Prompt 20 added one frontend-only table primitive typing fix so report tables can use real table-cell semantics such as `colSpan`.
 - Prompt 21 added no NestJS endpoints, Prisma changes, or environment changes.
+- Prompt 22 added no new business endpoints or Prisma schema changes.
+- Prompt 22 added release-readiness compatibility changes only:
+  - `apps/api/Dockerfile` now ships the built API output and installed dependencies without runtime `pnpm install`
+  - `apps/web/Dockerfile` now runs the standalone Next.js runner as the non-root `node` user
+  - `docker-compose.yml` now starts `api` and `web` from runner images with health-based dependencies instead of dev mounts and polling flags
+  - `docker-compose.yml` now exposes `api-migrate` and `api-bootstrap` under the `ops` profile
+  - `tests/e2e/playwright.config.ts` and `scripts/start-playwright-web.mjs` now boot the standalone Next build in a way that matches the runner image and avoids stale `.next` state
+  - `.github/workflows/ci.yml` now boots Compose and runs runtime smoke after repo tests
 
 ## Financial Reporting API Rules Now In Effect
 
@@ -326,11 +350,18 @@ apps/web/src/
 ## Docker Runtime Notes
 
 - Docker Compose remains the canonical local runtime.
-- Web container startup runs Next from `apps/web` directly so App Router proxy/module resolution works reliably in the monorepo.
-- Web container startup clears the contents of the mounted `apps/web/.next` cache before launching `next dev`, which prevents stale App Router route manifests from causing docker-only `404` responses on newly added routes.
-- API container startup uses a deterministic `pnpm build:api && node dist/apps/api/main.js` path inside Docker Compose.
-- `.dockerignore` ignores nested `node_modules`, nested `.next`, nested `.nx`, and `.pnpm-store`, which prevents broken Windows package links from polluting Docker build contexts.
-- For Prompt 18 document flows, Docker runtime must provide a browser-resolvable `S3_PUBLIC_ENDPOINT`; the compose default now uses `http://localhost:9000` so direct-upload and secure-download links work from the host browser while the API keeps using `http://minio:9000` for container-to-container storage access.
+- `docker compose up -d --build` now starts release-minded runner containers for `api` and `web`.
+- The Compose runtime no longer depends on in-container `pnpm install`, bind-mounted app source, or mounted `.next` artifacts for normal Phase 1 use.
+- `api` waits on healthy `postgres` and `minio`; `web` waits on a healthy `api`.
+- Compose healthchecks now target:
+  - `http://127.0.0.1:3333/api/v1/health/ready` inside the API container
+  - `http://127.0.0.1:3000` inside the web container
+- The canonical containerized maintenance helpers are:
+  - `corepack pnpm docker:migrate`
+  - `corepack pnpm docker:bootstrap -- --company-name ...`
+- Playwright now assembles the standalone Next.js output plus `.next/static` and `public` assets before starting the local verification server, which keeps e2e behavior aligned with the runner image.
+- For Prompt 18 document flows, Docker runtime must provide a browser-resolvable `S3_PUBLIC_ENDPOINT`; local Compose uses `http://localhost:9000` while the API keeps using `http://minio:9000` for container-to-container storage access.
+- In non-localhost production, browser auth now requires HTTPS because the cookies become `Secure` in `NODE_ENV=production`.
 
 ## Verification Completed
 
@@ -341,63 +372,34 @@ corepack pnpm typecheck
 corepack pnpm build
 corepack pnpm test
 docker compose up -d --build
-corepack pnpm auth:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "change-me-secure-admin-password"
+corepack pnpm docker:migrate
+corepack pnpm docker:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "change-me-secure-admin-password"
+corepack pnpm docker:smoke
 ```
 
 Live verification completed against the rebuilt running stack for:
 
 - web root and protected-route redirect behavior
+- `http://127.0.0.1:3000/dashboard` redirecting to `http://localhost:3000/dashboard`
 - API health and readiness
 - Swagger
 - browser verification on the canonical `http://localhost:3000` origin
 - login and company-aware session selection
 - authenticated shell rendering
+- Prompt 13 accounting route load against the running Compose stack
 - Prompt 15 CRM/property desk routes still loading
 - Prompt 16 HR routes loading against the running backend
 - Prompt 17 payroll routes loading against the running backend
-- live audit/document browser verification in the main `Real Capita` company for:
-  - protected-route redirect to login
-  - login plus explicit company selection on `http://localhost:3000`
-  - attachments list route load
-  - secure upload intent plus direct browser upload to MinIO
-  - upload finalization through the NestJS API
-  - attachment detail load
-  - normalized company-link creation
-  - secure download URL generation and retrieval
-  - attachment link archive
-  - attachment archive
-  - audit event list filters plus audit event detail panel
-- live payroll browser verification in the main `Real Capita` company for:
-  - login and explicit company selection on `http://localhost:3000`
-  - salary structures route load plus live salary structure create (`P17LIVE734426`)
-  - payroll runs route load plus live payroll run detail hydration against an existing draft run
-  - payroll posting route load plus explicit posting of an existing finalized run, resulting in voucher reference `PAYROLL-2099-10`
-- live Prompt 19 backend verification in the main `Real Capita` company for:
-  - login and explicit company selection through `POST /api/v1/auth/login`
-  - Swagger JSON inclusion for all four `/api/v1/companies/{companyId}/accounting/reports/*` routes
-  - trial balance response over posted live data
-  - general ledger response over a live posting account returned by the trial balance
-  - profit & loss response over live posted data
-  - balance sheet response over live posted data with `isBalanced=true`
-- live Prompt 20 browser verification on the canonical `http://localhost:3000` origin in the main `Real Capita` company for:
-  - login plus explicit company selection
-  - financial report navigation visibility in the authenticated shell
-  - trial balance page load over live posted data using a wide date range
-  - general ledger page load over a live posting account returned by the trial balance (`PARAST185933`)
-  - profit & loss page load over live posted data
-  - balance sheet page load with `isBalanced=true` and explicit `UNCLOSED_EARNINGS` disclosure
-- live Prompt 21 browser verification on the canonical `http://localhost:3000` origin in the main `Real Capita` company for:
-  - login plus explicit company selection
-  - dashboard route load as the main signed-in landing page
-  - operational summary panels rendering from live REST-backed data
-  - recent-activity widgets rendering
-  - pending-work cards rendering
-  - quick-action links navigating into existing module routes
-  - dashboard error-state surfacing still preserving page usability
+- Prompt 18 audit/document routes loading against the running backend
+- Prompt 21 dashboard route loading as the main signed-in landing page on the Compose stack
+- containerized migration helper completing cleanly against the running Compose database
+- containerized bootstrap helper completing cleanly against the running Compose database
 
 ## Current Local URLs
 
 - Web: `http://localhost:3000`
+- Canonical local browser origin: `http://localhost:3000`
+- Non-canonical local browser origin: `http://127.0.0.1:3000` redirects to the canonical localhost origin
 - API: `http://localhost:3333`
 - API auth login: `http://localhost:3333/api/v1/auth/login`
 - API current user: `http://localhost:3333/api/v1/auth/me`
@@ -410,4 +412,4 @@ Live verification completed against the rebuilt running stack for:
 
 ## Final Status
 
-Backend foundations through Prompt 11 remain intact. Prompt 12 established the authenticated frontend shell and Org & Security baseline, Prompt 13 added the Accounting Core UI, Prompt 14 added the Project & Real-Estate Master UI, Prompt 15 added the frontend CRM & Property Desk operational UI, Prompt 16 added the frontend HR Core operational UI, Prompt 17 added the frontend Payroll Core operational UI, Prompt 18 added the frontend Audit & Documents operational UI, Prompt 19 added the backend financial reporting API, Prompt 20 added the frontend financial reporting UI, and Prompt 21 added the frontend operational dashboard/home experience without breaking the locked architecture. The repo is ready for Prompt 22.
+Backend foundations through Prompt 11 remain intact. Prompt 12 established the authenticated frontend shell and Org & Security baseline, Prompt 13 added the Accounting Core UI, Prompt 14 added the Project & Real-Estate Master UI, Prompt 15 added the frontend CRM & Property Desk operational UI, Prompt 16 added the frontend HR Core operational UI, Prompt 17 added the frontend Payroll Core operational UI, Prompt 18 added the frontend Audit & Documents operational UI, Prompt 19 added the backend financial reporting API, Prompt 20 added the frontend financial reporting UI, Prompt 21 added the frontend operational dashboard/home experience, and Prompt 22 hardened runtime, origin, Docker Compose, CI, and deployment reliability without breaking the locked architecture. The repo is ready for Prompt 23.

@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 const now = '2026-03-17T00:00:00.000Z';
 const today = '2026-03-17';
-const sessionCookieUrl = 'http://127.0.0.1:3100';
+const sessionCookieUrl = 'http://localhost:3100';
 
 const baseSession = {
   tokenType: 'Bearer',
@@ -1784,7 +1784,9 @@ test('supports collection creation and linkage detail and surfaces invalid colle
   await setupCrmPropertyDeskApiMocks(page, { authenticated: true });
 
   await page.goto('/crm-property-desk/collections');
-  await expect(page.getByRole('heading', { name: 'Collections' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Collections', exact: true }),
+  ).toBeVisible();
 
   await page.getByRole('button', { name: 'New collection' }).click();
   const collectionDialog = page.getByRole('dialog');

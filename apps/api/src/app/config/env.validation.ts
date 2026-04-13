@@ -143,6 +143,23 @@ const normalizeUrlList = (
   return values.map((entry) => normalizeUrl(entry, key, errors));
 };
 
+const sameCookieOrigin = (left: URL, right: URL): boolean =>
+  left.protocol === right.protocol && left.hostname === right.hostname;
+
+const tryParseUrl = (
+  value: string,
+  key: string,
+  errors: string[],
+): URL | undefined => {
+  try {
+    return new URL(value);
+  } catch {
+    errors.push(`${key} must be a valid URL.`);
+
+    return undefined;
+  }
+};
+
 const normalizeRoutePath = (value: string): string =>
   value.replace(/^\/+|\/+$/g, '');
 
@@ -278,6 +295,11 @@ const parseEnvironment = (environment: RawEnvironment): ValidatedEnvironment => 
     'S3_PUBLIC_ENDPOINT',
     errors,
   );
+  const webAppUrlObject = tryParseUrl(webAppUrl, 'WEB_APP_URL', errors);
+  const apiBaseUrlObject = tryParseUrl(apiBaseUrl, 'API_BASE_URL', errors);
+  const corsOriginObjects = corsOrigins
+    .map((origin) => tryParseUrl(origin, 'CORS_ORIGIN', errors))
+    .filter((origin): origin is URL => origin !== undefined);
 
   if (!globalPrefix) {
     errors.push('API_GLOBAL_PREFIX must not be empty.');
@@ -285,6 +307,31 @@ const parseEnvironment = (environment: RawEnvironment): ValidatedEnvironment => 
 
   if (!swaggerPath) {
     errors.push('SWAGGER_PATH must not be empty.');
+  }
+
+  if (
+    webAppUrlObject &&
+    apiBaseUrlObject &&
+    !sameCookieOrigin(webAppUrlObject, apiBaseUrlObject)
+  ) {
+    errors.push(
+      'WEB_APP_URL and API_BASE_URL must share the same scheme and hostname because the browser session uses host-only auth cookies. Use the same host with different ports if needed.',
+    );
+  }
+
+  if (!corsOrigins.includes(webAppUrl)) {
+    errors.push('CORS_ORIGIN must include WEB_APP_URL exactly.');
+  }
+
+  if (
+    webAppUrlObject &&
+    corsOriginObjects.some(
+      (origin) => !sameCookieOrigin(webAppUrlObject, origin),
+    )
+  ) {
+    errors.push(
+      'Every CORS_ORIGIN entry must use the same scheme and hostname as WEB_APP_URL while cookie-backed browser sessions remain host-only.',
+    );
   }
 
   const validatedEnvironment: ValidatedEnvironment = {

@@ -791,7 +791,7 @@ test('renders project/property master pages and the read-only unit-status catalo
     {
       name: 'rc_access_token',
       value: 'dummy-token',
-      url: 'http://127.0.0.1:3100',
+      url: 'http://localhost:3100',
     },
   ]);
   await setupProjectPropertyApiMocks(page, { authenticated: true });
@@ -839,7 +839,7 @@ test('supports unit create, edit, and filter flow with hierarchy context', async
     {
       name: 'rc_access_token',
       value: 'dummy-token',
-      url: 'http://127.0.0.1:3100',
+      url: 'http://localhost:3100',
     },
   ]);
   await setupProjectPropertyApiMocks(page, { authenticated: true });

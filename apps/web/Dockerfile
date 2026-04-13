@@ -46,13 +46,17 @@ FROM node:22-bookworm-slim AS runner
 
 ENV NEXT_TELEMETRY_DISABLED="1"
 ENV NODE_ENV="production"
+ENV HOSTNAME="0.0.0.0"
+ENV PORT="3000"
 
 WORKDIR /app
 
-COPY --from=builder /workspace/apps/web/.next/standalone ./
-COPY --from=builder /workspace/apps/web/.next/static ./apps/web/.next/static
-COPY --from=builder /workspace/apps/web/public ./apps/web/public
+COPY --from=builder --chown=node:node /workspace/apps/web/.next/standalone ./
+COPY --from=builder --chown=node:node /workspace/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder --chown=node:node /workspace/apps/web/public ./apps/web/public
 
 EXPOSE 3000
+
+USER node
 
 CMD ["node", "apps/web/server.js"]

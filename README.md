@@ -42,12 +42,16 @@ tests/
 - `minio`: local S3-compatible object storage for development and test workflows.
 - No Next.js API routes exist under `apps/web`; all backend operations belong in the NestJS API.
 
+## Operations Guide
+
+- Phase 1 release, runtime, and single-VM deployment notes live in [docs/operations/deployment.md](docs/operations/deployment.md).
+
 ## Current Frontend Coverage
 
 - authenticated application shell
 - login/logout/session handling against the NestJS auth API
 - company-aware protected routing
-- dashboard placeholder
+- operational dashboard and signed-in home
 - Org & Security admin pages for companies, locations, departments, users, and company-scoped role assignments
 - accounting pages for chart of accounts and vouchers
 - project/property master pages for projects, cost centers, phases, blocks, zones, unit types, unit statuses, and units
@@ -76,6 +80,7 @@ Root:
 - `CORS_ORIGIN` defaults to `WEB_APP_URL` if omitted, but keeping it explicit is recommended
 - `JWT_ACCESS_TOKEN_SECRET` and `JWT_REFRESH_TOKEN_SECRET` must each be at least 32 characters long
 - `S3_PUBLIC_ENDPOINT` must stay browser-resolvable for direct-upload/download document flows; local Docker defaults use `http://localhost:9000`
+- `BOOTSTRAP_*` values are optional and are only needed when you run the containerized admin-bootstrap helper
 - The root `build` scripts force `NODE_ENV=production` for Next.js builds so the shared local `.env` can stay on development settings for API work
 
 App-level examples:
@@ -121,11 +126,11 @@ Or run both app processes together:
 corepack pnpm dev
 ```
 
-Apply the auth schema locally:
+Apply the existing Prisma migrations locally:
 
 ```powershell
 corepack pnpm prisma:generate
-corepack pnpm prisma:migrate:dev --name prompt_4_auth_core
+corepack pnpm prisma:migrate:deploy
 ```
 
 Create the first company admin explicitly:
@@ -142,16 +147,28 @@ Create the root env file:
 Copy-Item .env.example .env
 ```
 
-Start the full stack:
+Start the full stack in the same production-minded mode used for the single-VM target:
 
 ```powershell
-docker compose up --build
+docker compose up -d --build
 ```
 
-Run detached:
+Apply database migrations against the running Compose database:
 
 ```powershell
-docker compose up --build -d
+corepack pnpm docker:migrate
+```
+
+Bootstrap the first company admin against the running Compose database:
+
+```powershell
+corepack pnpm docker:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "change-me-secure-admin-password"
+```
+
+Run the runtime smoke checks:
+
+```powershell
+corepack pnpm docker:smoke
 ```
 
 Stop the stack:
@@ -181,6 +198,9 @@ docker compose logs -f
 | MinIO API     | `http://localhost:9000`                            | S3-compatible endpoint          |
 | MinIO Console | `http://localhost:9001`                            | Local object storage admin UI   |
 
+- Canonical local browser origin: `http://localhost:3000`
+- `http://127.0.0.1:3000` redirects to the canonical localhost origin and should not be used in docs, tests, or normal browser verification
+
 ## MinIO In Local Development
 
 - MinIO exists only to emulate the intended S3-compatible storage boundary during development.
@@ -194,7 +214,7 @@ docker compose logs -f
 
 ## Auth Core Verification
 
-After `docker compose up -d`, verify the runtime and auth core:
+After `docker compose up -d --build`, verify the runtime and auth core:
 
 ```powershell
 Invoke-WebRequest http://localhost:3333/api/v1/health
@@ -202,8 +222,9 @@ Invoke-WebRequest http://localhost:3333/api/v1/health/ready
 Invoke-WebRequest http://localhost:3333/api/v1/health/dependencies
 Invoke-WebRequest http://localhost:3333/api/docs
 
-corepack pnpm prisma:migrate:deploy
-corepack pnpm auth:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "change-me-secure-admin-password"
+corepack pnpm docker:migrate
+corepack pnpm docker:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "change-me-secure-admin-password"
+corepack pnpm docker:smoke
 
 $loginBody = @{
   email = 'admin@example.com'
@@ -231,7 +252,7 @@ If the same user later belongs to multiple companies, include `companyId` in the
 
 - `apps/api/Dockerfile`: multi-stage local-first API image with `development`, `builder`, and `runner` stages
 - `apps/web/Dockerfile`: multi-stage web image with `development`, `builder`, and standalone `runner` stages
-- `docker-compose.yml`: full local stack with named volumes, healthchecks, env-driven configuration, official `postgres:15-alpine`, and a pinned official MinIO image
+- `docker-compose.yml`: production-minded Compose stack with runner containers for `api` and `web`, healthchecks, env-driven configuration, official `postgres:15-alpine`, a pinned official MinIO image, and `ops` profile helpers for migrations and admin bootstrap
 - The only canonical Dockerfiles in this repository are `apps/api/Dockerfile` and `apps/web/Dockerfile`
 
 ## Devcontainer
@@ -248,10 +269,14 @@ Open the repository in a devcontainer, then run the same root commands documente
 ## Quality Commands
 
 ```powershell
+corepack pnpm verify
 corepack pnpm lint
 corepack pnpm typecheck
 corepack pnpm build
 corepack pnpm test
+corepack pnpm docker:migrate
+corepack pnpm docker:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "change-me-secure-admin-password"
+corepack pnpm docker:smoke
 corepack pnpm format
 corepack pnpm prisma:format
 corepack pnpm prisma:generate
@@ -267,12 +292,16 @@ GitHub Actions currently validates:
 - typecheck
 - build
 - API unit tests plus Playwright smoke coverage
+- Docker Compose boot plus runtime smoke on the documented localhost URLs
 
 ## Operational Notes
 
 - Docker Compose is the intended Phase 1 local and single-VM orchestration baseline.
 - Secrets are not embedded in Compose; they come from `.env`.
-- App containers keep Nx runtime state in container-specific named volumes so host Nx processes do not contend with Docker-based development runs.
+- Compose now runs the production-minded `runner` stages for `api` and `web` instead of bind-mounted dev processes.
+- The `ops` profile exposes the canonical containerized maintenance helpers:
+  - `api-migrate`
+  - `api-bootstrap`
 - The API now exposes auth, liveness, readiness, dependency, and Swagger endpoints for backend verification.
 - Refresh tokens are stored as SHA-256 hashes with rotation and family-wide revocation support.
 - The bootstrap admin path is explicit only; no auth seed runs automatically during app startup.

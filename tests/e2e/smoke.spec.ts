@@ -256,7 +256,7 @@ const setupApiMocks = async (
         {
           name: 'rc_access_token',
           value: 'access-token',
-          url: 'http://127.0.0.1:3100',
+          url: 'http://localhost:3100',
         },
       ]);
       await fulfillJson(page, route, 200, baseSession);
@@ -458,6 +458,14 @@ test('redirects protected routes to login when no browser session exists', async
   await expect(page.getByRole('heading', { name: 'Open the admin shell' })).toBeVisible();
 });
 
+test('redirects 127.0.0.1 requests onto the canonical localhost origin', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:3100/dashboard');
+
+  await expect(page).toHaveURL('http://localhost:3100/login?next=%2Fdashboard');
+});
+
 test('supports company-aware login and enters the authenticated shell', async ({
   page,
 }) => {
@@ -485,7 +493,7 @@ test('renders Org & Security pages and supports basic admin interactions', async
     {
       name: 'rc_access_token',
       value: 'dummy-token',
-      url: 'http://127.0.0.1:3100',
+      url: 'http://localhost:3100',
     },
   ]);
   await setupApiMocks(page, { authenticated: true });

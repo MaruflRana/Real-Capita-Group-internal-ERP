@@ -11,11 +11,52 @@ const isProtectedRoute = (pathname: string): boolean =>
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 
+const getCanonicalOrigin = (): string | null => {
+  const configuredOrigin = process.env.NEXT_PUBLIC_APP_URL?.trim();
+
+  if (!configuredOrigin) {
+    return null;
+  }
+
+  try {
+    return new URL(configuredOrigin).origin;
+  } catch {
+    return null;
+  }
+};
+
+const getRequestOrigin = (request: NextRequest): string => {
+  const host = request.headers.get('host');
+
+  if (!host) {
+    return request.nextUrl.origin;
+  }
+
+  try {
+    return new URL(`${request.nextUrl.protocol}//${host}`).origin;
+  } catch {
+    return request.nextUrl.origin;
+  }
+};
+
 export const proxy = (request: NextRequest) => {
   const { pathname, search } = request.nextUrl;
+  const canonicalOrigin = getCanonicalOrigin();
+  const requestOrigin = getRequestOrigin(request);
   const hasSessionCookie =
     request.cookies.has(ACCESS_COOKIE_NAME) ||
     request.cookies.has(REFRESH_COOKIE_NAME);
+
+  if (
+    canonicalOrigin &&
+    canonicalOrigin !== requestOrigin &&
+    (request.method === 'GET' || request.method === 'HEAD')
+  ) {
+    return NextResponse.redirect(
+      new URL(`${pathname}${search}`, canonicalOrigin),
+      307,
+    );
+  }
 
   if (pathname === APP_ROUTES.home) {
     return NextResponse.redirect(
