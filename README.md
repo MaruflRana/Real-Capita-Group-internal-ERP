@@ -46,6 +46,25 @@ tests/
 
 - Phase 1 release, runtime, and single-VM deployment notes live in [docs/operations/deployment.md](docs/operations/deployment.md).
 
+## Fast Runner Workflow
+
+If this machine mostly pulls the latest branch and runs the shared stack, use the one-step sync command:
+
+```powershell
+corepack pnpm stack:sync
+```
+
+If you already pulled and only want to rebuild, migrate, and smoke-check the current checkout:
+
+```powershell
+corepack pnpm stack:up
+```
+
+- `stack:sync` runs `git pull --ff-only`, installs dependencies, rebuilds the Docker stack, applies Prisma migrations, and runs the runtime smoke checks
+- `stack:up` skips the Git pull and reuses the current checkout
+- The first run on a new machine can take several minutes because Docker needs to build the `api` and `web` images
+- Use the documented `http://localhost:*` URLs on Windows; host-side `127.0.0.1` loopback can be less reliable with Docker
+
 ## Current Frontend Coverage
 
 - authenticated application shell
