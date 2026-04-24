@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import { useAuth } from '../../components/providers/auth-provider';
+import { OutputActionGroup } from '../../components/ui/output-actions';
 import { EmptyState } from '../../components/ui/empty-state';
 import {
   Table,
@@ -13,8 +14,10 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { isApiError } from '../../lib/api/client';
+import { buildQueryString } from '../../lib/api/query-string';
 import type { BalanceSheetQueryParams } from '../../lib/api/types';
 import { formatAccountingAmount } from '../../lib/format';
+import { downloadApiCsv, printCurrentPage } from '../../lib/output';
 import {
   AsOfDateField,
   ReportFilterActions,
@@ -26,6 +29,7 @@ import {
   FinancialReportingAccessRequiredState,
   FinancialReportingFilterCard,
   FinancialReportingPageHeader,
+  FinancialReportingPrintContext,
   FinancialReportingQueryErrorBanner,
   FinancialReportingReadOnlyNotice,
   FinancialReportingSection,
@@ -35,7 +39,10 @@ import {
   ReportRefreshHint,
 } from './shared';
 import { StatementHierarchyTable } from './tables';
-import { getDefaultAsOfDate } from './utils';
+import {
+  buildFinancialReportCsvFileName,
+  getDefaultAsOfDate,
+} from './utils';
 
 const buildBalanceSheetFilters = ({
   asOfDate,
@@ -53,6 +60,8 @@ export const BalanceSheetPage = () => {
 
   const [asOfDate, setAsOfDate] = useState(defaultAsOfDate);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<BalanceSheetQueryParams>(
     buildBalanceSheetFilters({ asOfDate: defaultAsOfDate }),
   );
@@ -78,6 +87,7 @@ export const BalanceSheetPage = () => {
     }
 
     setValidationError(null);
+    setExportError(null);
     setAppliedFilters(buildBalanceSheetFilters({ asOfDate }));
   };
 
@@ -86,12 +96,52 @@ export const BalanceSheetPage = () => {
 
     setAsOfDate(nextAsOfDate);
     setValidationError(null);
+    setExportError(null);
     setAppliedFilters(buildBalanceSheetFilters({ asOfDate: nextAsOfDate }));
+  };
+
+  const handleExport = async () => {
+    if (!companyId) {
+      return;
+    }
+
+    setExportError(null);
+    setIsExporting(true);
+
+    try {
+      await downloadApiCsv(
+        `companies/${companyId}/accounting/reports/balance-sheet/export${buildQueryString(appliedFilters)}`,
+        buildFinancialReportCsvFileName({
+          companySlug: user.currentCompany.slug,
+          reportSlug: 'balance-sheet',
+          segments: ['as-of', appliedFilters.asOfDate],
+        }),
+      );
+    } catch (error) {
+      setExportError(
+        isApiError(error)
+          ? error.apiError.message
+          : error instanceof Error
+            ? error.message
+            : 'Unable to export the balance sheet.',
+      );
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
     <div className="space-y-6">
       <FinancialReportingPageHeader
+        actions={
+          reportQuery.data ? (
+            <OutputActionGroup
+              isExporting={isExporting}
+              onExport={() => void handleExport()}
+              onPrint={printCurrentPage}
+            />
+          ) : null
+        }
         description="Review assets, liabilities, equity, and any derived equity adjustment the backend includes to keep the statement honest and mathematically complete."
         scopeName={user.currentCompany.name}
         scopeSlug={user.currentCompany.slug}
@@ -103,35 +153,62 @@ export const BalanceSheetPage = () => {
         title="Read-only reporting"
       />
 
-      <FinancialReportingFilterCard>
-        <ReportFilterGrid>
-          <AsOfDateField onChange={setAsOfDate} value={asOfDate} />
-        </ReportFilterGrid>
-        <ReportFilterActions
-          isApplying={reportQuery.isFetching}
-          onApply={handleApply}
-          onReset={handleReset}
-        />
-      </FinancialReportingFilterCard>
+      <div className="screen-only space-y-6">
+        <FinancialReportingFilterCard>
+          <ReportFilterGrid>
+            <AsOfDateField onChange={setAsOfDate} value={asOfDate} />
+          </ReportFilterGrid>
+          <ReportFilterActions
+            isApplying={reportQuery.isFetching}
+            onApply={handleApply}
+            onReset={handleReset}
+          />
+        </FinancialReportingFilterCard>
 
-      {validationError ? (
-        <FinancialReportingQueryErrorBanner message={validationError} />
-      ) : null}
-      {reportQuery.isError && isApiError(reportQuery.error) ? (
-        <FinancialReportingQueryErrorBanner
-          message={reportQuery.error.apiError.message}
+        {validationError ? (
+          <FinancialReportingQueryErrorBanner message={validationError} />
+        ) : null}
+        {exportError ? (
+          <FinancialReportingQueryErrorBanner message={exportError} />
+        ) : null}
+        {reportQuery.isError && isApiError(reportQuery.error) ? (
+          <FinancialReportingQueryErrorBanner
+            message={reportQuery.error.apiError.message}
+          />
+        ) : null}
+        <ReportRefreshHint
+          isFetching={reportQuery.isFetching && !!reportQuery.data}
         />
-      ) : null}
-      <ReportRefreshHint
-        isFetching={reportQuery.isFetching && !!reportQuery.data}
-      />
 
-      {reportQuery.isPending && !reportQuery.data ? (
-        <ReportLoadingState label="Loading the balance sheet." />
-      ) : null}
+        {reportQuery.isPending && !reportQuery.data ? (
+          <ReportLoadingState label="Loading the balance sheet." />
+        ) : null}
+      </div>
 
       {reportQuery.data ? (
         <>
+          <FinancialReportingPrintContext
+            items={[
+              {
+                label: 'Company',
+                value: user.currentCompany.name,
+              },
+              {
+                label: 'As-of date',
+                value: reportQuery.data.asOfDate,
+              },
+              {
+                label: 'Balance state',
+                value: reportQuery.data.isBalanced ? 'Balanced' : 'Not balanced',
+              },
+              {
+                label: 'Derived adjustment',
+                value: `UNCLOSED_EARNINGS ${formatAccountingAmount(reportQuery.data.totals.unclosedEarnings)}`,
+              },
+            ]}
+            title="Balance sheet print context"
+          />
+
           <BalanceStatusBanner isBalanced={reportQuery.data.isBalanced} />
 
           <FinancialReportingSection

@@ -4,6 +4,7 @@ import type {
   ParticularAccountRecord,
 } from '../../lib/api/types';
 import { formatAccountingAmount } from '../../lib/format';
+import { buildExportFileName } from '../../lib/output';
 
 export const REPORTING_OPTION_PAGE_SIZE = 100;
 
@@ -70,3 +71,19 @@ export const getStatementSectionCountLabel = (
   sections: FinancialStatementSectionRecord[],
 ): string =>
   `${sections.length} section${sections.length === 1 ? '' : 's'} returned`;
+
+export const formatReportDateRangeLabel = (
+  dateFrom: string,
+  dateTo: string,
+) => `${dateFrom} to ${dateTo}`;
+
+export const buildFinancialReportCsvFileName = ({
+  companySlug,
+  reportSlug,
+  segments,
+}: {
+  companySlug: string;
+  reportSlug: string;
+  segments: string[];
+}) =>
+  buildExportFileName([companySlug, reportSlug, ...segments], 'csv');

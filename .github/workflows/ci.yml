@@ -34,6 +34,13 @@ jobs:
       - name: Validate Docker Compose config
         run: docker compose -f docker-compose.yml config > /dev/null
 
+      - name: Validate operations helpers
+        run: |
+          pnpm backup:db -- --help
+          pnpm restore:db -- --help
+          pnpm verify:backup -- --help
+          pnpm ops:env-check -- --env-file .env.example --allow-placeholders
+
       - name: Install Playwright browser
         run: pnpm exec playwright install --with-deps chromium
 

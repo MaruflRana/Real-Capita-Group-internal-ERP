@@ -6,6 +6,7 @@ coverage
 .next
 out
 .turbo
+*.tsbuildinfo
 
 .env
 .env.local
@@ -18,6 +19,7 @@ out
 .nx/workspace-data
 playwright-report
 test-results
+backups
 
 .idea
 .vscode/*

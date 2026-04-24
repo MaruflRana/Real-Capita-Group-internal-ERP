@@ -3,12 +3,16 @@
 import { useState } from 'react';
 
 import { useAuth } from '../../components/providers/auth-provider';
+import { OutputActionGroup } from '../../components/ui/output-actions';
 import { EmptyState } from '../../components/ui/empty-state';
+import { buildQueryString } from '../../lib/api/query-string';
 import { isApiError } from '../../lib/api/client';
 import type {
   AccountingVoucherType,
   TrialBalanceQueryParams,
 } from '../../lib/api/types';
+import { formatDate } from '../../lib/format';
+import { downloadApiCsv, printCurrentPage } from '../../lib/output';
 import {
   DateRangeFields,
   ReportFilterActions,
@@ -20,6 +24,7 @@ import {
   FinancialReportingAccessRequiredState,
   FinancialReportingFilterCard,
   FinancialReportingPageHeader,
+  FinancialReportingPrintContext,
   FinancialReportingQueryErrorBanner,
   FinancialReportingReadOnlyNotice,
   FinancialReportingSection,
@@ -30,7 +35,12 @@ import {
   ReportRefreshHint,
 } from './shared';
 import { TrialBalanceReportTable } from './tables';
-import { getDefaultReportDateRange, isDateRangeInvalid } from './utils';
+import {
+  buildFinancialReportCsvFileName,
+  formatReportDateRangeLabel,
+  getDefaultReportDateRange,
+  isDateRangeInvalid,
+} from './utils';
 
 const buildTrialBalanceFilters = ({
   dateFrom,
@@ -58,6 +68,8 @@ export const TrialBalancePage = () => {
     '',
   );
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<TrialBalanceQueryParams>(
     buildTrialBalanceFilters({
       dateFrom: defaultRange.dateFrom,
@@ -92,6 +104,7 @@ export const TrialBalancePage = () => {
     }
 
     setValidationError(null);
+    setExportError(null);
     setAppliedFilters(
       buildTrialBalanceFilters({ dateFrom, dateTo, voucherType }),
     );
@@ -104,6 +117,7 @@ export const TrialBalancePage = () => {
     setDateTo(nextDefaultRange.dateTo);
     setVoucherType('');
     setValidationError(null);
+    setExportError(null);
     setAppliedFilters(
       buildTrialBalanceFilters({
         dateFrom: nextDefaultRange.dateFrom,
@@ -113,9 +127,55 @@ export const TrialBalancePage = () => {
     );
   };
 
+  const handleExport = async () => {
+    if (!companyId) {
+      return;
+    }
+
+    setExportError(null);
+    setIsExporting(true);
+
+    try {
+      await downloadApiCsv(
+        `companies/${companyId}/accounting/reports/trial-balance/export${buildQueryString(appliedFilters)}`,
+        buildFinancialReportCsvFileName({
+          companySlug: user.currentCompany.slug,
+          reportSlug: 'trial-balance',
+          segments: [
+            appliedFilters.dateFrom,
+            'to',
+            appliedFilters.dateTo,
+            appliedFilters.voucherType
+              ? appliedFilters.voucherType.toLowerCase()
+              : 'all-vouchers',
+          ],
+        }),
+      );
+    } catch (error) {
+      setExportError(
+        isApiError(error)
+          ? error.apiError.message
+          : error instanceof Error
+            ? error.message
+            : 'Unable to export the trial balance.',
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <FinancialReportingPageHeader
+        actions={
+          reportQuery.data ? (
+            <OutputActionGroup
+              isExporting={isExporting}
+              onExport={() => void handleExport()}
+              onPrint={printCurrentPage}
+            />
+          ) : null
+        }
         description="Review posted accounting activity across the chart hierarchy with opening, movement, and closing debit and credit balances for the active company."
         scopeName={user.currentCompany.name}
         scopeSlug={user.currentCompany.slug}
@@ -127,95 +187,129 @@ export const TrialBalancePage = () => {
         title="Read-only reporting"
       />
 
-      <FinancialReportingFilterCard>
-        <ReportFilterGrid>
-          <DateRangeFields
-            dateFrom={dateFrom}
-            dateTo={dateTo}
-            onDateFromChange={setDateFrom}
-            onDateToChange={setDateTo}
+      <div className="screen-only space-y-6">
+        <FinancialReportingFilterCard>
+          <ReportFilterGrid>
+            <DateRangeFields
+              dateFrom={dateFrom}
+              dateTo={dateTo}
+              onDateFromChange={setDateFrom}
+              onDateToChange={setDateTo}
+            />
+            <VoucherTypeField onChange={setVoucherType} value={voucherType} />
+          </ReportFilterGrid>
+          <ReportFilterActions
+            isApplying={reportQuery.isFetching}
+            onApply={handleApply}
+            onReset={handleReset}
           />
-          <VoucherTypeField onChange={setVoucherType} value={voucherType} />
-        </ReportFilterGrid>
-        <ReportFilterActions
-          isApplying={reportQuery.isFetching}
-          onApply={handleApply}
-          onReset={handleReset}
-        />
-      </FinancialReportingFilterCard>
+        </FinancialReportingFilterCard>
 
-      {validationError ? (
-        <FinancialReportingQueryErrorBanner message={validationError} />
-      ) : null}
-      {reportQuery.isError && isApiError(reportQuery.error) ? (
-        <FinancialReportingQueryErrorBanner
-          message={reportQuery.error.apiError.message}
+        {validationError ? (
+          <FinancialReportingQueryErrorBanner message={validationError} />
+        ) : null}
+        {exportError ? (
+          <FinancialReportingQueryErrorBanner message={exportError} />
+        ) : null}
+        {reportQuery.isError && isApiError(reportQuery.error) ? (
+          <FinancialReportingQueryErrorBanner
+            message={reportQuery.error.apiError.message}
+          />
+        ) : null}
+        <ReportRefreshHint
+          isFetching={reportQuery.isFetching && !!reportQuery.data}
         />
-      ) : null}
-      <ReportRefreshHint
-        isFetching={reportQuery.isFetching && !!reportQuery.data}
-      />
 
-      {reportQuery.isPending && !reportQuery.data ? (
-        <ReportLoadingState label="Loading the company trial balance." />
-      ) : null}
+        {reportQuery.isPending && !reportQuery.data ? (
+          <ReportLoadingState label="Loading the company trial balance." />
+        ) : null}
+      </div>
 
       {reportQuery.data ? (
-        <FinancialReportingSection
-          description="The hierarchy below follows the backend report contract directly: account class, account group, ledger account, and posting account where available."
-          title="Report output"
-        >
-          <ReportMetricGrid>
-            <ReportMetricCard
-              label="Opening balance"
-              value={
-                <ReportAmountPair
-                  credit={reportQuery.data.totals.openingCredit}
-                  debit={reportQuery.data.totals.openingDebit}
-                />
-              }
-            />
-            <ReportMetricCard
-              label="Period movement"
-              value={
-                <ReportAmountPair
-                  credit={reportQuery.data.totals.movementCredit}
-                  debit={reportQuery.data.totals.movementDebit}
-                />
-              }
-            />
-            <ReportMetricCard
-              label="Closing balance"
-              value={
-                <ReportAmountPair
-                  credit={reportQuery.data.totals.closingCredit}
-                  debit={reportQuery.data.totals.closingDebit}
-                />
-              }
-            />
-            <ReportMetricCard
-              description={
-                reportQuery.data.voucherType
-                  ? `Limited to ${reportQuery.data.voucherType.toLowerCase()} vouchers.`
-                  : 'All posted voucher types are included.'
-              }
-              label="Source of truth"
-              value="Posted vouchers only"
-            />
-          </ReportMetricGrid>
+        <>
+          <FinancialReportingPrintContext
+            items={[
+              {
+                label: 'Company',
+                value: user.currentCompany.name,
+              },
+              {
+                label: 'Period',
+                value: formatReportDateRangeLabel(
+                  reportQuery.data.dateFrom,
+                  reportQuery.data.dateTo,
+                ),
+              },
+              {
+                label: 'Voucher scope',
+                value: reportQuery.data.voucherType
+                  ? reportQuery.data.voucherType
+                  : 'All posted voucher types',
+              },
+              {
+                label: 'Period end',
+                value: formatDate(reportQuery.data.dateTo),
+              },
+            ]}
+            title="Trial balance print context"
+          />
 
-          {reportQuery.data.sections.length === 0 ? (
-            <EmptyState
-              description="No posted voucher activity matched the selected period and filters."
-              title="No balances found"
-            />
-          ) : (
-            <TrialBalanceReportTable
-              sections={reportQuery.data.sections}
-              totals={reportQuery.data.totals}
-            />
-          )}
-        </FinancialReportingSection>
+          <FinancialReportingSection
+            description="The hierarchy below follows the backend report contract directly: account class, account group, ledger account, and posting account where available."
+            title="Report output"
+          >
+            <ReportMetricGrid>
+              <ReportMetricCard
+                label="Opening balance"
+                value={
+                  <ReportAmountPair
+                    credit={reportQuery.data.totals.openingCredit}
+                    debit={reportQuery.data.totals.openingDebit}
+                  />
+                }
+              />
+              <ReportMetricCard
+                label="Period movement"
+                value={
+                  <ReportAmountPair
+                    credit={reportQuery.data.totals.movementCredit}
+                    debit={reportQuery.data.totals.movementDebit}
+                  />
+                }
+              />
+              <ReportMetricCard
+                label="Closing balance"
+                value={
+                  <ReportAmountPair
+                    credit={reportQuery.data.totals.closingCredit}
+                    debit={reportQuery.data.totals.closingDebit}
+                  />
+                }
+              />
+              <ReportMetricCard
+                description={
+                  reportQuery.data.voucherType
+                    ? `Limited to ${reportQuery.data.voucherType.toLowerCase()} vouchers.`
+                    : 'All posted voucher types are included.'
+                }
+                label="Source of truth"
+                value="Posted vouchers only"
+              />
+            </ReportMetricGrid>
+
+            {reportQuery.data.sections.length === 0 ? (
+              <EmptyState
+                description="No posted voucher activity matched the selected period and filters."
+                title="No balances found"
+              />
+            ) : (
+              <TrialBalanceReportTable
+                sections={reportQuery.data.sections}
+                totals={reportQuery.data.totals}
+              />
+            )}
+          </FinancialReportingSection>
+        </>
       ) : null}
     </div>
   );

@@ -19,11 +19,13 @@ export const FinancialReportingPageHeader = ({
   description,
   scopeName,
   scopeSlug,
+  actions,
 }: {
   title: string;
   description: string;
   scopeName?: string;
   scopeSlug?: string;
+  actions?: ReactNode;
 }) => (
   <Card>
     <CardHeader className="flex flex-col gap-4 border-b border-border/70 lg:flex-row lg:items-start lg:justify-between">
@@ -44,6 +46,7 @@ export const FinancialReportingPageHeader = ({
           </div>
         ) : null}
       </div>
+      {actions ? <div className="shrink-0">{actions}</div> : null}
     </CardHeader>
   </Card>
 );
@@ -209,6 +212,31 @@ export const ReportValueList = ({
         <div className="mt-2 text-sm text-foreground">{item.value}</div>
       </div>
     ))}
+  </div>
+);
+
+export const FinancialReportingPrintContext = ({
+  items,
+  title,
+}: {
+  items: Array<{
+    label: string;
+    value: ReactNode;
+  }>;
+  title: string;
+}) => (
+  <div className="print-only rounded-2xl border border-border/70 bg-background px-4 py-4">
+    <p className="text-sm font-semibold text-foreground">{title}</p>
+    <div className="mt-3 grid gap-3 md:grid-cols-2">
+      {items.map((item) => (
+        <div key={item.label}>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+            {item.label}
+          </p>
+          <div className="mt-1 text-sm text-foreground">{item.value}</div>
+        </div>
+      ))}
+    </div>
   </div>
 );
 

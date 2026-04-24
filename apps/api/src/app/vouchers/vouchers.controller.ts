@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  Res,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -19,6 +20,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import type { Response } from 'express';
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { RequireCompanyAccountingAccess } from '../auth/decorators/require-company-accounting-access.decorator';
@@ -26,6 +28,7 @@ import type { AuthenticatedUser } from '../auth/interfaces/auth.types';
 import { RequestId } from '../common/decorators/request-id.decorator';
 import { ApiErrorResponseDto } from '../common/dto/api-error-response.dto';
 import { VouchersService } from './vouchers.service';
+import { buildVoucherDetailCsv } from './voucher-exports';
 import {
   CreateVoucherDraftDto,
   CreateVoucherLineDto,
@@ -64,6 +67,28 @@ export class VouchersController {
     @Query() query: VouchersListQueryDto,
   ) {
     return this.vouchersService.listVouchers(companyId, query);
+  }
+
+  @Get(':voucherId/export')
+  @ApiOperation({
+    summary: 'Return voucher detail as a read-only CSV export.',
+  })
+  @ApiOkResponse({
+    description: 'Voucher detail CSV export was returned.',
+  })
+  async exportVoucher(
+    @Param('companyId') companyId: string,
+    @Param('voucherId') voucherId: string,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const voucher = await this.vouchersService.getVoucherDetail(
+      companyId,
+      voucherId,
+    );
+
+    response.setHeader('Content-Type', 'text/csv; charset=utf-8');
+
+    return buildVoucherDetailCsv(voucher);
   }
 
   @Get(':voucherId')

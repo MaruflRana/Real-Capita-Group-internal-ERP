@@ -7,6 +7,7 @@ import { Button } from '@real-capita/ui';
 import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
 import { Label } from '../../components/ui/label';
+import { OutputActionGroup } from '../../components/ui/output-actions';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
@@ -19,12 +20,18 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { isApiError } from '../../lib/api/client';
+import { listUnits } from '../../lib/api/project-property';
 import type {
   CreateUnitPayload,
   UnitRecord,
   UpdateUnitPayload,
 } from '../../lib/api/types';
 import { formatDateTime } from '../../lib/format';
+import {
+  buildExportFileName,
+  exportPaginatedCsv,
+  getExportDateStamp,
+} from '../../lib/output';
 import { ProjectPathPreview, UnitFormPanel, type UnitFormValues } from './forms';
 import {
   useBlocks,
@@ -71,6 +78,8 @@ export const UnitsPage = () => {
   const [panelOpen, setPanelOpen] = useState(false);
   const [editor, setEditor] = useState<UnitRecord | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const deferredSearch = useDeferredValue(search);
 
   const projectsQuery = useProjects(
@@ -300,6 +309,101 @@ export const UnitsPage = () => {
     };
   };
 
+  const handleExport = async () => {
+    if (!companyId) {
+      return;
+    }
+
+    setExportError(null);
+    setIsExporting(true);
+
+    try {
+      await exportPaginatedCsv({
+        columns: [
+          {
+            header: 'Unit Code',
+            value: (unit) => unit.code,
+          },
+          {
+            header: 'Unit Name',
+            value: (unit) => unit.name,
+          },
+          {
+            header: 'Project Code',
+            value: (unit) => unit.projectCode,
+          },
+          {
+            header: 'Project Name',
+            value: (unit) => unit.projectName,
+          },
+          {
+            header: 'Phase Code',
+            value: (unit) => unit.phaseCode ?? '',
+          },
+          {
+            header: 'Phase Name',
+            value: (unit) => unit.phaseName ?? '',
+          },
+          {
+            header: 'Block Code',
+            value: (unit) => unit.blockCode ?? '',
+          },
+          {
+            header: 'Block Name',
+            value: (unit) => unit.blockName ?? '',
+          },
+          {
+            header: 'Zone Code',
+            value: (unit) => unit.zoneCode ?? '',
+          },
+          {
+            header: 'Zone Name',
+            value: (unit) => unit.zoneName ?? '',
+          },
+          {
+            header: 'Unit Type',
+            value: (unit) => unit.unitTypeName,
+          },
+          {
+            header: 'Unit Status',
+            value: (unit) => unit.unitStatusName,
+          },
+          {
+            header: 'Active',
+            value: (unit) => (unit.isActive ? 'Yes' : 'No'),
+          },
+          {
+            header: 'Description',
+            value: (unit) => unit.description ?? '',
+          },
+          {
+            header: 'Updated At',
+            value: (unit) => unit.updatedAt,
+          },
+        ],
+        companyId,
+        fileName: buildExportFileName([
+          user.currentCompany.slug,
+          'units',
+          'export',
+          getExportDateStamp(),
+        ]),
+        listFn: listUnits,
+        query: listQuery,
+      });
+    } catch (error) {
+      setExportError(
+        isApiError(error)
+          ? error.apiError.message
+          : error instanceof Error
+            ? error.message
+            : 'Unable to export the unit list.',
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <ProjectPropertyPageHeader
@@ -308,19 +412,26 @@ export const UnitsPage = () => {
         scopeName={user.currentCompany.name}
         scopeSlug={user.currentCompany.slug}
         actions={
-          <Button
-            onClick={() => {
-              setActionError(null);
-              setEditor(null);
-              setPanelOpen(true);
-            }}
-          >
-            New unit
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <OutputActionGroup
+              isExporting={isExporting}
+              onExport={() => void handleExport()}
+            />
+            <Button
+              onClick={() => {
+                setActionError(null);
+                setEditor(null);
+                setPanelOpen(true);
+              }}
+            >
+              New unit
+            </Button>
+          </div>
         }
       />
 
       {actionError ? <ProjectPropertyQueryErrorBanner message={actionError} /> : null}
+      {exportError ? <ProjectPropertyQueryErrorBanner message={exportError} /> : null}
 
       <ProjectPropertySection
         title="Unit management"

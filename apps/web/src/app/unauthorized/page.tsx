@@ -8,14 +8,22 @@ export default function UnauthorizedPage() {
   return (
     <StateScreen
       title="Access not available"
-      description="This session does not currently have the role scope required for the requested admin surface."
+      description="The request was authenticated, but the active company-scoped session does not include the role access required for this workspace. If the session itself is missing, return to sign in instead."
       actions={
-        <Link
-          className={cn(buttonVariants())}
-          href={APP_ROUTES.dashboard}
-        >
-          Return to dashboard
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            className={cn(buttonVariants())}
+            href={APP_ROUTES.dashboard}
+          >
+            Return to dashboard
+          </Link>
+          <Link
+            className={cn(buttonVariants({ variant: 'outline' }))}
+            href={APP_ROUTES.login}
+          >
+            Go to sign in
+          </Link>
+        </div>
       }
     />
   );

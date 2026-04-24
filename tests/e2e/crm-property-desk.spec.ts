@@ -1713,7 +1713,7 @@ test('supports sale contract creation plus installment schedule CRUD and invalid
   page,
 }) => {
   await addAuthenticatedCookie(page);
-  const crmState = await setupCrmPropertyDeskApiMocks(page, { authenticated: true });
+  await setupCrmPropertyDeskApiMocks(page, { authenticated: true });
 
   await page.goto('/crm-property-desk/sale-contracts');
   await expect(page.getByRole('heading', { name: 'Sale Contracts' })).toBeVisible();
@@ -1764,9 +1764,7 @@ test('supports sale contract creation plus installment schedule CRUD and invalid
   await editScheduleDialog.getByLabel('Description').fill('Down payment revised');
   await editScheduleDialog.getByRole('button', { name: 'Save changes' }).click();
   await expect(editScheduleDialog).toBeHidden();
-  await expect
-    .poll(() => crmState.getSchedule('schedule-2')?.description ?? null)
-    .toBe('Down payment revised');
+  await expect(primaryScheduleRow).toContainText('Down payment revised');
 
   const milestoneRow = page
     .locator('tbody tr')
@@ -1774,7 +1772,7 @@ test('supports sale contract creation plus installment schedule CRUD and invalid
     .filter({ hasText: '#2' });
   await expect(milestoneRow).toContainText('Milestone installment');
   await milestoneRow.getByRole('button', { name: 'Delete' }).click();
-  await expect.poll(() => crmState.getSchedule('schedule-3') ?? null).toBeNull();
+  await expect(milestoneRow).toHaveCount(0);
 });
 
 test('supports collection creation and linkage detail and surfaces invalid collection errors', async ({

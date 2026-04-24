@@ -1,4 +1,10 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
 import { AUTH_ROLES_KEY } from '../constants/auth.constants';
@@ -23,9 +29,15 @@ export class RolesGuard implements CanActivate {
     const authenticatedUser = request.user;
 
     if (!authenticatedUser) {
-      return false;
+      throw new UnauthorizedException('Authentication is required.');
     }
 
-    return requiredRoles.some((role) => authenticatedUser.roles.includes(role));
+    if (requiredRoles.some((role) => authenticatedUser.roles.includes(role))) {
+      return true;
+    }
+
+    throw new ForbiddenException(
+      'The active session does not include the required role scope.',
+    );
   }
 }

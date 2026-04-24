@@ -139,6 +139,31 @@ export const AccountingReadOnlyNotice = ({
   </div>
 );
 
+export const AccountingPrintContext = ({
+  items,
+  title,
+}: {
+  items: Array<{
+    label: string;
+    value: ReactNode;
+  }>;
+  title: string;
+}) => (
+  <div className="print-only rounded-2xl border border-border/70 bg-background px-4 py-4">
+    <p className="text-sm font-semibold text-foreground">{title}</p>
+    <div className="mt-3 grid gap-3 md:grid-cols-2">
+      {items.map((item) => (
+        <div key={item.label}>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+            {item.label}
+          </p>
+          <div className="mt-1 text-sm text-foreground">{item.value}</div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 export const FormErrorText = ({
   message,
 }: {

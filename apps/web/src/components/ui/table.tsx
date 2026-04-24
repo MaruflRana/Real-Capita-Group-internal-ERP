@@ -11,7 +11,7 @@ export const Table = ({
   className,
   ...props
 }: TableHTMLAttributes<HTMLTableElement>) => (
-  <div className="overflow-x-auto">
+  <div className="table-shell overflow-x-auto">
     <table
       className={cn('min-w-full border-separate border-spacing-0', className)}
       {...props}

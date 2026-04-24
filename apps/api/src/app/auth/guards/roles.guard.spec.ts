@@ -34,12 +34,13 @@ test('roles guard enforces the required roles', () => {
     ),
     true,
   );
-  assert.equal(
-    guard.canActivate(
-      createExecutionContext({
-        roles: ['company_member'],
-      }),
-    ),
-    false,
+  assert.throws(
+    () =>
+      guard.canActivate(
+        createExecutionContext({
+          roles: ['company_member'],
+        }),
+      ),
+    /required role scope/u,
   );
 });

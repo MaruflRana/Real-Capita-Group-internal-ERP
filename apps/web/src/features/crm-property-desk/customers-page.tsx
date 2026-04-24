@@ -8,6 +8,7 @@ import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { OutputActionGroup } from '../../components/ui/output-actions';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
@@ -20,8 +21,14 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { isApiError } from '../../lib/api/client';
+import { listCustomers } from '../../lib/api/crm-property-desk';
 import type { CustomerRecord } from '../../lib/api/types';
 import { formatDateTime } from '../../lib/format';
+import {
+  buildExportFileName,
+  exportPaginatedCsv,
+  getExportDateStamp,
+} from '../../lib/output';
 import { CustomerFormPanel, type CustomerFormValues } from './forms';
 import {
   useCustomer,
@@ -55,6 +62,8 @@ export const CustomersPage = () => {
   const [panelOpen, setPanelOpen] = useState(false);
   const [editor, setEditor] = useState<CustomerRecord | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const deferredSearch = useDeferredValue(search);
 
   const query = useMemo(
@@ -104,6 +113,73 @@ export const CustomersPage = () => {
     notes: normalizeOptionalTextToNull(values.notes),
   });
 
+  const handleExport = async () => {
+    if (!companyId) {
+      return;
+    }
+
+    setExportError(null);
+    setIsExporting(true);
+
+    try {
+      await exportPaginatedCsv({
+        columns: [
+          {
+            header: 'Customer ID',
+            value: (customer) => customer.id,
+          },
+          {
+            header: 'Full Name',
+            value: (customer) => customer.fullName,
+          },
+          {
+            header: 'Email',
+            value: (customer) => customer.email ?? '',
+          },
+          {
+            header: 'Phone',
+            value: (customer) => customer.phone ?? '',
+          },
+          {
+            header: 'Address',
+            value: (customer) => customer.address ?? '',
+          },
+          {
+            header: 'Notes',
+            value: (customer) => customer.notes ?? '',
+          },
+          {
+            header: 'Active',
+            value: (customer) => (customer.isActive ? 'Yes' : 'No'),
+          },
+          {
+            header: 'Updated At',
+            value: (customer) => customer.updatedAt,
+          },
+        ],
+        companyId,
+        fileName: buildExportFileName([
+          user.currentCompany.slug,
+          'customers',
+          'export',
+          getExportDateStamp(),
+        ]),
+        listFn: listCustomers,
+        query,
+      });
+    } catch (error) {
+      setExportError(
+        isApiError(error)
+          ? error.apiError.message
+          : error instanceof Error
+            ? error.message
+            : 'Unable to export the customer list.',
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <CrmPropertyDeskPageHeader
@@ -112,19 +188,26 @@ export const CustomersPage = () => {
         scopeName={user.currentCompany.name}
         scopeSlug={user.currentCompany.slug}
         actions={
-          <Button
-            onClick={() => {
-              setActionError(null);
-              setEditor(null);
-              setPanelOpen(true);
-            }}
-          >
-            New customer
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <OutputActionGroup
+              isExporting={isExporting}
+              onExport={() => void handleExport()}
+            />
+            <Button
+              onClick={() => {
+                setActionError(null);
+                setEditor(null);
+                setPanelOpen(true);
+              }}
+            >
+              New customer
+            </Button>
+          </div>
         }
       />
 
       {actionError ? <CrmPropertyDeskQueryErrorBanner message={actionError} /> : null}
+      {exportError ? <CrmPropertyDeskQueryErrorBanner message={exportError} /> : null}
 
       <CrmPropertyDeskSection
         title="Customer master list"

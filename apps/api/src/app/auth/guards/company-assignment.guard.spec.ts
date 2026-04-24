@@ -95,18 +95,20 @@ test('company assignment guard rejects missing scoped roles', async () => {
     },
   );
 
-  const result = await guard.canActivate(
-    createExecutionContext({
-      user: {
-        id: 'user-1',
-      },
-      params: {
-        companyId: 'company-2',
-      },
-    }),
+  await assert.rejects(
+    () =>
+      guard.canActivate(
+        createExecutionContext({
+          user: {
+            id: 'user-1',
+          },
+          params: {
+            companyId: 'company-2',
+          },
+        }),
+      ),
+    /required role scope for the requested company/u,
   );
-
-  assert.equal(result, false);
 });
 
 test('company assignment guard defers missing companies to the service layer', async () => {

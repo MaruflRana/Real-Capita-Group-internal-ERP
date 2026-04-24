@@ -9,6 +9,7 @@ import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { OutputActionGroup } from '../../components/ui/output-actions';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
@@ -22,6 +23,12 @@ import {
 } from '../../components/ui/table';
 import { isApiError } from '../../lib/api/client';
 import { formatAccountingAmount, formatDateTime } from '../../lib/format';
+import { listPayrollRuns } from '../../lib/api/payroll';
+import {
+  buildExportFileName,
+  exportPaginatedCsv,
+  getExportDateStamp,
+} from '../../lib/output';
 import { getPayrollRunDetailRoute } from '../../lib/routes';
 import type { PayrollRunRecord, PayrollRunStatus } from '../../lib/api/types';
 import { PayrollRunFormPanel, type PayrollRunFormValues } from './forms';
@@ -66,6 +73,8 @@ export const PayrollRunsPage = () => {
   const [panelOpen, setPanelOpen] = useState(false);
   const [editor, setEditor] = useState<PayrollRunRecord | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const deferredSearch = useDeferredValue(search);
 
   const listQuery = useMemo(
@@ -136,6 +145,95 @@ export const PayrollRunsPage = () => {
     description: normalizeOptionalTextToNull(values.description),
   });
 
+  const handleExport = async () => {
+    if (!companyId) {
+      return;
+    }
+
+    setExportError(null);
+    setIsExporting(true);
+
+    try {
+      await exportPaginatedCsv({
+        columns: [
+          {
+            header: 'Payroll Run ID',
+            value: (payrollRun) => payrollRun.id,
+          },
+          {
+            header: 'Payroll Year',
+            value: (payrollRun) => payrollRun.payrollYear,
+          },
+          {
+            header: 'Payroll Month',
+            value: (payrollRun) => payrollRun.payrollMonth,
+          },
+          {
+            header: 'Period',
+            value: (payrollRun) =>
+              formatPayrollPeriodLabel(
+                payrollRun.payrollYear,
+                payrollRun.payrollMonth,
+              ),
+          },
+          {
+            header: 'Status',
+            value: (payrollRun) => payrollRun.status,
+          },
+          {
+            header: 'Scope',
+            value: (payrollRun) => getPayrollRunScopeLabel(payrollRun),
+          },
+          {
+            header: 'Line Count',
+            value: (payrollRun) => payrollRun.lineCount,
+          },
+          {
+            header: 'Gross Amount',
+            value: (payrollRun) =>
+              Number(payrollRun.totalBasicAmount) +
+              Number(payrollRun.totalAllowanceAmount),
+          },
+          {
+            header: 'Net Amount',
+            value: (payrollRun) => payrollRun.totalNetAmount,
+          },
+          {
+            header: 'Voucher Reference',
+            value: (payrollRun) => getPayrollVoucherReference(payrollRun),
+          },
+          {
+            header: 'Description',
+            value: (payrollRun) => payrollRun.description ?? '',
+          },
+          {
+            header: 'Updated At',
+            value: (payrollRun) => payrollRun.updatedAt,
+          },
+        ],
+        companyId,
+        fileName: buildExportFileName([
+          user.currentCompany.slug,
+          'payroll-runs',
+          'export',
+          getExportDateStamp(),
+        ]),
+        listFn: listPayrollRuns,
+        query: listQuery,
+      });
+    } catch (error) {
+      setExportError(
+        isApiError(error)
+          ? error.apiError.message
+          : error instanceof Error
+            ? error.message
+            : 'Unable to export the payroll run list.',
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PayrollCorePageHeader
@@ -144,19 +242,26 @@ export const PayrollRunsPage = () => {
         scopeName={user.currentCompany.name}
         scopeSlug={user.currentCompany.slug}
         actions={
-          <Button
-            onClick={() => {
-              setActionError(null);
-              setEditor(null);
-              setPanelOpen(true);
-            }}
-          >
-            New payroll run
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <OutputActionGroup
+              isExporting={isExporting}
+              onExport={() => void handleExport()}
+            />
+            <Button
+              onClick={() => {
+                setActionError(null);
+                setEditor(null);
+                setPanelOpen(true);
+              }}
+            >
+              New payroll run
+            </Button>
+          </div>
         }
       />
 
       {actionError ? <PayrollCoreQueryErrorBanner message={actionError} /> : null}
+      {exportError ? <PayrollCoreQueryErrorBanner message={exportError} /> : null}
 
       <PayrollCoreSection
         title="Payroll run list"

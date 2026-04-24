@@ -53,3 +53,101 @@
       radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.08), transparent 30%);
   }
 }
+
+@media print {
+  @page {
+    margin: 0.7in;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+  }
+
+  body {
+    min-height: auto !important;
+    background-image: none !important;
+    color: #111827 !important;
+  }
+
+  .app-shell-sidebar,
+  .app-shell-header,
+  .screen-only {
+    display: none !important;
+  }
+
+  .app-shell,
+  .app-shell-main,
+  .table-shell {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    overflow: visible !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .app-shell-main {
+    flex: none !important;
+  }
+
+  .app-shell-main > * {
+    width: 100% !important;
+  }
+
+  .rounded-\[2rem\],
+  .rounded-3xl,
+  .rounded-2xl {
+    border-radius: 0 !important;
+  }
+
+  .shadow-shell,
+  .shadow-sm {
+    box-shadow: none !important;
+  }
+
+  .bg-admin-canvas,
+  .bg-card,
+  .bg-card\/80,
+  .bg-card\/95,
+  .bg-background,
+  .bg-background\/70,
+  .bg-background\/80,
+  .bg-background\/85,
+  .bg-muted\/20,
+  .bg-muted\/25,
+  .bg-muted\/35,
+  .bg-muted\/50,
+  .bg-primary\/5 {
+    background: #ffffff !important;
+  }
+
+  table {
+    width: 100% !important;
+    page-break-inside: auto;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tr,
+  td,
+  th {
+    page-break-inside: avoid;
+  }
+
+  td,
+  th {
+    border-color: #d1d5db !important;
+    color: #111827 !important;
+    font-size: 11px !important;
+    padding: 0.35rem 0.5rem !important;
+  }
+}
+
+.print-only {
+  display: none;
+}

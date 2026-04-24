@@ -23,13 +23,16 @@ const assertCompanyId = (companyId: string | undefined) => {
 };
 
 const buildAccessKey = (access: DashboardAccess) => [
+  access.dashboard,
   access.accounting,
+  access.financialReports,
   access.projectProperty,
   access.crm,
   access.hr,
   access.payroll,
   access.documents,
   access.auditEvents,
+  access.orgSecurity,
 ] as const;
 
 export const dashboardKeys = {

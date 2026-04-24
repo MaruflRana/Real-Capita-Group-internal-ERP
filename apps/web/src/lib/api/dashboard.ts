@@ -34,13 +34,16 @@ const COUNT_QUERY = {
 const ACTIVITY_PAGE_SIZE = 3;
 
 export interface DashboardAccess {
+  dashboard: boolean;
   accounting: boolean;
+  financialReports: boolean;
   projectProperty: boolean;
   crm: boolean;
   hr: boolean;
   payroll: boolean;
   documents: boolean;
   auditEvents: boolean;
+  orgSecurity: boolean;
 }
 
 export interface DashboardPeriod {
@@ -184,13 +187,7 @@ export const getDashboardSummary = async (
     tasks.push(
       (async () => {
         try {
-          const [
-            draftVoucherCount,
-            postedVoucherCount,
-            profitAndLoss,
-            balanceSheet,
-            trialBalance,
-          ] = await Promise.all([
+          const [draftVoucherCount, postedVoucherCount] = await Promise.all([
             countListItems(
               listVouchers(companyId, {
                 ...COUNT_QUERY,
@@ -203,6 +200,30 @@ export const getDashboardSummary = async (
                 status: 'POSTED',
               }),
             ),
+          ]);
+
+          summary.accounting = {
+            draftVoucherCount,
+            postedVoucherCount,
+          };
+        } catch (error) {
+          summary.issues.push(
+            createIssue(
+              'accounting-summary',
+              'Accounting summary is unavailable.',
+              error,
+            ),
+          );
+        }
+      })(),
+    );
+  }
+
+  if (access.financialReports) {
+    tasks.push(
+      (async () => {
+        try {
+          const [profitAndLoss, balanceSheet, trialBalance] = await Promise.all([
             getProfitAndLossReport(companyId, {
               dateFrom: period.dateFrom,
               dateTo: period.dateTo,
@@ -216,10 +237,6 @@ export const getDashboardSummary = async (
             }),
           ]);
 
-          summary.accounting = {
-            draftVoucherCount,
-            postedVoucherCount,
-          };
           summary.financial = {
             dateFrom: period.dateFrom,
             dateTo: period.dateTo,
@@ -236,8 +253,8 @@ export const getDashboardSummary = async (
         } catch (error) {
           summary.issues.push(
             createIssue(
-              'accounting-summary',
-              'Accounting summary is unavailable.',
+              'financial-summary',
+              'Financial reports summary is unavailable.',
               error,
             ),
           );

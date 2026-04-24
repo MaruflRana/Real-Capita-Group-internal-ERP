@@ -45,20 +45,66 @@ tests/
 ## Operations Guide
 
 - Phase 1 release, runtime, and single-VM deployment notes live in [docs/operations/deployment.md](docs/operations/deployment.md).
+- Phase 1 backup, restore, MinIO/S3, and disaster-recovery notes live in [docs/operations/backup-restore.md](docs/operations/backup-restore.md).
+- Phase 1 route/module inventory lives in [docs/operations/phase-1-route-inventory.md](docs/operations/phase-1-route-inventory.md).
+- Phase 1 UAT checklist lives in [docs/operations/phase-1-uat-checklist.md](docs/operations/phase-1-uat-checklist.md).
+- Phase 1 release checklist and caveats register live in [docs/operations/phase-1-release-checklist.md](docs/operations/phase-1-release-checklist.md).
 
 ## Current Frontend Coverage
 
 - authenticated application shell
 - login/logout/session handling against the NestJS auth API
 - company-aware protected routing
+- role-aware shell navigation, page guarding, forbidden states, and dashboard/widget visibility aligned with company-scoped RBAC
 - operational dashboard and signed-in home
 - Org & Security admin pages for companies, locations, departments, users, and company-scoped role assignments
 - accounting pages for chart of accounts and vouchers
+- finance output actions for trial balance, general ledger, profit & loss, balance sheet, and voucher detail via CSV export plus browser print-friendly rendering
 - project/property master pages for projects, cost centers, phases, blocks, zones, unit types, unit statuses, and units
 - CRM/property desk pages for customers, leads, bookings, sale contracts, installment schedules, and collections
 - HR Core pages for employees, attendance devices, device mappings, attendance logs, leave types, and leave requests
 - Payroll Core pages for salary structures, payroll runs, payroll run detail/line editing, and posting
 - Audit & Documents pages for attachments, attachment detail, secure upload/finalize/link/download/archive actions, and audit event browsing
+- selected Phase 1 CSV exports for units, customers, bookings, collections, employees, leave requests, payroll runs, attachments, and audit events
+
+## Phase 1 Export And Print Coverage
+
+- CSV export is the only Phase 1 structured file format added in this repo. No `.xlsx` generation or server-side PDF pipeline exists.
+- Browser print-friendly output is available for:
+  - trial balance
+  - general ledger
+  - profit & loss
+  - balance sheet
+  - voucher detail
+- CSV export is available for:
+  - trial balance
+  - general ledger
+  - profit & loss
+  - balance sheet
+  - voucher detail
+  - units
+  - customers
+  - bookings
+  - collections
+  - employees
+  - leave requests
+  - payroll runs
+  - attachments
+  - audit events
+- Export and print actions follow the existing company-scoped authorization model. Users can only see or use output actions for pages they can already access.
+
+## Phase 1 Access Behavior
+
+- Protected application routes redirect unauthenticated browser sessions to `/login`.
+- Authenticated sessions that lack company-scoped access for a route now receive a clear forbidden state instead of a generic page failure.
+- Shell navigation, dashboard quick actions, and dashboard widgets only surface modules that the current company role set can actually reach.
+- Current company-scoped roles used by Phase 1 access rules are:
+  - `company_admin`
+  - `company_accountant`
+  - `company_hr`
+  - `company_payroll`
+  - `company_sales`
+  - `company_member`
 
 ## What Is Intentionally Not Built Yet
 
@@ -67,6 +113,7 @@ tests/
 - No OCR/text extraction, virus scanning, approval workflow, e-signature, or public-sharing document flows
 - No report builder or dashboard-heavy audit/document analytics
 - No payslip PDF, bank payout/export, or broader reporting workflows
+- No `.xlsx` generation, server-side PDF rendering, automated scheduled backups, or point-in-time recovery
 
 ## Environment Files
 
@@ -82,6 +129,8 @@ Root:
 - `S3_PUBLIC_ENDPOINT` must stay browser-resolvable for direct-upload/download document flows; local Docker defaults use `http://localhost:9000`
 - `BOOTSTRAP_*` values are optional and are only needed when you run the containerized admin-bootstrap helper
 - The root `build` scripts force `NODE_ENV=production` for Next.js builds so the shared local `.env` can stay on development settings for API work
+- Before release work, run `corepack pnpm ops:env-check -- --strict` and replace placeholder secrets.
+- Do not commit `.env`, local env overrides, database dumps, or object-storage backups.
 
 App-level examples:
 
@@ -169,6 +218,13 @@ Run the runtime smoke checks:
 
 ```powershell
 corepack pnpm docker:smoke
+```
+
+Create and verify a PostgreSQL backup from the running Compose stack:
+
+```powershell
+corepack pnpm backup:db
+corepack pnpm verify:backup -- --file backups/postgres/real_capita_erp-YYYYMMDDTHHMMSSZ.dump
 ```
 
 Stop the stack:
@@ -277,10 +333,21 @@ corepack pnpm test
 corepack pnpm docker:migrate
 corepack pnpm docker:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "change-me-secure-admin-password"
 corepack pnpm docker:smoke
+corepack pnpm ops:smoke
+corepack pnpm backup:db
+corepack pnpm verify:backup -- --file backups/postgres/real_capita_erp-YYYYMMDDTHHMMSSZ.dump
+corepack pnpm restore:db -- --file backups/postgres/real_capita_erp-YYYYMMDDTHHMMSSZ.dump --dry-run
+corepack pnpm ops:env-check -- --strict
 corepack pnpm format
 corepack pnpm prisma:format
 corepack pnpm prisma:generate
 ```
+
+## Phase 1 Release Candidate References
+
+- Route and module inventory: [docs/operations/phase-1-route-inventory.md](docs/operations/phase-1-route-inventory.md)
+- Human UAT checklist: [docs/operations/phase-1-uat-checklist.md](docs/operations/phase-1-uat-checklist.md)
+- Release checklist and caveats register: [docs/operations/phase-1-release-checklist.md](docs/operations/phase-1-release-checklist.md)
 
 ## CI Baseline
 
@@ -288,6 +355,7 @@ GitHub Actions currently validates:
 
 - dependency installation
 - Docker Compose config rendering
+- backup/restore helper help output and env-template safety validation
 - lint
 - typecheck
 - build

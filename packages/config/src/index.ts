@@ -6,6 +6,8 @@ export const DEFAULT_API_PORT = 3333;
 export const DEFAULT_WEB_PORT = 3000;
 export const DEFAULT_SWAGGER_PATH = `${API_PREFIX}/docs`;
 
+export * from './access';
+
 export const buildVersionedApiPath = (
   resource: string,
   version = API_VERSION,

@@ -826,6 +826,8 @@ test('surfaces dashboard section issues when summary data fails', async ({
   await page.goto('/dashboard');
 
   await expect(page.getByText('Some dashboard data could not load.')).toBeVisible();
-  await expect(page.getByText('Accounting summary is unavailable.')).toBeVisible();
+  await expect(
+    page.getByText('Financial reports summary is unavailable.'),
+  ).toBeVisible();
   await expect(page.getByText('Balance sheet endpoint unavailable.')).toBeVisible();
 });

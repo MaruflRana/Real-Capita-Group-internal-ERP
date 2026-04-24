@@ -8,6 +8,7 @@ import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { OutputActionGroup } from '../../components/ui/output-actions';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
@@ -20,8 +21,14 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { isApiError } from '../../lib/api/client';
+import { listEmployees } from '../../lib/api/hr-core';
 import type { EmployeeRecord } from '../../lib/api/types';
 import { formatDateTime } from '../../lib/format';
+import {
+  buildExportFileName,
+  exportPaginatedCsv,
+  getExportDateStamp,
+} from '../../lib/output';
 import { EmployeeFormPanel, type EmployeeFormValues } from './forms';
 import {
   useEmployee,
@@ -65,6 +72,8 @@ export const EmployeesPage = () => {
   const [panelOpen, setPanelOpen] = useState(false);
   const [editor, setEditor] = useState<EmployeeRecord | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const deferredSearch = useDeferredValue(search);
 
   const listQuery = useMemo(
@@ -157,6 +166,81 @@ export const EmployeesPage = () => {
     managerEmployeeId: normalizeNullableId(values.managerEmployeeId),
   });
 
+  const handleExport = async () => {
+    if (!companyId) {
+      return;
+    }
+
+    setExportError(null);
+    setIsExporting(true);
+
+    try {
+      await exportPaginatedCsv({
+        columns: [
+          {
+            header: 'Employee ID',
+            value: (employee) => employee.id,
+          },
+          {
+            header: 'Employee Code',
+            value: (employee) => employee.employeeCode,
+          },
+          {
+            header: 'Full Name',
+            value: (employee) => employee.fullName,
+          },
+          {
+            header: 'Department',
+            value: (employee) => employee.departmentName ?? '',
+          },
+          {
+            header: 'Location',
+            value: (employee) => employee.locationName ?? '',
+          },
+          {
+            header: 'User Email',
+            value: (employee) => employee.userEmail ?? '',
+          },
+          {
+            header: 'Manager Code',
+            value: (employee) => employee.managerEmployeeCode ?? '',
+          },
+          {
+            header: 'Manager Name',
+            value: (employee) => employee.managerFullName ?? '',
+          },
+          {
+            header: 'Active',
+            value: (employee) => (employee.isActive ? 'Yes' : 'No'),
+          },
+          {
+            header: 'Updated At',
+            value: (employee) => employee.updatedAt,
+          },
+        ],
+        companyId,
+        fileName: buildExportFileName([
+          user.currentCompany.slug,
+          'employees',
+          'export',
+          getExportDateStamp(),
+        ]),
+        listFn: listEmployees,
+        query: listQuery,
+      });
+    } catch (error) {
+      setExportError(
+        isApiError(error)
+          ? error.apiError.message
+          : error instanceof Error
+            ? error.message
+            : 'Unable to export the employee list.',
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <HrCorePageHeader
@@ -165,19 +249,26 @@ export const EmployeesPage = () => {
         scopeName={user.currentCompany.name}
         scopeSlug={user.currentCompany.slug}
         actions={
-          <Button
-            onClick={() => {
-              setActionError(null);
-              setEditor(null);
-              setPanelOpen(true);
-            }}
-          >
-            New employee
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <OutputActionGroup
+              isExporting={isExporting}
+              onExport={() => void handleExport()}
+            />
+            <Button
+              onClick={() => {
+                setActionError(null);
+                setEditor(null);
+                setPanelOpen(true);
+              }}
+            >
+              New employee
+            </Button>
+          </div>
         }
       />
 
       {actionError ? <HrCoreQueryErrorBanner message={actionError} /> : null}
+      {exportError ? <HrCoreQueryErrorBanner message={exportError} /> : null}
 
       <HrCoreSection
         title="Employee master list"

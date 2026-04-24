@@ -434,6 +434,17 @@ const setupHrCoreApiMocks = async (
       pathname.endsWith('/companies/company-1/employees') &&
       request.method() === 'GET'
     ) {
+      const requestedPageSize = Number(searchParams.get('pageSize') ?? '10');
+
+      if (requestedPageSize > 100) {
+        await fulfillJson(
+          route,
+          400,
+          createApiError(400, 'pageSize must not be greater than 100'),
+        );
+        return;
+      }
+
       const items = employees.filter(
         (employee) =>
           (!searchParams.get('departmentId') ||
@@ -1845,6 +1856,25 @@ test('renders the HR navigation and supports employee create with backend errors
   await expect(
     page.getByText('This user is already linked to another employee in the company.'),
   ).toBeVisible();
+});
+
+test('supports employee list export for HR users', async ({ page }) => {
+  await setupHrCoreApiMocks(page, { authenticated: true });
+  await addAuthenticatedCookie(page);
+  const exportDate = new Date().toISOString().slice(0, 10);
+
+  await page.goto('/hr/employees');
+
+  await expect(page.getByRole('heading', { name: 'Employees' })).toBeVisible();
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export CSV' }).click();
+  const download = await downloadPromise;
+
+  expect(await download.failure()).toBeNull();
+  expect(download.suggestedFilename()).toBe(
+    `real-capita-holdings-employees-export-${exportDate}.csv`,
+  );
 });
 
 test('supports attendance device and device mapping operations with conflict surfacing', async ({

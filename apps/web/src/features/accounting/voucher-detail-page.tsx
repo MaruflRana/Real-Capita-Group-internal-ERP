@@ -10,6 +10,7 @@ import {
 } from '@real-capita/ui';
 import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
+import { OutputActionGroup } from '../../components/ui/output-actions';
 import { SidePanel } from '../../components/ui/side-panel';
 import {
   Table,
@@ -20,6 +21,11 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { isApiError } from '../../lib/api/client';
+import {
+  buildExportFileName,
+  downloadApiCsv,
+  printCurrentPage,
+} from '../../lib/output';
 import {
   formatAccountingAmount,
   formatDate,
@@ -39,6 +45,7 @@ import {
 import {
   AccountingAccessRequiredState,
   AccountingPageHeader,
+  AccountingPrintContext,
   AccountingQueryErrorBanner,
   AccountingReadOnlyNotice,
   AccountingSection,
@@ -74,6 +81,8 @@ export const VoucherDetailPage = ({
   const [linePanelOpen, setLinePanelOpen] = useState(false);
   const [lineEditorId, setLineEditorId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const voucher = voucherQuery.data;
   const lineEditor =
@@ -149,6 +158,37 @@ export const VoucherDetailPage = ({
     setLineEditorId(null);
   };
 
+  const handleExport = async () => {
+    if (!companyId || !voucher) {
+      return;
+    }
+
+    setExportError(null);
+    setIsExporting(true);
+
+    try {
+      await downloadApiCsv(
+        `companies/${companyId}/accounting/vouchers/${voucher.id}/export`,
+        buildExportFileName([
+          user.currentCompany.slug,
+          'voucher',
+          voucher.reference ?? voucher.id,
+          voucher.voucherDate,
+        ]),
+      );
+    } catch (error) {
+      setExportError(
+        isApiError(error)
+          ? error.apiError.message
+          : error instanceof Error
+            ? error.message
+            : 'Unable to export the voucher detail.',
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <AccountingPageHeader
@@ -157,16 +197,28 @@ export const VoucherDetailPage = ({
         scopeName={user.currentCompany.name}
         scopeSlug={user.currentCompany.slug}
         actions={
-          <Link
-            className={cn(buttonVariants({ variant: 'outline' }))}
-            href={APP_ROUTES.accountingVouchers}
-          >
-            Back to vouchers
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            {voucher ? (
+              <OutputActionGroup
+                isExporting={isExporting}
+                onExport={() => void handleExport()}
+                onPrint={printCurrentPage}
+              />
+            ) : null}
+            <Link
+              className={cn(buttonVariants({ variant: 'outline' }), 'screen-only')}
+              href={APP_ROUTES.accountingVouchers}
+            >
+              Back to vouchers
+            </Link>
+          </div>
         }
       />
 
-      {actionError ? <AccountingQueryErrorBanner message={actionError} /> : null}
+      <div className="screen-only space-y-3">
+        {actionError ? <AccountingQueryErrorBanner message={actionError} /> : null}
+        {exportError ? <AccountingQueryErrorBanner message={exportError} /> : null}
+      </div>
 
       {voucherQuery.isPending ? (
         <div className="rounded-3xl border border-border/70 bg-card/80 px-6 py-8 text-sm text-muted-foreground">
@@ -178,31 +230,63 @@ export const VoucherDetailPage = ({
         />
       ) : voucher ? (
         <>
+          <AccountingPrintContext
+            items={[
+              {
+                label: 'Company',
+                value: user.currentCompany.name,
+              },
+              {
+                label: 'Voucher type',
+                value: formatVoucherTypeLabel(voucher.voucherType),
+              },
+              {
+                label: 'Voucher date',
+                value: formatDate(voucher.voucherDate),
+              },
+              {
+                label: 'Status',
+                value: voucher.status,
+              },
+              {
+                label: 'Reference',
+                value: voucher.reference ?? 'No reference',
+              },
+              {
+                label: 'Posted at',
+                value: formatDateTime(voucher.postedAt, 'Not posted'),
+              },
+            ]}
+            title="Voucher print context"
+          />
+
           <AccountingSection
             title={`${formatVoucherTypeLabel(voucher.voucherType)} voucher`}
             description="The draft stays editable until an explicit post succeeds. Posted vouchers are rendered as read-only."
             actions={
               isDraft ? (
-                <Button
-                  disabled={postVoucherMutation.isPending}
-                  onClick={() => {
-                    if (!window.confirm('Post this voucher now?')) {
-                      return;
-                    }
+                <div className="screen-only">
+                  <Button
+                    disabled={postVoucherMutation.isPending}
+                    onClick={() => {
+                      if (!window.confirm('Post this voucher now?')) {
+                        return;
+                      }
 
-                    void postVoucherMutation
-                      .mutateAsync(voucher.id)
-                      .then(() => setActionError(null))
-                      .catch((error) =>
-                        handleActionError(
-                          error,
-                          'Unable to post the voucher.',
-                        ),
-                      );
-                  }}
-                >
-                  {postVoucherMutation.isPending ? 'Posting...' : 'Post voucher'}
-                </Button>
+                      void postVoucherMutation
+                        .mutateAsync(voucher.id)
+                        .then(() => setActionError(null))
+                        .catch((error) =>
+                          handleActionError(
+                            error,
+                            'Unable to post the voucher.',
+                          ),
+                        );
+                    }}
+                  >
+                    {postVoucherMutation.isPending ? 'Posting...' : 'Post voucher'}
+                  </Button>
+                </div>
               ) : null
             }
           >
@@ -289,46 +373,50 @@ export const VoucherDetailPage = ({
             </div>
           </AccountingSection>
 
-          <AccountingSection
-            title="Voucher header"
-            description="Draft header fields can be updated without touching the line items."
-          >
-            <VoucherHeaderForm
-              defaultValues={{
-                voucherType: voucher.voucherType,
-                voucherDate: voucher.voucherDate,
-                reference: voucher.reference ?? '',
-                description: voucher.description ?? '',
-              }}
-              disabled={!isDraft}
-              isPending={updateVoucherDraftMutation.isPending}
-              onSubmit={(values) =>
-                updateVoucherDraftMutation
-                  .mutateAsync({
-                    voucherId: voucher.id,
-                    payload: buildHeaderPayload(values),
-                  })
-                  .then(() => setActionError(null))
-              }
-              submitErrorFallback="Unable to save the voucher header."
-              submitLabel="Save header"
-            />
-          </AccountingSection>
+          <div className="screen-only">
+            <AccountingSection
+              title="Voucher header"
+              description="Draft header fields can be updated without touching the line items."
+            >
+              <VoucherHeaderForm
+                defaultValues={{
+                  voucherType: voucher.voucherType,
+                  voucherDate: voucher.voucherDate,
+                  reference: voucher.reference ?? '',
+                  description: voucher.description ?? '',
+                }}
+                disabled={!isDraft}
+                isPending={updateVoucherDraftMutation.isPending}
+                onSubmit={(values) =>
+                  updateVoucherDraftMutation
+                    .mutateAsync({
+                      voucherId: voucher.id,
+                      payload: buildHeaderPayload(values),
+                    })
+                    .then(() => setActionError(null))
+                }
+                submitErrorFallback="Unable to save the voucher header."
+                submitLabel="Save header"
+              />
+            </AccountingSection>
+          </div>
 
           <AccountingSection
             title="Voucher lines"
-            description="Voucher lines must use active posting-level accounts only. Edit or remove lines while the voucher remains in draft state."
+            description="Voucher lines use active posting-level accounts only. Draft vouchers remain editable on screen, while print and export stay read-only."
             actions={
               isDraft ? (
-                <Button
-                  onClick={() => {
-                    setActionError(null);
-                    setLineEditorId(null);
-                    setLinePanelOpen(true);
-                  }}
-                >
-                  Add line
-                </Button>
+                <div className="screen-only">
+                  <Button
+                    onClick={() => {
+                      setActionError(null);
+                      setLineEditorId(null);
+                      setLinePanelOpen(true);
+                    }}
+                  >
+                    Add line
+                  </Button>
+                </div>
               ) : null
             }
           >
@@ -341,7 +429,7 @@ export const VoucherDetailPage = ({
                     <TableHead>Description</TableHead>
                     <TableHead>Debit</TableHead>
                     <TableHead>Credit</TableHead>
-                    <TableHead className="w-[180px]">Actions</TableHead>
+                    <TableHead className="screen-only w-[180px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -361,7 +449,7 @@ export const VoucherDetailPage = ({
                       <TableCell>{line.description || 'No description'}</TableCell>
                       <TableCell>{formatAccountingAmount(line.debitAmount)}</TableCell>
                       <TableCell>{formatAccountingAmount(line.creditAmount)}</TableCell>
-                      <TableCell>
+                      <TableCell className="screen-only">
                         {isDraft ? (
                           <div className="flex flex-wrap gap-2">
                             <Button

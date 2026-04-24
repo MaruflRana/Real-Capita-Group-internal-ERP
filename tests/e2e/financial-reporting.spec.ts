@@ -58,6 +58,21 @@ const fulfillJson = async (
   });
 };
 
+const fulfillText = async (
+  route: Parameters<Page['route']>[1] extends (route: infer T) => unknown
+    ? T
+    : never,
+  status: number,
+  body: string,
+  contentType = 'text/plain',
+) => {
+  await route.fulfill({
+    status,
+    contentType,
+    body,
+  });
+};
+
 const setupFinancialReportingApiMocks = async (
   page: Page,
   {
@@ -197,6 +212,62 @@ const setupFinancialReportingApiMocks = async (
           totalPages: 1,
         },
       });
+      return;
+    }
+
+    if (
+      pathname.endsWith(
+        '/companies/company-1/accounting/reports/trial-balance/export',
+      )
+    ) {
+      await fulfillText(
+        route,
+        200,
+        'Row Type,Account Class Name\r\nREPORT_TOTAL,Report totals',
+        'text/csv; charset=utf-8',
+      );
+      return;
+    }
+
+    if (
+      pathname.endsWith(
+        '/companies/company-1/accounting/reports/general-ledger/export',
+      )
+    ) {
+      await fulfillText(
+        route,
+        200,
+        'Row Type,Posting Account Name\r\nPERIOD_TOTAL,Petty Cash',
+        'text/csv; charset=utf-8',
+      );
+      return;
+    }
+
+    if (
+      pathname.endsWith(
+        '/companies/company-1/accounting/reports/profit-loss/export',
+      )
+    ) {
+      await fulfillText(
+        route,
+        200,
+        'Row Type,Amount\r\nNET_PROFIT_LOSS,5800.00',
+        'text/csv; charset=utf-8',
+      );
+      return;
+    }
+
+    if (
+      pathname.endsWith(
+        '/companies/company-1/accounting/reports/balance-sheet/export',
+      )
+    ) {
+      await fulfillText(
+        route,
+        200,
+        'Row Type,Amount\r\nTOTAL_ASSETS,25000.00',
+        'text/csv; charset=utf-8',
+      );
       return;
     }
 
@@ -685,7 +756,9 @@ test('renders the profit and loss statement', async ({ page, context }) => {
   await expect(page.getByText('Total revenue')).toBeVisible();
   await expect(page.getByText('Operating Revenue')).toBeVisible();
   await expect(page.getByText('Operating Expense')).toBeVisible();
-  await expect(page.getByText('5,800.00')).toBeVisible();
+  await expect(
+    page.locator('span.font-mono.tabular-nums').filter({ hasText: '5,800.00' }),
+  ).toBeVisible();
 });
 
 test('renders the balance sheet and discloses derived equity adjustments', async ({
@@ -710,6 +783,71 @@ test('renders the balance sheet and discloses derived equity adjustments', async
   await expect(
     page.getByText('Unclosed earnings adjustment', { exact: true }),
   ).toBeVisible();
-  await expect(page.getByText('UNCLOSED_EARNINGS')).toBeVisible();
+  await expect(page.getByText('UNCLOSED_EARNINGS', { exact: true })).toBeVisible();
   await expect(page.getByText('25,000.00').first()).toBeVisible();
+});
+
+test('supports trial balance export and print-ready rendering', async ({
+  page,
+  context,
+}) => {
+  await context.addCookies([
+    {
+      name: 'rc_access_token',
+      value: 'dummy-token',
+      url: 'http://localhost:3100',
+    },
+  ]);
+  await setupFinancialReportingApiMocks(page, { authenticated: true });
+
+  await page.goto('/accounting/reports/trial-balance');
+  await page.getByLabel('Date from').fill('2026-03-01');
+  await page.getByLabel('Date to').fill('2026-03-31');
+  await page.getByRole('button', { name: 'Apply filters' }).click();
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export CSV' }).click();
+  const download = await downloadPromise;
+
+  await expect(download.failure()).resolves.toBeNull();
+  expect(download.suggestedFilename()).toBe(
+    'real-capita-holdings-trial-balance-2026-03-01-to-2026-03-31-all-vouchers.csv',
+  );
+
+  await page.emulateMedia({ media: 'print' });
+
+  await expect(page.getByText('Trial balance print context')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Apply filters' })).toBeHidden();
+  await expect(page.locator('aside')).toBeHidden();
+});
+
+test('surfaces export authorization failures clearly', async ({
+  page,
+  context,
+}) => {
+  await context.addCookies([
+    {
+      name: 'rc_access_token',
+      value: 'dummy-token',
+      url: 'http://localhost:3100',
+    },
+  ]);
+  await setupFinancialReportingApiMocks(page, { authenticated: true });
+  await page.route(
+    '**/api/v1/companies/company-1/accounting/reports/trial-balance/export**',
+    async (route) => {
+      await fulfillJson(
+        route,
+        403,
+        createApiError(403, 'Company accounting access is required for export.'),
+      );
+    },
+  );
+
+  await page.goto('/accounting/reports/trial-balance');
+  await page.getByRole('button', { name: 'Export CSV' }).click();
+
+  await expect(
+    page.getByText('Company accounting access is required for export.'),
+  ).toBeVisible();
 });

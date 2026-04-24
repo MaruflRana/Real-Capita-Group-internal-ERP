@@ -58,6 +58,21 @@ const fulfillJson = async (
   });
 };
 
+const fulfillText = async (
+  route: Parameters<Page['route']>[1] extends (route: infer T) => unknown
+    ? T
+    : never,
+  status: number,
+  body: string,
+  contentType = 'text/plain',
+) => {
+  await route.fulfill({
+    status,
+    contentType,
+    body,
+  });
+};
+
 const createPagination = (total: number, pageSize: number) => ({
   page: 1,
   pageSize,
@@ -464,6 +479,27 @@ const setupAccountingApiMocks = async (
     }
 
     if (
+      pathname.match(/\/companies\/company-1\/accounting\/vouchers\/[^/]+\/export$/u) &&
+      request.method() === 'GET'
+    ) {
+      const voucherId = pathname.split('/').slice(-2)[0];
+      const voucher = vouchers.find((item) => item.id === voucherId);
+
+      if (!voucher) {
+        await fulfillJson(route, 404, createApiError(404, 'Voucher not found.'));
+        return;
+      }
+
+      await fulfillText(
+        route,
+        200,
+        `Voucher ID,Reference,Status\r\n${voucher.id},${voucher.reference ?? ''},${voucher.status}`,
+        'text/csv; charset=utf-8',
+      );
+      return;
+    }
+
+    if (
       pathname.match(/\/companies\/company-1\/accounting\/vouchers\/[^/]+$/u) &&
       request.method() === 'GET'
     ) {
@@ -631,6 +667,7 @@ test('renders accounting pages and completes an unbalanced-to-posted voucher flo
   ).toBeVisible();
   await page.getByRole('link', { name: 'Create voucher' }).first().click();
   await expect(page.getByRole('heading', { name: 'Create voucher draft' })).toBeVisible();
+  await page.getByLabel('Voucher date').fill('2026-03-16');
   await page.getByLabel('Reference').fill('JV-1001');
   await page.getByLabel('Description').fill('Cash to bank adjustment');
   await page.getByRole('button', { name: 'Create draft' }).click();
@@ -672,4 +709,19 @@ test('renders accounting pages and completes an unbalanced-to-posted voucher flo
   await expect(
     page.getByText('strongly protected in the UI'),
   ).toBeVisible();
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export CSV' }).click();
+  const download = await downloadPromise;
+
+  expect(await download.failure()).toBeNull();
+  expect(download.suggestedFilename()).toBe(
+    'real-capita-holdings-voucher-jv-1001-2026-03-16.csv',
+  );
+
+  await page.emulateMedia({ media: 'print' });
+
+  await expect(page.getByText('Voucher print context')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Back to vouchers' })).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Save header' })).toBeHidden();
 });

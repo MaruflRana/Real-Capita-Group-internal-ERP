@@ -91,7 +91,10 @@ export const formatEnumLabel = (value: string) =>
 
 export const getAccessibleWorkspaceLabels = (access: DashboardAccess) => {
   const items = [
+    access.dashboard ? 'Dashboard' : null,
+    access.orgSecurity ? 'Org & Security' : null,
     access.accounting ? 'Accounting' : null,
+    access.financialReports ? 'Financial Reports' : null,
     access.projectProperty ? 'Project / Property' : null,
     access.crm ? 'CRM / Sales' : null,
     access.hr ? 'HR' : null,
@@ -158,7 +161,7 @@ const QUICK_ACTIONS = [
     description: 'Open the existing reporting workspace.',
     href: APP_ROUTES.accountingReportsTrialBalance,
     icon: FileText,
-    isVisible: (access: DashboardAccess) => access.accounting,
+    isVisible: (access: DashboardAccess) => access.financialReports,
   },
   {
     id: 'documents',

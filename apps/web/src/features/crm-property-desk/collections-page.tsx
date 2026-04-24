@@ -8,6 +8,7 @@ import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { OutputActionGroup } from '../../components/ui/output-actions';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
@@ -20,8 +21,14 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { isApiError } from '../../lib/api/client';
+import { listCollections } from '../../lib/api/crm-property-desk';
 import type { CollectionRecord } from '../../lib/api/types';
 import { formatAccountingAmount, formatDate, formatDateTime } from '../../lib/format';
+import {
+  buildExportFileName,
+  exportPaginatedCsv,
+  getExportDateStamp,
+} from '../../lib/output';
 import {
   CollectionCreatePanel,
   CollectionDetailPanel,
@@ -66,6 +73,8 @@ export const CollectionsPage = () => {
   const [panelOpen, setPanelOpen] = useState(false);
   const [editor, setEditor] = useState<CollectionRecord | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const deferredSearch = useDeferredValue(search);
 
   const customersQuery = useCustomers(
@@ -199,6 +208,93 @@ export const CollectionsPage = () => {
   const scheduleMap = new Map(schedules.map((schedule) => [schedule.id, schedule]));
   const voucherMap = new Map(vouchers.map((voucher) => [voucher.id, voucher]));
 
+  const handleExport = async () => {
+    if (!companyId) {
+      return;
+    }
+
+    setExportError(null);
+    setIsExporting(true);
+
+    try {
+      await exportPaginatedCsv({
+        columns: [
+          {
+            header: 'Collection ID',
+            value: (collection) => collection.id,
+          },
+          {
+            header: 'Customer Name',
+            value: (collection) => collection.customerName,
+          },
+          {
+            header: 'Booking ID',
+            value: (collection) => collection.bookingId ?? '',
+          },
+          {
+            header: 'Sale Contract ID',
+            value: (collection) => collection.saleContractId ?? '',
+          },
+          {
+            header: 'Installment Schedule ID',
+            value: (collection) => collection.installmentScheduleId ?? '',
+          },
+          {
+            header: 'Voucher ID',
+            value: (collection) => collection.voucherId,
+          },
+          {
+            header: 'Voucher Reference',
+            value: (collection) => collection.voucherReference ?? '',
+          },
+          {
+            header: 'Voucher Status',
+            value: (collection) => collection.voucherStatus,
+          },
+          {
+            header: 'Voucher Date',
+            value: (collection) => collection.voucherDate,
+          },
+          {
+            header: 'Amount',
+            value: (collection) => collection.amount,
+          },
+          {
+            header: 'Collection Date',
+            value: (collection) => collection.collectionDate,
+          },
+          {
+            header: 'Reference',
+            value: (collection) => collection.reference ?? '',
+          },
+          {
+            header: 'Updated At',
+            value: (collection) => collection.updatedAt,
+          },
+        ],
+        companyId,
+        fileName: buildExportFileName([
+          user.currentCompany.slug,
+          'collections',
+          'export',
+          getExportDateStamp(),
+        ]),
+        listFn: listCollections,
+        query,
+      });
+    } catch (error) {
+      setExportError(
+        isApiError(error)
+          ? error.apiError.message
+          : error instanceof Error
+            ? error.message
+            : 'Unable to export the collection register.',
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <CrmPropertyDeskPageHeader
@@ -207,19 +303,26 @@ export const CollectionsPage = () => {
         scopeName={user.currentCompany.name}
         scopeSlug={user.currentCompany.slug}
         actions={
-          <Button
-            onClick={() => {
-              setActionError(null);
-              setEditor(null);
-              setPanelOpen(true);
-            }}
-          >
-            New collection
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <OutputActionGroup
+              isExporting={isExporting}
+              onExport={() => void handleExport()}
+            />
+            <Button
+              onClick={() => {
+                setActionError(null);
+                setEditor(null);
+                setPanelOpen(true);
+              }}
+            >
+              New collection
+            </Button>
+          </div>
         }
       />
 
       {actionError ? <CrmPropertyDeskQueryErrorBanner message={actionError} /> : null}
+      {exportError ? <CrmPropertyDeskQueryErrorBanner message={exportError} /> : null}
 
       <CrmPropertyDeskSection
         title="Collection register"

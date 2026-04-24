@@ -1,4 +1,10 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
 import { AUTH_ROLES_KEY, COMPANY_SCOPE_KEY } from '../constants/auth.constants';
@@ -28,7 +34,7 @@ export class CompanyAssignmentGuard implements CanActivate {
     const authenticatedUser = request.user;
 
     if (!authenticatedUser) {
-      return false;
+      throw new UnauthorizedException('Authentication is required.');
     }
 
     const companyValue = this.readCompanyValue(
@@ -56,7 +62,9 @@ export class CompanyAssignmentGuard implements CanActivate {
     );
 
     if (!assignments) {
-      return false;
+      throw new ForbiddenException(
+        'The active session does not have access to the requested company scope.',
+      );
     }
 
     const requiredRoles =
@@ -73,7 +81,13 @@ export class CompanyAssignmentGuard implements CanActivate {
       assignments.map((assignment) => assignment.role.code),
     );
 
-    return requiredRoles.some((role) => assignedRoles.has(role));
+    if (requiredRoles.some((role) => assignedRoles.has(role))) {
+      return true;
+    }
+
+    throw new ForbiddenException(
+      'The active session does not include the required role scope for the requested company.',
+    );
   }
 
   private readCompanyValue(

@@ -8,6 +8,7 @@ import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { OutputActionGroup } from '../../components/ui/output-actions';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
@@ -20,11 +21,17 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { isApiError } from '../../lib/api/client';
+import { listLeaveRequests } from '../../lib/api/hr-core';
 import type {
   LeaveRequestRecord,
   LeaveRequestStatus,
 } from '../../lib/api/types';
 import { formatDateTime } from '../../lib/format';
+import {
+  buildExportFileName,
+  exportPaginatedCsv,
+  getExportDateStamp,
+} from '../../lib/output';
 import {
   LeaveRequestActionPanel,
   LeaveRequestDetailPanel,
@@ -80,6 +87,8 @@ export const LeaveRequestsPage = () => {
   const [selectedLeaveRequest, setSelectedLeaveRequest] =
     useState<LeaveRequestRecord | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const deferredSearch = useDeferredValue(search);
 
   const listQuery = useMemo(
@@ -182,6 +191,81 @@ export const LeaveRequestsPage = () => {
     reason: normalizeOptionalTextToNull(values.reason),
   });
 
+  const handleExport = async () => {
+    if (!companyId) {
+      return;
+    }
+
+    setExportError(null);
+    setIsExporting(true);
+
+    try {
+      await exportPaginatedCsv({
+        columns: [
+          {
+            header: 'Leave Request ID',
+            value: (leaveRequest) => leaveRequest.id,
+          },
+          {
+            header: 'Employee Code',
+            value: (leaveRequest) => leaveRequest.employeeCode,
+          },
+          {
+            header: 'Employee Name',
+            value: (leaveRequest) => leaveRequest.employeeFullName,
+          },
+          {
+            header: 'Leave Type',
+            value: (leaveRequest) => leaveRequest.leaveTypeName,
+          },
+          {
+            header: 'Start Date',
+            value: (leaveRequest) => leaveRequest.startDate,
+          },
+          {
+            header: 'End Date',
+            value: (leaveRequest) => leaveRequest.endDate,
+          },
+          {
+            header: 'Status',
+            value: (leaveRequest) => leaveRequest.status,
+          },
+          {
+            header: 'Department',
+            value: (leaveRequest) => leaveRequest.departmentName ?? '',
+          },
+          {
+            header: 'Location',
+            value: (leaveRequest) => leaveRequest.locationName ?? '',
+          },
+          {
+            header: 'Updated At',
+            value: (leaveRequest) => leaveRequest.updatedAt,
+          },
+        ],
+        companyId,
+        fileName: buildExportFileName([
+          user.currentCompany.slug,
+          'leave-requests',
+          'export',
+          getExportDateStamp(),
+        ]),
+        listFn: listLeaveRequests,
+        query: listQuery,
+      });
+    } catch (error) {
+      setExportError(
+        isApiError(error)
+          ? error.apiError.message
+          : error instanceof Error
+            ? error.message
+            : 'Unable to export the leave request list.',
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <HrCorePageHeader
@@ -190,19 +274,26 @@ export const LeaveRequestsPage = () => {
         scopeName={user.currentCompany.name}
         scopeSlug={user.currentCompany.slug}
         actions={
-          <Button
-            onClick={() => {
-              setActionError(null);
-              setSelectedLeaveRequest(null);
-              setPanelMode('create');
-            }}
-          >
-            New leave request
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <OutputActionGroup
+              isExporting={isExporting}
+              onExport={() => void handleExport()}
+            />
+            <Button
+              onClick={() => {
+                setActionError(null);
+                setSelectedLeaveRequest(null);
+                setPanelMode('create');
+              }}
+            >
+              New leave request
+            </Button>
+          </div>
         }
       />
 
       {actionError ? <HrCoreQueryErrorBanner message={actionError} /> : null}
+      {exportError ? <HrCoreQueryErrorBanner message={exportError} /> : null}
 
       <HrCoreSection
         title="Leave request list"

@@ -94,9 +94,38 @@ export const apiRequest = async <TResponse>(
     ...init
   }: ApiRequestOptions = {},
 ): Promise<TResponse> => {
-  const execute = async (
-    allowRetry: boolean,
-  ): Promise<TResponse> => {
+  const response = await executeApiRequest(resource, {
+    authMode,
+    body,
+    headers,
+    init,
+    retryOnUnauthorized,
+  });
+
+  if (response.status === 204 || !isJsonResponse(response)) {
+    return undefined as TResponse;
+  }
+
+  return (await response.json()) as TResponse;
+};
+
+const executeApiRequest = async (
+  resource: string,
+  {
+    authMode,
+    body,
+    headers,
+    init,
+    retryOnUnauthorized,
+  }: {
+    authMode: AuthMode;
+    body: unknown;
+    headers: HeadersInit | undefined;
+    init: Omit<ApiRequestOptions, 'authMode' | 'body' | 'headers' | 'retryOnUnauthorized'>;
+    retryOnUnauthorized: boolean;
+  },
+): Promise<Response> => {
+  const execute = async (allowRetry: boolean): Promise<Response> => {
     const serializedBody =
       body === undefined
         ? undefined
@@ -139,14 +168,31 @@ export const apiRequest = async <TResponse>(
       throw await normalizeApiError(response);
     }
 
-    if (response.status === 204 || !isJsonResponse(response)) {
-      return undefined as TResponse;
-    }
-
-    return (await response.json()) as TResponse;
+    return response;
   };
 
   return execute(true);
+};
+
+export const apiRequestText = async (
+  resource: string,
+  {
+    authMode = 'required',
+    body,
+    headers,
+    retryOnUnauthorized = true,
+    ...init
+  }: ApiRequestOptions = {},
+): Promise<string> => {
+  const response = await executeApiRequest(resource, {
+    authMode,
+    body,
+    headers,
+    init,
+    retryOnUnauthorized,
+  });
+
+  return response.text();
 };
 
 export const isApiError = (error: unknown): error is ApiError =>

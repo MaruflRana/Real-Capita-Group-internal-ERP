@@ -1,14 +1,16 @@
+import { COMPANY_ROLE_CODES } from '@real-capita/config';
+
 export const ACCESS_TOKEN_TYPE = 'access';
 export const REFRESH_TOKEN_TYPE = 'refresh';
 export const AUTH_ACCESS_COOKIE_NAME = 'rc_access_token';
 export const AUTH_REFRESH_COOKIE_NAME = 'rc_refresh_token';
 
-export const ROLE_COMPANY_ADMIN = 'company_admin';
-export const ROLE_COMPANY_ACCOUNTANT = 'company_accountant';
-export const ROLE_COMPANY_HR = 'company_hr';
-export const ROLE_COMPANY_MEMBER = 'company_member';
-export const ROLE_COMPANY_PAYROLL = 'company_payroll';
-export const ROLE_COMPANY_SALES = 'company_sales';
+export const ROLE_COMPANY_ADMIN = COMPANY_ROLE_CODES.admin;
+export const ROLE_COMPANY_ACCOUNTANT = COMPANY_ROLE_CODES.accountant;
+export const ROLE_COMPANY_HR = COMPANY_ROLE_CODES.hr;
+export const ROLE_COMPANY_MEMBER = COMPANY_ROLE_CODES.member;
+export const ROLE_COMPANY_PAYROLL = COMPANY_ROLE_CODES.payroll;
+export const ROLE_COMPANY_SALES = COMPANY_ROLE_CODES.sales;
 
 export const AUTH_ROLES_KEY = 'auth_roles';
 export const COMPANY_SCOPE_KEY = 'company_scope';

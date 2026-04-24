@@ -13,7 +13,7 @@
   - payroll core
   - audit trail and attachment/document infrastructure
   - financial reporting API for trial balance, general ledger, profit & loss, and balance sheet
-- `apps/web` now contains the frontend slices delivered through Prompt 20:
+- `apps/web` now contains the frontend slices delivered through Prompt 24:
   - Prompt 12 authenticated shell, login/logout/session UX, and Org & Security UI
   - Prompt 13 accounting chart-of-accounts and voucher UI
   - Prompt 14 project/property master UI
@@ -22,6 +22,7 @@
   - Prompt 17 Payroll Core UI
   - Prompt 18 Audit & Documents UI for attachments and audit events
   - Prompt 20 Financial Reporting UI for trial balance, general ledger, profit & loss, and balance sheet
+  - Prompt 24 Phase 1 export + print readiness for finance outputs and selected operational CSV exports
 - Prompt 21 replaced the placeholder signed-in home with a frontend-only operational dashboard:
   - `/dashboard` remains the main signed-in landing page
   - dashboard summary, recent activity, pending-work, and quick-action widgets reuse existing REST endpoints only
@@ -72,7 +73,46 @@
     - `corepack pnpm docker:bootstrap -- --company-name ...`
     - `corepack pnpm docker:smoke`
   - GitHub Actions now validates Docker Compose boot plus runtime smoke after lint, typecheck, build, and test
-- The repo is now ready for Prompt 23.
+- Prompt 23 hardened authorization and role-aware UX without adding new ERP business modules:
+  - `packages/config/src/access.ts` now defines the shared Phase 1 module access matrix
+  - backend auth decorators now consume the shared matrix instead of duplicating role lists
+  - backend guards now return explicit, stable `401`/`403` failures for missing auth, company scope, or role scope
+  - the frontend auth provider, shell navigation, route boundary, dashboard widgets, and quick actions now consume the same matrix
+  - authenticated but unauthorized route hits now render a clear forbidden state instead of leaking broken module pages
+  - representative backend and frontend authorization checks now exist in API specs and Playwright e2e coverage
+- Prompt 24 added Phase 1 output/export readiness without adding new ERP business modules:
+  - backend read-only CSV endpoints now exist for trial balance, general ledger, profit & loss, balance sheet, and voucher detail
+  - frontend report pages now support CSV export plus browser print-friendly rendering for trial balance, general ledger, profit & loss, and balance sheet
+  - the voucher detail page now supports CSV export plus browser print-friendly rendering
+  - selected operational list pages now support CSV export through the shared paginated export helper:
+    - units
+    - customers
+    - bookings
+    - collections
+    - employees
+    - leave requests
+    - payroll runs
+    - attachments
+    - audit events
+  - print styling now hides shell/navigation chrome while preserving company context, filters-as-context, and totals on supported print pages
+  - no new backend write flows, no `.xlsx` generation, and no server-side PDF rendering pipeline were added
+- Prompt 25 added Phase 1 backup, restore, and operations-readiness support without adding new ERP business modules:
+  - `corepack pnpm backup:db` creates PostgreSQL custom-format dumps from the Compose `postgres` service
+  - `corepack pnpm verify:backup -- --file <path>` checks backup existence, size, and `pg_restore --list` metadata
+  - `corepack pnpm restore:db -- --file <path> --dry-run` validates restore inputs without changing data
+  - `corepack pnpm restore:db -- --file <path> --confirm-destroy-data` performs the destructive Compose PostgreSQL restore path
+  - backups default to `backups/postgres/<database>-YYYYMMDDTHHMMSSZ.dump`
+  - `corepack pnpm ops:env-check -- --strict` warns/fails on missing or unsafe production env values
+  - `docs/operations/backup-restore.md` now documents PostgreSQL backup/restore, MinIO/S3 object backup guidance, secret handling, and Phase 1 disaster-recovery expectations
+  - no NestJS endpoints, Next.js routes, Prisma schema changes, or business modules were added
+- Prompt 26 completed the Phase 1 release-candidate audit and UAT readiness pass without adding new ERP business modules:
+  - `docs/operations/phase-1-route-inventory.md` records the Phase 1 backend module, frontend route, access-role, output-surface, and out-of-scope inventory
+  - `docs/operations/phase-1-uat-checklist.md` provides practical human UAT coverage across auth, dashboard, modules, export/print, backup dry-run, and role access
+  - `docs/operations/phase-1-release-checklist.md` records env setup, secrets, Docker Compose deployment, migration, bootstrap, backup, smoke, rollback, and caveats
+  - tracked generated `*.tsbuildinfo` artifacts were removed and ignored
+  - the Phase 1 architecture baseline was refreshed through Prompt 25 behavior
+  - no NestJS endpoints, Next.js routes, Prisma schema changes, or business workflows were added
+- The repo is now ready for Prompt 27.
 
 ## Frontend Routes
 
@@ -120,6 +160,44 @@
 - `/audit-documents/audit-events`
 - `/unauthorized`
 
+## Phase 1 Output Surfaces Now In Effect
+
+- Financial Reports:
+  - `/accounting/reports/trial-balance`: CSV export + print-friendly output
+  - `/accounting/reports/general-ledger`: CSV export + print-friendly output
+  - `/accounting/reports/profit-loss`: CSV export + print-friendly output
+  - `/accounting/reports/balance-sheet`: CSV export + print-friendly output
+- Accounting detail:
+  - `/accounting/vouchers/[voucherId]`: CSV export + print-friendly output
+- Selected operational CSV exports:
+  - `/project-property/units`
+  - `/crm-property-desk/customers`
+  - `/crm-property-desk/bookings`
+  - `/crm-property-desk/collections`
+  - `/hr/employees`
+  - `/hr/leave-requests`
+  - `/payroll/runs`
+  - `/audit-documents/attachments`
+  - `/audit-documents/audit-events`
+- Output format constraints:
+  - CSV is the only Phase 1 export file format
+  - browser print styling is the only Phase 1 print/PDF-from-browser path
+  - no `.xlsx` generation
+  - no server-side PDF rendering pipeline
+
+## Phase 1 Release-Candidate Docs Now In Effect
+
+- Route/module inventory:
+  - `docs/operations/phase-1-route-inventory.md`
+- UAT checklist:
+  - `docs/operations/phase-1-uat-checklist.md`
+- Release checklist and caveats register:
+  - `docs/operations/phase-1-release-checklist.md`
+- Prompt 26 handoff:
+  - `docs/handoffs/prompt-26-status.md`
+- Prompt 27 scope:
+  - `docs/handoffs/prompt-27-scope.md`
+
 ## Frontend Structure Summary
 
 ```text
@@ -139,7 +217,7 @@ apps/web/src/
   components/
     auth/                 auth guard
     providers/            query + auth providers
-    ui/                   reusable shell/table/form primitives
+    ui/                   reusable shell/table/form primitives plus shared output actions
   features/
     accounting/           Prompt 13 accounting UI
     audit-documents/      Prompt 18 attachment/audit pages, forms, hooks, shared UI
@@ -156,6 +234,7 @@ apps/web/src/
     api/                  typed REST client helpers for auth, org, accounting, project, CRM, HR, payroll, and audit/documents
     forms.ts              API-form error mapping helpers
     format.ts             shared formatting helpers
+    output.ts             shared CSV download, paginated export, filename, and print helpers
     routes.ts             canonical web routes
 ```
 
@@ -180,28 +259,28 @@ apps/web/src/
   - the UI renders a company selector
   - the second login submits the selected `companyId`
 
+## Phase 1 Authorization Matrix Now In Effect
+
+| Module                    | `company_admin` | `company_accountant` | `company_hr` | `company_payroll` | `company_sales` | `company_member` |
+| ------------------------- | --------------- | -------------------- | ------------ | ----------------- | --------------- | ---------------- |
+| Dashboard                 | yes             | yes                  | yes          | yes               | yes             | yes              |
+| Org & Security            | yes             | no                   | no           | no                | no              | no               |
+| Accounting                | yes             | yes                  | no           | no                | no              | no               |
+| Financial Reports         | yes             | yes                  | no           | no                | no              | no               |
+| Project & Property Master | yes             | no                   | no           | no                | no              | no               |
+| CRM / Property Desk       | yes             | no                   | no           | no                | yes             | no               |
+| HR                        | yes             | no                   | yes          | no                | no              | no               |
+| Payroll                   | yes             | no                   | yes          | yes               | no              | no               |
+| Audit & Documents         | yes             | yes                  | yes          | yes               | yes             | no               |
+| Audit Events              | yes             | no                   | no           | no                | no              | no               |
+
 ## Frontend Access Rules Now In Effect
 
-- Org & Security navigation remains aligned with the existing Prompt 12 admin access rules.
-- Financial report navigation is visible to users with backend-supported accounting access for the selected company:
-  - `company_admin`
-  - `company_accountant`
-- CRM/property desk navigation remains aligned with the existing Prompt 15 access rules, primarily `company_admin` and `company_sales`.
-- HR navigation is visible to users with backend-supported HR access for the selected company:
-  - `company_admin`
-  - `company_hr`
-- Payroll navigation is visible to users with backend-supported payroll access for the selected company:
-  - `company_admin`
-  - `company_hr`
-  - `company_payroll`
-- Document navigation is visible to users with backend-supported document access for the selected company:
-  - `company_admin`
-  - `company_accountant`
-  - `company_hr`
-  - `company_payroll`
-  - `company_sales`
-- Audit event navigation is limited to:
-  - `company_admin`
+- The web shell now hides module navigation entries the active company session cannot reach.
+- Protected app routes still redirect unauthenticated sessions to `/login`.
+- Authenticated sessions that lack access now receive a clear forbidden state in-shell instead of a broken module page.
+- Dashboard summary panels, recent-activity panels, pending-work cards, and quick actions now render only when the current role set can reach the underlying module.
+- The frontend still does not own security; the NestJS API remains authoritative for route and company-scope enforcement.
 
 ## Audit & Documents UI Rules Now In Effect
 
@@ -260,6 +339,35 @@ apps/web/src/
   - `docker-compose.yml` now exposes `api-migrate` and `api-bootstrap` under the `ops` profile
   - `tests/e2e/playwright.config.ts` and `scripts/start-playwright-web.mjs` now boot the standalone Next build in a way that matches the runner image and avoids stale `.next` state
   - `.github/workflows/ci.yml` now boots Compose and runs runtime smoke after repo tests
+- Prompt 23 added no new ERP business endpoints or Prisma schema changes.
+- Prompt 23 now centralizes module-level authorization expectations in `packages/config/src/access.ts` so backend and frontend access behavior share the same Phase 1 source of truth.
+- Prompt 23 now keeps using the existing `auth/me` company-scoped roles payload for frontend access decisions; no new permissions service or policy-management UI was introduced.
+- Prompt 24 added only read-only output endpoints and frontend output helpers:
+  - `GET /companies/:companyId/accounting/reports/trial-balance/export`
+  - `GET /companies/:companyId/accounting/reports/general-ledger/export`
+  - `GET /companies/:companyId/accounting/reports/profit-loss/export`
+  - `GET /companies/:companyId/accounting/reports/balance-sheet/export`
+  - `GET /companies/:companyId/accounting/vouchers/:voucherId/export`
+  - shared frontend CSV helpers live in `apps/web/src/lib/output.ts`
+  - shared frontend output action UI lives in `apps/web/src/components/ui/output-actions.tsx`
+  - print support stays browser-native and frontend-only; no server-side PDF service was added
+- Prompt 25 added only operations helpers and documentation:
+  - `scripts/backup-postgres.mjs`
+  - `scripts/restore-postgres.mjs`
+  - `scripts/verify-postgres-backup.mjs`
+  - `scripts/check-env-safety.mjs`
+  - `scripts/lib/ops.mjs`
+  - `backups/` is ignored so local database dumps are not committed
+  - CI now validates the helper help paths and `.env.example` placeholder-safe env check
+  - no backend REST routes, frontend routes, Prisma schema changes, or business workflows were added
+- Prompt 26 added only release-candidate documentation and generated-file hygiene:
+  - `docs/operations/phase-1-route-inventory.md`
+  - `docs/operations/phase-1-uat-checklist.md`
+  - `docs/operations/phase-1-release-checklist.md`
+  - `docs/handoffs/prompt-26-status.md`
+  - `docs/handoffs/prompt-27-scope.md`
+  - `*.tsbuildinfo` is ignored and previously tracked build-info files were removed
+  - no backend REST routes, frontend routes, Prisma schema changes, or business workflows were added
 
 ## Financial Reporting API Rules Now In Effect
 
@@ -317,6 +425,32 @@ apps/web/src/
   - clear loading, empty, validation, and API-error states
   - no Next.js server actions or backend proxy routes
 
+## Phase 1 Export And Print Rules Now In Effect
+
+- Supported finance report outputs:
+  - trial balance: CSV export + browser print-friendly rendering
+  - general ledger: CSV export + browser print-friendly rendering
+  - profit & loss: CSV export + browser print-friendly rendering
+  - balance sheet: CSV export + browser print-friendly rendering
+- Supported accounting detail output:
+  - voucher detail: CSV export + browser print-friendly rendering
+- Supported operational CSV exports:
+  - units
+  - customers
+  - bookings
+  - collections
+  - employees
+  - leave requests
+  - payroll runs
+  - attachments
+  - audit events
+- Output behavior constraints:
+  - all output actions remain read-only
+  - export access follows the same module and role visibility rules as page access
+  - browser print hides shell/navigation chrome where practical and preserves company context, report context, and totals
+  - CSV headers and column order are now stable for the supported Phase 1 output surfaces
+  - client-side paginated exports now stay within the backend list-query page-size contract
+
 ## Dashboard & Home UI Rules Now In Effect
 
 - `/dashboard` remains the authenticated landing page for signed-in users.
@@ -359,6 +493,16 @@ apps/web/src/
 - The canonical containerized maintenance helpers are:
   - `corepack pnpm docker:migrate`
   - `corepack pnpm docker:bootstrap -- --company-name ...`
+- The canonical Phase 1 backup/restore helpers are:
+  - `corepack pnpm backup:db`
+  - `corepack pnpm verify:backup -- --file backups/postgres/<backup>.dump`
+  - `corepack pnpm restore:db -- --file backups/postgres/<backup>.dump --dry-run`
+  - `corepack pnpm restore:db -- --file backups/postgres/<backup>.dump --confirm-destroy-data`
+  - `corepack pnpm ops:env-check -- --strict`
+- The canonical Phase 1 release-candidate references are:
+  - `docs/operations/phase-1-route-inventory.md`
+  - `docs/operations/phase-1-uat-checklist.md`
+  - `docs/operations/phase-1-release-checklist.md`
 - Playwright now assembles the standalone Next.js output plus `.next/static` and `public` assets before starting the local verification server, which keeps e2e behavior aligned with the runner image.
 - For Prompt 18 document flows, Docker runtime must provide a browser-resolvable `S3_PUBLIC_ENDPOINT`; local Compose uses `http://localhost:9000` while the API keeps using `http://minio:9000` for container-to-container storage access.
 - In non-localhost production, browser auth now requires HTTPS because the cookies become `Secure` in `NODE_ENV=production`.
@@ -367,6 +511,7 @@ apps/web/src/
 
 ```powershell
 $env:NX_WORKSPACE_ROOT='C:\Users\wadud\Documents\New project'
+corepack pnpm prisma:generate
 corepack pnpm lint
 corepack pnpm typecheck
 corepack pnpm build
@@ -375,6 +520,30 @@ docker compose up -d --build
 corepack pnpm docker:migrate
 corepack pnpm docker:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "change-me-secure-admin-password"
 corepack pnpm docker:smoke
+corepack pnpm backup:db
+corepack pnpm verify:backup -- --file backups/postgres/real_capita_erp-20260424T083915Z.dump
+corepack pnpm restore:db -- --file backups/postgres/real_capita_erp-20260424T083915Z.dump --dry-run
+corepack pnpm ops:smoke
+```
+
+Prompt 26 release-candidate verification completed with:
+
+```powershell
+corepack pnpm verify
+corepack pnpm lint
+corepack pnpm typecheck
+corepack pnpm build
+corepack pnpm test
+docker compose up -d --build
+corepack pnpm docker:migrate
+corepack pnpm docker:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "change-me-secure-admin-password"
+corepack pnpm docker:smoke
+corepack pnpm ops:smoke
+corepack pnpm backup:db
+corepack pnpm verify:backup -- --file backups/postgres/real_capita_erp-20260424T090724Z.dump
+corepack pnpm restore:db -- --file backups/postgres/real_capita_erp-20260424T090724Z.dump --dry-run
+corepack pnpm ops:env-check -- --env-file .env.example --allow-placeholders
+docker compose ps
 ```
 
 Live verification completed against the rebuilt running stack for:
@@ -392,8 +561,39 @@ Live verification completed against the rebuilt running stack for:
 - Prompt 17 payroll routes loading against the running backend
 - Prompt 18 audit/document routes loading against the running backend
 - Prompt 21 dashboard route loading as the main signed-in landing page on the Compose stack
+- Prompt 23 role-aware shell navigation and forbidden-state behavior through Playwright coverage
+- Prompt 24 finance output routes exporting CSV and rendering print-friendly output:
+  - trial balance
+  - general ledger
+  - profit & loss
+  - balance sheet
+- Prompt 24 voucher detail exporting CSV and rendering print-friendly output
+- Prompt 24 operational CSV exports completing on the running stack for:
+  - units
+  - customers
+  - bookings
+  - collections
+  - employees
+  - leave requests
+  - payroll runs
+  - attachments
+  - audit events
+- cookie-backed browser login into the running `/dashboard` page after container bootstrap
 - containerized migration helper completing cleanly against the running Compose database
 - containerized bootstrap helper completing cleanly against the running Compose database
+- Prompt 25 PostgreSQL backup creation against the running Compose database
+- Prompt 25 backup verification confirming a non-empty dump and `pg_restore --list` metadata
+- Prompt 25 restore dry-run completing without database mutation
+- Prompt 25 restore refusal behavior without `--confirm-destroy-data`
+- API health, Swagger, and web root returning HTTP `200` after the Prompt 25 Compose rebuild
+- Prompt 26 live release-candidate smoke against the rebuilt Docker stack:
+  - API liveness, readiness, and Swagger returned HTTP `200`
+  - browser admin login reached `/dashboard`
+  - representative module pages loaded for accounting, financial reports, project/property, CRM/property desk, HR, payroll, audit/documents, and org/security
+  - trial balance CSV export completed
+  - trial balance print action invoked browser print
+  - controlled UAT-only role users verified representative admin, accountant, HR, payroll, sales, and member access behavior
+  - the live admin data set had one active company assignment, so the multi-company selector branch did not appear live; existing Playwright coverage and UAT guidance cover the selector branch when a multi-company user exists
 
 ## Current Local URLs
 
@@ -412,4 +612,4 @@ Live verification completed against the rebuilt running stack for:
 
 ## Final Status
 
-Backend foundations through Prompt 11 remain intact. Prompt 12 established the authenticated frontend shell and Org & Security baseline, Prompt 13 added the Accounting Core UI, Prompt 14 added the Project & Real-Estate Master UI, Prompt 15 added the frontend CRM & Property Desk operational UI, Prompt 16 added the frontend HR Core operational UI, Prompt 17 added the frontend Payroll Core operational UI, Prompt 18 added the frontend Audit & Documents operational UI, Prompt 19 added the backend financial reporting API, Prompt 20 added the frontend financial reporting UI, Prompt 21 added the frontend operational dashboard/home experience, and Prompt 22 hardened runtime, origin, Docker Compose, CI, and deployment reliability without breaking the locked architecture. The repo is ready for Prompt 23.
+Backend foundations through Prompt 11 remain intact. Prompt 12 established the authenticated frontend shell and Org & Security baseline, Prompt 13 added the Accounting Core UI, Prompt 14 added the Project & Real-Estate Master UI, Prompt 15 added the frontend CRM & Property Desk operational UI, Prompt 16 added the frontend HR Core operational UI, Prompt 17 added the frontend Payroll Core operational UI, Prompt 18 added the frontend Audit & Documents operational UI, Prompt 19 added the backend financial reporting API, Prompt 20 added the frontend financial reporting UI, Prompt 21 added the frontend operational dashboard/home experience, Prompt 22 hardened runtime, origin, Docker Compose, CI, and deployment reliability, Prompt 23 hardened backend authorization consistency plus role-aware frontend navigation, route gating, forbidden UX, and dashboard visibility, Prompt 24 added Phase 1 export + print readiness, Prompt 25 added Phase 1 PostgreSQL backup/restore plus operations-readiness runbooks, and Prompt 26 completed the Phase 1 release-candidate audit plus UAT/release documentation without breaking the locked architecture. The repo is ready for Prompt 27.

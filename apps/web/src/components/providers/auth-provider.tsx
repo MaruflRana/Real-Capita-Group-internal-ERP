@@ -13,9 +13,11 @@ import {
   useQueryClient,
 } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import type { Phase1AccessSummary } from '@real-capita/config';
 
 import { getCurrentUser, login, logout } from '../../lib/api/auth';
 import { isApiError } from '../../lib/api/client';
+import { getUserAccessSummary } from '../../lib/access';
 import { APP_ROUTES } from '../../lib/routes';
 
 import type {
@@ -31,6 +33,8 @@ interface AuthContextValue {
   user: CurrentUser | null;
   sessionError: ApiErrorResponse | null;
   adminAssignments: CompanyAssignment[];
+  access: Phase1AccessSummary;
+  canAccessDashboard: boolean;
   canAccessAccounting: boolean;
   canAccessDocuments: boolean;
   canAccessAuditEvents: boolean;
@@ -86,34 +90,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     user?.assignments.filter((assignment) =>
       assignment.roles.includes('company_admin'),
     ) ?? [];
-  const canAccessAccounting =
-    user?.roles.some(
-      (role) => role === 'company_admin' || role === 'company_accountant',
-    ) ?? false;
-  const canAccessDocuments =
-    user?.roles.some(
-      (role) =>
-        role === 'company_admin' ||
-        role === 'company_accountant' ||
-        role === 'company_hr' ||
-        role === 'company_payroll' ||
-        role === 'company_sales',
-    ) ?? false;
-  const canAccessPayroll =
-    user?.roles.some(
-      (role) =>
-        role === 'company_admin' ||
-        role === 'company_hr' ||
-        role === 'company_payroll',
-    ) ?? false;
-  const canAccessProjectProperty = user?.roles.includes('company_admin') ?? false;
-  const canAccessCrmPropertyDesk =
-    user?.roles.some(
-      (role) => role === 'company_admin' || role === 'company_sales',
-    ) ?? false;
-  const canAccessHr =
-    user?.roles.some((role) => role === 'company_admin' || role === 'company_hr') ??
-    false;
+  const access = getUserAccessSummary(user);
+  const canAccessAccounting = access.accounting;
+  const canAccessDocuments = access.auditDocuments;
+  const canAccessPayroll = access.payroll;
+  const canAccessProjectProperty = access.projectProperty;
+  const canAccessCrmPropertyDesk = access.crmPropertyDesk;
+  const canAccessHr = access.hr;
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -125,14 +108,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       user,
       sessionError,
       adminAssignments,
+      access,
+      canAccessDashboard: access.dashboard,
       canAccessAccounting,
       canAccessDocuments,
-      canAccessAuditEvents: user?.roles.includes('company_admin') ?? false,
+      canAccessAuditEvents: access.auditEvents,
       canAccessPayroll,
       canAccessProjectProperty,
       canAccessCrmPropertyDesk,
       canAccessHr,
-      canAccessOrgSecurity: user?.roles.includes('company_admin') ?? false,
+      canAccessOrgSecurity: access.orgSecurity,
       signIn: signInMutation.mutateAsync,
       signOut: async () => {
         await signOutMutation.mutateAsync();
@@ -146,6 +131,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       isSigningOut: signOutMutation.isPending,
     }),
     [
+      access,
       adminAssignments,
       canAccessAccounting,
       canAccessDocuments,

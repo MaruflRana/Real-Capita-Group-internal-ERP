@@ -864,6 +864,7 @@ test('supports attachment list, finalize error surfacing, secure upload, linking
 }) => {
   await setupAuditDocumentsApiMocks(page, { authenticated: true });
   await addAuthenticatedCookie(page);
+  const exportDate = new Date().toISOString().slice(0, 10);
 
   await page.goto('/audit-documents/attachments');
 
@@ -872,6 +873,15 @@ test('supports attachment list, finalize error surfacing, secure upload, linking
   await expect(page.getByRole('link', { name: 'Audit Events' })).toBeVisible();
   await expect(page.getByText('pending-contract.pdf')).toBeVisible();
   await expect(page.getByText('payroll-summary.xlsx')).toBeVisible();
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export CSV' }).click();
+  const download = await downloadPromise;
+
+  expect(await download.failure()).toBeNull();
+  expect(download.suggestedFilename()).toBe(
+    `real-capita-holdings-attachments-export-${exportDate}.csv`,
+  );
 
   await page
     .locator('tbody tr', { hasText: 'pending-contract.pdf' })

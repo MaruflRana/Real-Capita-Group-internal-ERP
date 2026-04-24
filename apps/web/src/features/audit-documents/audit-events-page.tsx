@@ -8,6 +8,7 @@ import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { OutputActionGroup } from '../../components/ui/output-actions';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
@@ -20,8 +21,14 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { isApiError } from '../../lib/api/client';
+import { listAuditEvents } from '../../lib/api/audit-documents';
 import type { AuditEntityType, AuditEventCategory } from '../../lib/api/types';
 import { formatDateTime } from '../../lib/format';
+import {
+  buildExportFileName,
+  exportPaginatedCsv,
+  getExportDateStamp,
+} from '../../lib/output';
 import { useAttachmentUploaders, useAuditEvent, useAuditEvents } from './hooks';
 import {
   AuditAccessRequiredState,
@@ -61,6 +68,8 @@ export const AuditEventsPage = () => {
   const [selectedAuditEventId, setSelectedAuditEventId] = useState<string | null>(
     null,
   );
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const deferredSearch = useDeferredValue(search);
 
   const uploaderQuery = useAttachmentUploaders(
@@ -139,6 +148,82 @@ export const AuditEventsPage = () => {
       ? uploaderQuery.error.apiError.message
       : null;
 
+  const handleExport = async () => {
+    if (!companyId) {
+      return;
+    }
+
+    setExportError(null);
+    setIsExporting(true);
+
+    try {
+      await exportPaginatedCsv({
+        columns: [
+          {
+            header: 'Audit Event ID',
+            value: (auditEvent) => auditEvent.id,
+          },
+          {
+            header: 'Created At',
+            value: (auditEvent) => auditEvent.createdAt,
+          },
+          {
+            header: 'Actor',
+            value: (auditEvent) =>
+              getUserLabel(
+                auditEvent.actorEmail,
+                auditEvent.actorUserId,
+                'System',
+              ),
+          },
+          {
+            header: 'Category',
+            value: (auditEvent) => auditEvent.category,
+          },
+          {
+            header: 'Event Type',
+            value: (auditEvent) => auditEvent.eventType,
+          },
+          {
+            header: 'Target Entity Type',
+            value: (auditEvent) => auditEvent.targetEntityType ?? '',
+          },
+          {
+            header: 'Target Entity ID',
+            value: (auditEvent) => auditEvent.targetEntityId ?? '',
+          },
+          {
+            header: 'Request ID',
+            value: (auditEvent) => auditEvent.requestId ?? '',
+          },
+          {
+            header: 'Metadata Preview',
+            value: (auditEvent) => getAuditMetadataPreview(auditEvent.metadata),
+          },
+        ],
+        companyId,
+        fileName: buildExportFileName([
+          user.currentCompany.slug,
+          'audit-events',
+          'export',
+          getExportDateStamp(),
+        ]),
+        listFn: listAuditEvents,
+        query: listQuery,
+      });
+    } catch (error) {
+      setExportError(
+        isApiError(error)
+          ? error.apiError.message
+          : error instanceof Error
+            ? error.message
+            : 'Unable to export the audit event list.',
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <AuditDocumentsPageHeader
@@ -146,9 +231,16 @@ export const AuditEventsPage = () => {
         description="Browse company-scoped audit events with operational filters, compact metadata previews, and a focused detail surface for traceability."
         scopeName={user.currentCompany.name}
         scopeSlug={user.currentCompany.slug}
+        actions={
+          <OutputActionGroup
+            isExporting={isExporting}
+            onExport={() => void handleExport()}
+          />
+        }
       />
 
       {uploadersError ? <AuditDocumentsQueryErrorBanner message={uploadersError} /> : null}
+      {exportError ? <AuditDocumentsQueryErrorBanner message={exportError} /> : null}
 
       <AuditDocumentsSection
         title="Audit event list"

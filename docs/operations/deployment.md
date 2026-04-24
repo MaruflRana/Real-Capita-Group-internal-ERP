@@ -8,6 +8,12 @@
 - Canonical local API origin: `http://localhost:3333`
 - Canonical local object-storage origin for browser-facing presigned URLs: `http://localhost:9000`
 
+Related release-candidate references:
+
+- Route and module inventory: [phase-1-route-inventory.md](phase-1-route-inventory.md)
+- Human UAT checklist: [phase-1-uat-checklist.md](phase-1-uat-checklist.md)
+- Release checklist and caveats register: [phase-1-release-checklist.md](phase-1-release-checklist.md)
+
 ## Origin And Cookie Rules
 
 - Use `http://localhost:3000` as the canonical local browser origin.
@@ -15,6 +21,19 @@
 - `WEB_APP_URL`, `API_BASE_URL`, and every `CORS_ORIGIN` entry must share the same scheme and hostname while browser auth stays cookie-backed.
 - The current browser auth cookies are host-only and do not set a cookie domain.
 - In `NODE_ENV=production`, auth cookies are `Secure`, so non-localhost browser sessions must use HTTPS.
+
+## Runtime Access Expectations
+
+- Protected app routes redirect unauthenticated browser sessions to `/login`.
+- Authenticated sessions that lack company-scoped access receive explicit `403` responses from the API and a clear forbidden state in the web shell.
+- Shell navigation, dashboard quick actions, and dashboard panels only surface modules that the current company role set can access.
+- Phase 1 company-scoped roles currently used by access hardening are:
+  - `company_admin`
+  - `company_accountant`
+  - `company_hr`
+  - `company_payroll`
+  - `company_sales`
+  - `company_member`
 
 ## Required Runtime Environment
 
@@ -97,6 +116,20 @@ docker compose logs -f
 docker compose down
 ```
 
+## Backup Before Maintenance
+
+Before every release, migration, restore rehearsal, or VM maintenance window, create and verify a PostgreSQL backup:
+
+```powershell
+docker compose up -d postgres
+corepack pnpm backup:db
+corepack pnpm verify:backup -- --file backups/postgres/real_capita_erp-YYYYMMDDTHHMMSSZ.dump
+```
+
+Back up object storage on the same operational cadence. For local MinIO this means the `minio-data` Docker volume or an `mc mirror` copy of the configured `S3_BUCKET`. For external S3-compatible storage, use the provider's bucket backup, versioning, replication, or lifecycle tooling.
+
+The detailed backup, restore, MinIO/S3, and disaster-recovery runbook is [backup-restore.md](backup-restore.md).
+
 ## Bootstrap Admin Flow
 
 Preferred repo-root command:
@@ -120,15 +153,54 @@ Notes:
 ## Single-VM Production Flow
 
 1. Copy `.env.example` to `.env` and replace every placeholder secret before the first deployment.
-2. Set `NODE_ENV=production`.
-3. Set `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_BASE_URL`, `WEB_APP_URL`, and `API_BASE_URL` to the real HTTPS origins you intend users to open.
-4. Keep `CORS_ORIGIN` aligned with the same browser hostname as `WEB_APP_URL`.
-5. Set `S3_PUBLIC_ENDPOINT` to the VM-visible or DNS-visible object-storage origin that browser uploads and downloads can reach.
-6. Consider setting `ENABLE_SWAGGER=false` unless Swagger must remain exposed on the VM.
-7. Bring the stack up with `docker compose up -d --build`.
-8. Run `corepack pnpm docker:migrate`.
-9. Run the explicit bootstrap helper once.
-10. Verify the runtime on the final public origin before handing the VM over for real use.
+2. Run `corepack pnpm ops:env-check -- --strict` and fix every warning before real production use.
+3. Set `NODE_ENV=production`.
+4. Set `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_BASE_URL`, `WEB_APP_URL`, and `API_BASE_URL` to the real HTTPS origins you intend users to open.
+5. Keep `CORS_ORIGIN` aligned with the same browser hostname as `WEB_APP_URL`.
+6. Set `S3_PUBLIC_ENDPOINT` to the VM-visible or DNS-visible object-storage origin that browser uploads and downloads can reach.
+7. Consider setting `ENABLE_SWAGGER=false` unless Swagger must remain exposed on the VM.
+8. Bring the stack up with `docker compose up -d --build`.
+9. Run `corepack pnpm docker:migrate`.
+10. Run the explicit bootstrap helper once.
+11. Verify the runtime on the final public origin before handing the VM over for real use.
+
+## Update And Release Procedure
+
+Use this sequence for a normal Phase 1 release on the single VM:
+
+```powershell
+git pull
+corepack pnpm ops:env-check -- --strict
+docker compose up -d postgres minio
+corepack pnpm backup:db
+corepack pnpm verify:backup -- --file backups/postgres/real_capita_erp-YYYYMMDDTHHMMSSZ.dump
+docker compose up -d --build
+corepack pnpm docker:migrate
+corepack pnpm ops:smoke
+docker compose ps
+```
+
+Notes:
+
+- Run the backup before applying migrations.
+- Keep the previous image source revision available until smoke checks pass.
+- If smoke checks fail after release, inspect logs first, then redeploy the previous known-good revision and run smoke again.
+- Do not run `docker compose down -v` during normal maintenance; `-v` removes named volumes including database and MinIO data.
+
+## Restore Procedure
+
+Use the restore runbook when a PostgreSQL restore is required:
+
+```powershell
+docker compose stop web api
+corepack pnpm restore:db -- --file backups/postgres/real_capita_erp-YYYYMMDDTHHMMSSZ.dump --dry-run
+corepack pnpm restore:db -- --file backups/postgres/real_capita_erp-YYYYMMDDTHHMMSSZ.dump --confirm-destroy-data
+corepack pnpm docker:migrate
+docker compose up -d api web
+corepack pnpm ops:smoke
+```
+
+Restore is destructive and will not run without explicit confirmation. Restore MinIO/S3 object bytes from the matching object backup before reopening workflows that depend on attachments.
 
 ## MinIO / S3 Public Endpoint Notes
 
@@ -143,6 +215,7 @@ Notes:
 Repo validation:
 
 ```powershell
+corepack pnpm verify
 corepack pnpm lint
 corepack pnpm typecheck
 corepack pnpm build
@@ -156,6 +229,9 @@ docker compose up -d --build
 corepack pnpm docker:migrate
 corepack pnpm docker:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "change-me-secure-admin-password"
 corepack pnpm docker:smoke
+corepack pnpm backup:db
+corepack pnpm verify:backup -- --file backups/postgres/real_capita_erp-YYYYMMDDTHHMMSSZ.dump
+corepack pnpm restore:db -- --file backups/postgres/real_capita_erp-YYYYMMDDTHHMMSSZ.dump --dry-run
 ```
 
 Expected local URLs:
@@ -173,3 +249,5 @@ Expected local URLs:
 - Production browser sessions require HTTPS because the auth cookies become `Secure` outside localhost development.
 - The API emits production warnings if Swagger is still enabled, if browser-facing app URLs still point at loopback hosts, or if `S3_PUBLIC_ENDPOINT` is not browser-resolvable.
 - `pnpm lint` currently passes with warnings that pre-date Prompt 22; Prompt 22 did not widen those warnings into errors.
+- PostgreSQL backups under `backups/postgres/` are local files only; copy production backups off the VM or to separately managed durable storage.
+- Restore only covers PostgreSQL. Attachment bytes also require MinIO/S3 object backup and restore.

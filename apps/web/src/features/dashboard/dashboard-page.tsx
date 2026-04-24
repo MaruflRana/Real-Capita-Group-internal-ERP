@@ -16,6 +16,7 @@ import {
 import { useAuth } from '../../components/providers/auth-provider';
 import { Badge } from '../../components/ui/badge';
 import { EmptyState } from '../../components/ui/empty-state';
+import { getRoleLabels } from '../../lib/access';
 import {
   formatAttachmentStatusLabel,
   formatAuditEventCategoryLabel,
@@ -61,6 +62,7 @@ import {
 
 export const DashboardPage = () => {
   const {
+    access: userAccess,
     canAccessAccounting,
     canAccessAuditEvents,
     canAccessCrmPropertyDesk,
@@ -80,13 +82,16 @@ export const DashboardPage = () => {
 
   const access = useMemo(
     () => ({
+      dashboard: userAccess.dashboard,
       accounting: canAccessAccounting,
+      financialReports: userAccess.financialReports,
       projectProperty: canAccessProjectProperty,
       crm: canAccessCrmPropertyDesk,
       hr: canAccessHr,
       payroll: canAccessPayroll,
       documents: canAccessDocuments,
       auditEvents: canAccessAuditEvents,
+      orgSecurity: canAccessOrgSecurity,
     }),
     [
       canAccessAccounting,
@@ -94,8 +99,11 @@ export const DashboardPage = () => {
       canAccessCrmPropertyDesk,
       canAccessDocuments,
       canAccessHr,
+      canAccessOrgSecurity,
       canAccessPayroll,
       canAccessProjectProperty,
+      userAccess.dashboard,
+      userAccess.financialReports,
     ],
   );
   const period = useMemo(
@@ -126,7 +134,7 @@ export const DashboardPage = () => {
       return panels;
     }
 
-    if (summary.financial && access.accounting) {
+    if (summary.financial && access.financialReports) {
       panels.push({
         key: 'financial',
         title: 'Financial summary',
@@ -318,6 +326,7 @@ export const DashboardPage = () => {
     access.auditEvents,
     access.crm,
     access.documents,
+    access.financialReports,
     access.hr,
     access.payroll,
     access.projectProperty,
@@ -848,7 +857,7 @@ export const DashboardPage = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex flex-wrap gap-2">
-              {user.roles.map((role) => (
+              {getRoleLabels(user.roles).map((role) => (
                 <Badge key={role} variant="outline">
                   {role}
                 </Badge>
@@ -899,7 +908,7 @@ export const DashboardPage = () => {
                     ) : null}
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {assignment.roles.map((role) => (
+                    {getRoleLabels(assignment.roles).map((role) => (
                       <Badge key={`${assignment.company.id}-${role}`} variant="outline">
                         {role}
                       </Badge>

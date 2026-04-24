@@ -48,7 +48,7 @@ export const SidePanel = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="screen-only fixed inset-0 z-50">
       <button
         aria-label="Close panel"
         className="absolute inset-0 bg-slate-950/45 backdrop-blur-sm"

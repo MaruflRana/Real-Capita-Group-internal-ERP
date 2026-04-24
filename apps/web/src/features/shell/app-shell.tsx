@@ -26,17 +26,20 @@ import {
   ShieldCheck,
   Users,
 } from 'lucide-react';
+import type { Phase1ModuleKey } from '@real-capita/config';
 
 import { Button, cn } from '@real-capita/ui';
 import { useAuth } from '../../components/providers/auth-provider';
 import { Badge } from '../../components/ui/badge';
 import { formatDateTime } from '../../lib/format';
+import { getRoleLabels } from '../../lib/access';
 import { APP_ROUTES } from '../../lib/routes';
+import { RouteAccessBoundary } from './route-access-boundary';
 
 const navigation = [
   {
     title: 'Core',
-    access: 'public',
+    moduleKey: 'dashboard',
     items: [
       {
         href: APP_ROUTES.dashboard,
@@ -47,7 +50,7 @@ const navigation = [
   },
   {
     title: 'Accounting',
-    access: 'accounting',
+    moduleKey: 'accounting',
     items: [
       {
         href: APP_ROUTES.accountingChartOfAccounts,
@@ -63,7 +66,7 @@ const navigation = [
   },
   {
     title: 'Financial Reports',
-    access: 'accounting',
+    moduleKey: 'financialReports',
     items: [
       {
         href: APP_ROUTES.accountingReportsTrialBalance,
@@ -89,7 +92,7 @@ const navigation = [
   },
   {
     title: 'Audit & Documents',
-    access: 'documents',
+    moduleKey: 'auditDocuments',
     items: [
       {
         href: APP_ROUTES.auditDocumentsAttachments,
@@ -100,13 +103,13 @@ const navigation = [
         href: APP_ROUTES.auditDocumentsAuditEvents,
         label: 'Audit Events',
         icon: History,
-        access: 'audit-events',
+        moduleKey: 'auditEvents',
       },
     ],
   },
   {
     title: 'Payroll',
-    access: 'payroll',
+    moduleKey: 'payroll',
     items: [
       {
         href: APP_ROUTES.payrollSalaryStructures,
@@ -127,7 +130,7 @@ const navigation = [
   },
   {
     title: 'Project & Property Master',
-    access: 'project-property',
+    moduleKey: 'projectProperty',
     items: [
       {
         href: APP_ROUTES.projectPropertyProjects,
@@ -173,7 +176,7 @@ const navigation = [
   },
   {
     title: 'CRM & Property Desk',
-    access: 'crm-property-desk',
+    moduleKey: 'crmPropertyDesk',
     items: [
       {
         href: APP_ROUTES.crmPropertyDeskCustomers,
@@ -209,7 +212,7 @@ const navigation = [
   },
   {
     title: 'HR',
-    access: 'hr',
+    moduleKey: 'hr',
     items: [
       {
         href: APP_ROUTES.hrEmployees,
@@ -245,7 +248,7 @@ const navigation = [
   },
   {
     title: 'Org & Security',
-    access: 'org-security',
+    moduleKey: 'orgSecurity',
     items: [
       {
         href: APP_ROUTES.orgSecurityCompanies,
@@ -276,17 +279,15 @@ const navigation = [
   },
 ] as const;
 
+const hasModuleAccess = (
+  access: Record<Phase1ModuleKey, boolean>,
+  moduleKey: Phase1ModuleKey,
+) => access[moduleKey];
+
 export const AppShell = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
   const {
-    canAccessAccounting,
-    canAccessAuditEvents,
-    canAccessCrmPropertyDesk,
-    canAccessDocuments,
-    canAccessHr,
-    canAccessOrgSecurity,
-    canAccessPayroll,
-    canAccessProjectProperty,
+    access,
     signOut,
     user,
   } = useAuth();
@@ -296,10 +297,27 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
     return null;
   }
 
+  const visibleNavigation = navigation
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) =>
+        hasModuleAccess(
+          access,
+          'moduleKey' in item && item.moduleKey
+            ? item.moduleKey
+            : section.moduleKey,
+        ),
+      ),
+    }))
+    .filter(
+      (section) =>
+        hasModuleAccess(access, section.moduleKey) && section.items.length > 0,
+    );
+
   return (
-    <div className="min-h-screen bg-admin-canvas">
+    <div className="app-shell min-h-screen bg-admin-canvas">
       <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col gap-6 px-4 py-4 lg:flex-row lg:px-6">
-        <aside className="w-full shrink-0 rounded-[2rem] border border-border/70 bg-card/95 p-5 shadow-shell lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)] lg:w-80 lg:overflow-y-auto">
+        <aside className="app-shell-sidebar w-full shrink-0 rounded-[2rem] border border-border/70 bg-card/95 p-5 shadow-shell lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)] lg:w-80 lg:overflow-y-auto">
           <div className="space-y-4 border-b border-border/70 pb-6">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
@@ -320,7 +338,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                 {user.currentCompany.slug}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {user.roles.map((role) => (
+                {getRoleLabels(user.roles).map((role) => (
                   <Badge key={role} variant="outline">
                     {role}
                   </Badge>
@@ -330,7 +348,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
           </div>
 
           <nav className="mt-6 space-y-6">
-            {navigation.map((section) => (
+            {visibleNavigation.map((section) => (
               <div key={section.title}>
                 <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
                   {section.title}
@@ -340,32 +358,15 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                     const isActive =
                       pathname === item.href ||
                       pathname.startsWith(`${item.href}/`);
-                    const isDisabled =
-                      (section.access === 'documents' && !canAccessDocuments) ||
-                      (section.access === 'org-security' &&
-                        !canAccessOrgSecurity) ||
-                      (section.access === 'accounting' &&
-                        !canAccessAccounting) ||
-                      (section.access === 'payroll' && !canAccessPayroll) ||
-                      (section.access === 'crm-property-desk' &&
-                        !canAccessCrmPropertyDesk) ||
-                      (section.access === 'hr' && !canAccessHr) ||
-                      ('access' in item &&
-                        item.access === 'audit-events' &&
-                        !canAccessAuditEvents) ||
-                      (section.access === 'project-property' &&
-                        !canAccessProjectProperty);
                     const Icon = item.icon;
 
                     return (
                       <Link
-                        aria-disabled={isDisabled}
                         className={cn(
                           'flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition',
                           isActive
                             ? 'bg-primary text-primary-foreground shadow-sm'
                             : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                          isDisabled && 'pointer-events-none opacity-45',
                         )}
                         href={item.href}
                         key={item.href}
@@ -391,7 +392,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col gap-6">
-          <header className="sticky top-4 z-20 rounded-[2rem] border border-border/70 bg-card/95 px-5 py-4 shadow-shell backdrop-blur">
+          <header className="app-shell-header sticky top-4 z-20 rounded-[2rem] border border-border/70 bg-card/95 px-5 py-4 shadow-shell backdrop-blur">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.28em] text-primary">
@@ -457,7 +458,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                               ) : null}
                             </div>
                             <div className="mt-3 flex flex-wrap gap-2">
-                              {assignment.roles.map((role) => (
+                              {getRoleLabels(assignment.roles).map((role) => (
                                 <Badge
                                   key={`${assignment.company.id}-${role}`}
                                   variant="outline"
@@ -486,7 +487,9 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
             </div>
           </header>
 
-          <main className="min-w-0 flex-1">{children}</main>
+          <main className="app-shell-main min-w-0 flex-1">
+            <RouteAccessBoundary>{children}</RouteAccessBoundary>
+          </main>
         </div>
       </div>
     </div>

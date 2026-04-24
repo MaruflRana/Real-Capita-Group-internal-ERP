@@ -8,6 +8,7 @@ import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { OutputActionGroup } from '../../components/ui/output-actions';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
@@ -20,11 +21,17 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { isApiError } from '../../lib/api/client';
+import { listBookings } from '../../lib/api/crm-property-desk';
 import {
   PROPERTY_DESK_BOOKING_STATUSES,
   type BookingRecord,
 } from '../../lib/api/types';
 import { formatAccountingAmount, formatDate, formatDateTime } from '../../lib/format';
+import {
+  buildExportFileName,
+  exportPaginatedCsv,
+  getExportDateStamp,
+} from '../../lib/output';
 import {
   BookingCreatePanel,
   BookingEditPanel,
@@ -70,6 +77,8 @@ export const BookingsPage = () => {
   const [panelOpen, setPanelOpen] = useState(false);
   const [editor, setEditor] = useState<BookingRecord | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const deferredSearch = useDeferredValue(search);
 
   const customersQuery = useCustomers(
@@ -193,6 +202,97 @@ export const BookingsPage = () => {
     notes: normalizeOptionalTextToNull(values.notes),
   });
 
+  const handleExport = async () => {
+    if (!companyId) {
+      return;
+    }
+
+    setExportError(null);
+    setIsExporting(true);
+
+    try {
+      await exportPaginatedCsv({
+        columns: [
+          {
+            header: 'Booking ID',
+            value: (booking) => booking.id,
+          },
+          {
+            header: 'Customer Name',
+            value: (booking) => booking.customerName,
+          },
+          {
+            header: 'Customer Email',
+            value: (booking) => booking.customerEmail ?? '',
+          },
+          {
+            header: 'Customer Phone',
+            value: (booking) => booking.customerPhone ?? '',
+          },
+          {
+            header: 'Project Code',
+            value: (booking) => booking.projectCode,
+          },
+          {
+            header: 'Project Name',
+            value: (booking) => booking.projectName,
+          },
+          {
+            header: 'Unit Code',
+            value: (booking) => booking.unitCode,
+          },
+          {
+            header: 'Unit Name',
+            value: (booking) => booking.unitName,
+          },
+          {
+            header: 'Unit Status',
+            value: (booking) => booking.unitStatusName,
+          },
+          {
+            header: 'Status',
+            value: (booking) => booking.status,
+          },
+          {
+            header: 'Booking Amount',
+            value: (booking) => booking.bookingAmount,
+          },
+          {
+            header: 'Booking Date',
+            value: (booking) => booking.bookingDate,
+          },
+          {
+            header: 'Sale Contract Created',
+            value: (booking) => (booking.saleContractId ? 'Yes' : 'No'),
+          },
+          {
+            header: 'Updated At',
+            value: (booking) => booking.updatedAt,
+          },
+        ],
+        companyId,
+        fileName: buildExportFileName([
+          user.currentCompany.slug,
+          'bookings',
+          'export',
+          getExportDateStamp(),
+        ]),
+        listFn: listBookings,
+        query,
+      });
+    } catch (error) {
+      setExportError(
+        isApiError(error)
+          ? error.apiError.message
+          : error instanceof Error
+            ? error.message
+            : 'Unable to export the booking list.',
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <CrmPropertyDeskPageHeader
@@ -201,19 +301,26 @@ export const BookingsPage = () => {
         scopeName={user.currentCompany.name}
         scopeSlug={user.currentCompany.slug}
         actions={
-          <Button
-            onClick={() => {
-              setActionError(null);
-              setEditor(null);
-              setPanelOpen(true);
-            }}
-          >
-            New booking
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <OutputActionGroup
+              isExporting={isExporting}
+              onExport={() => void handleExport()}
+            />
+            <Button
+              onClick={() => {
+                setActionError(null);
+                setEditor(null);
+                setPanelOpen(true);
+              }}
+            >
+              New booking
+            </Button>
+          </div>
         }
       />
 
       {actionError ? <CrmPropertyDeskQueryErrorBanner message={actionError} /> : null}
+      {exportError ? <CrmPropertyDeskQueryErrorBanner message={exportError} /> : null}
 
       <CrmPropertyDeskSection
         title="Booking operations"

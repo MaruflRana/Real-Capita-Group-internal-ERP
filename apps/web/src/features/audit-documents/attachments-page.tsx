@@ -10,6 +10,7 @@ import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { OutputActionGroup } from '../../components/ui/output-actions';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
@@ -22,8 +23,14 @@ import {
   TableRow,
 } from '../../components/ui/table';
 import { isApiError } from '../../lib/api/client';
+import { listAttachments } from '../../lib/api/audit-documents';
 import type { AttachmentEntityType, AttachmentStatus } from '../../lib/api/types';
 import { formatDateTime } from '../../lib/format';
+import {
+  buildExportFileName,
+  exportPaginatedCsv,
+  getExportDateStamp,
+} from '../../lib/output';
 import { getAttachmentDetailRoute } from '../../lib/routes';
 import { AttachmentUploadPanel } from './forms';
 import {
@@ -74,6 +81,8 @@ export const AttachmentsPage = () => {
   const [dateTo, setDateTo] = useState('');
   const [uploadPanelOpen, setUploadPanelOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
   const deferredSearch = useDeferredValue(search);
   const deferredEntitySearch = useDeferredValue(entitySearch);
 
@@ -188,6 +197,82 @@ export const AttachmentsPage = () => {
       ? entityTypeQuery.error.apiError.message
       : null;
 
+  const handleExport = async () => {
+    if (!companyId || !attachmentListEnabled) {
+      return;
+    }
+
+    setExportError(null);
+    setIsExporting(true);
+
+    try {
+      await exportPaginatedCsv({
+        columns: [
+          {
+            header: 'Attachment ID',
+            value: (attachment) => attachment.id,
+          },
+          {
+            header: 'Original File Name',
+            value: (attachment) => attachment.originalFileName,
+          },
+          {
+            header: 'Status',
+            value: (attachment) => attachment.status,
+          },
+          {
+            header: 'Uploader',
+            value: (attachment) =>
+              getUserLabel(
+                attachment.uploadedByEmail,
+                attachment.uploadedById,
+                'Unknown uploader',
+              ),
+          },
+          {
+            header: 'Mime Type',
+            value: (attachment) => attachment.mimeType,
+          },
+          {
+            header: 'Size (Bytes)',
+            value: (attachment) => attachment.sizeBytes,
+          },
+          {
+            header: 'Linked Entities',
+            value: (attachment) =>
+              attachment.links
+                .filter((link) => link.isActive)
+                .map((link) => `${link.entityType}:${link.entityId}`)
+                .join('; '),
+          },
+          {
+            header: 'Created At',
+            value: (attachment) => attachment.createdAt,
+          },
+        ],
+        companyId,
+        fileName: buildExportFileName([
+          user.currentCompany.slug,
+          'attachments',
+          'export',
+          getExportDateStamp(),
+        ]),
+        listFn: listAttachments,
+        query: listQuery,
+      });
+    } catch (error) {
+      setExportError(
+        isApiError(error)
+          ? error.apiError.message
+          : error instanceof Error
+            ? error.message
+            : 'Unable to export the attachment list.',
+      );
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <AuditDocumentsPageHeader
@@ -196,18 +281,26 @@ export const AttachmentsPage = () => {
         scopeName={user.currentCompany.name}
         scopeSlug={user.currentCompany.slug}
         actions={
-          <Button
-            onClick={() => {
-              setActionError(null);
-              setUploadPanelOpen(true);
-            }}
-          >
-            New attachment
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <OutputActionGroup
+              exportDisabled={!attachmentListEnabled}
+              isExporting={isExporting}
+              onExport={() => void handleExport()}
+            />
+            <Button
+              onClick={() => {
+                setActionError(null);
+                setUploadPanelOpen(true);
+              }}
+            >
+              New attachment
+            </Button>
+          </div>
         }
       />
 
       {actionError ? <AuditDocumentsQueryErrorBanner message={actionError} /> : null}
+      {exportError ? <AuditDocumentsQueryErrorBanner message={exportError} /> : null}
       {entityTypesError ? <AuditDocumentsQueryErrorBanner message={entityTypesError} /> : null}
       {uploadersError ? <AuditDocumentsQueryErrorBanner message={uploadersError} /> : null}
 
