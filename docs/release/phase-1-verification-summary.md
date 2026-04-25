@@ -1,6 +1,50 @@
 # Phase 1 Verification Summary
 
-This summary records the final Phase 1 release-candidate verification status from existing handoff docs and the Prompt 28 packaging pass.
+This summary records the final Phase 1 release-candidate verification status from existing handoff docs, the Prompt 28 packaging pass, and the Prompt 29 deployment/tag handoff verification.
+
+## Prompt 29 Deployment/Tag Handoff Verification
+
+Status: passed.
+
+Release-candidate checkpoint:
+
+```text
+c04c93e5874f369b3bb47721e0c98bdcbd2b2532
+```
+
+Commands run:
+
+```powershell
+git status --short
+corepack pnpm verify
+docker compose up -d --build
+corepack pnpm docker:migrate
+corepack pnpm docker:smoke
+corepack pnpm backup:db
+corepack pnpm verify:backup -- --file backups/postgres/real_capita_erp-20260425T142454Z.dump
+corepack pnpm restore:db -- --file backups/postgres/real_capita_erp-20260425T142454Z.dump --dry-run
+```
+
+Observed result:
+
+- Initial `git status --short` was clean.
+- `HEAD` matched the supplied clean checkpoint `c04c93e5874f369b3bb47721e0c98bdcbd2b2532`.
+- `corepack pnpm verify` passed.
+- Lint completed with pre-existing warnings only.
+- Typecheck passed.
+- Build passed.
+- API tests passed: 154.
+- Playwright e2e tests passed: 45.
+- Docker Compose rebuilt and started the `web`, `api`, `postgres`, and `minio` services.
+- `corepack pnpm docker:migrate` completed with no pending migrations.
+- `corepack pnpm docker:smoke` passed for web, API readiness, and Swagger.
+- PostgreSQL backup was created at `backups/postgres/real_capita_erp-20260425T142454Z.dump`.
+- Backup verification confirmed a `207.1 KiB` file and `428` restore metadata entries.
+- Restore dry-run completed without database mutation.
+- No destructive restore was run.
+- Final post-documentation `corepack pnpm verify` also passed.
+
+Prompt 29 changed documentation only and did not modify application code, backend routes, frontend pages, Prisma schema, business logic, workflows, fake/demo data, or runtime architecture.
 
 ## Prompt 28 Final Verification
 

@@ -132,7 +132,14 @@
   - `docs/release/phase-1-verification-summary.md` records Prompt 28 final verification plus prior documented Prompt 26 and Prompt 27 validation
   - `docs/handoffs/prompt-28-status.md` and `docs/handoffs/prompt-29-scope.md` preserve handoff continuity
   - no application code, backend routes, frontend pages, Prisma schema changes, business workflows, fake/demo data, dashboards, workflow engines, or output formats were added
-- The repo is now ready for Prompt 29 as a UAT issue-fix sprint or final deployment/tagging support phase, depending on stakeholder UAT outcome.
+- Prompt 29 completed the final Phase 1 deployment/tag/release handoff and verification pass without adding new ERP business modules:
+  - `docs/release/phase-1-release-notes.md` now records the current release-candidate checkpoint `c04c93e5874f369b3bb47721e0c98bdcbd2b2532` and keeps stakeholder UAT/sign-off pending
+  - `docs/release/phase-1-verification-summary.md` now records Prompt 29 verification evidence
+  - `docs/release/phase-1-technical-handoff.md` and `docs/operations/phase-1-release-checklist.md` now include final pre-deploy command sequencing, env/secrets checks, backup, migration, smoke, rollback, HTTPS, `S3_PUBLIC_ENDPOINT`, and object-storage backup reminders
+  - `docs/release/tagging-and-release.md` now records safe release-candidate and final-tag guidance
+  - `docs/handoffs/prompt-29-status.md` and `docs/handoffs/prompt-30-scope.md` preserve handoff continuity
+  - no application code, backend routes, frontend pages, Prisma schema changes, business workflows, fake/demo data, destructive restore, production deployment, dashboards, workflow engines, or output formats were added
+- The repo is now ready for Prompt 30 as a UAT blocker fix sprint, production deployment assistance phase, or Phase 2 roadmap phase, depending on stakeholder outcome.
 
 ## Frontend Routes
 
@@ -225,6 +232,10 @@
   - `docs/handoffs/prompt-28-status.md`
 - Prompt 29 scope:
   - `docs/handoffs/prompt-29-scope.md`
+- Prompt 29 status:
+  - `docs/handoffs/prompt-29-status.md`
+- Prompt 30 scope:
+  - `docs/handoffs/prompt-30-scope.md`
 - Final Phase 1 release packaging and handoff bundle:
   - `docs/release/phase-1-release-notes.md`
   - `docs/release/phase-1-technical-handoff.md`
@@ -232,6 +243,7 @@
   - `docs/release/demo-readiness-guide.md`
   - `docs/release/phase-1-artifact-inventory.md`
   - `docs/release/phase-1-verification-summary.md`
+  - `docs/release/tagging-and-release.md`
 - UAT, demo, issue-log, limitation, and sign-off package:
   - `docs/uat/README.md`
   - `docs/uat/phase-1-feature-matrix.md`
@@ -681,6 +693,38 @@ Observed result:
 - local markdown links in the new release and handoff docs resolved.
 - no destructive restore was run.
 
+Prompt 29 deployment/tag handoff verification completed with:
+
+```powershell
+git status --short
+corepack pnpm verify
+docker compose up -d --build
+corepack pnpm docker:migrate
+corepack pnpm docker:smoke
+corepack pnpm backup:db
+corepack pnpm verify:backup -- --file backups/postgres/real_capita_erp-20260425T142454Z.dump
+corepack pnpm restore:db -- --file backups/postgres/real_capita_erp-20260425T142454Z.dump --dry-run
+```
+
+Observed result:
+
+- initial `git status --short` was clean.
+- `HEAD` matched `c04c93e5874f369b3bb47721e0c98bdcbd2b2532`.
+- `corepack pnpm verify` passed.
+- lint completed with pre-existing warnings only.
+- typecheck passed.
+- build passed.
+- API tests passed: 154.
+- Playwright e2e tests passed: 45.
+- Docker Compose rebuilt and started the release-minded stack.
+- `corepack pnpm docker:migrate` completed with no pending migrations.
+- `corepack pnpm docker:smoke` passed.
+- backup `backups/postgres/real_capita_erp-20260425T142454Z.dump` was created and verified.
+- restore dry-run completed without database mutation.
+- no destructive restore was run.
+- no production deployment or release tag was created.
+- final post-documentation `corepack pnpm verify` also passed.
+
 ## Current Local URLs
 
 - Web: `http://localhost:3000`
@@ -698,4 +742,4 @@ Observed result:
 
 ## Final Status
 
-Backend foundations through Prompt 11 remain intact. Prompt 12 established the authenticated frontend shell and Org & Security baseline, Prompt 13 added the Accounting Core UI, Prompt 14 added the Project & Real-Estate Master UI, Prompt 15 added the frontend CRM & Property Desk operational UI, Prompt 16 added the frontend HR Core operational UI, Prompt 17 added the frontend Payroll Core operational UI, Prompt 18 added the frontend Audit & Documents operational UI, Prompt 19 added the backend financial reporting API, Prompt 20 added the frontend financial reporting UI, Prompt 21 added the frontend operational dashboard/home experience, Prompt 22 hardened runtime, origin, Docker Compose, CI, and deployment reliability, Prompt 23 hardened backend authorization consistency plus role-aware frontend navigation, route gating, forbidden UX, and dashboard visibility, Prompt 24 added Phase 1 export + print readiness, Prompt 25 added Phase 1 PostgreSQL backup/restore plus operations-readiness runbooks, Prompt 26 completed the Phase 1 release-candidate audit plus UAT/release documentation, Prompt 27 added the Phase 1 UAT, stakeholder demo, issue-log, known-limitations, sign-off, and handoff documentation package, and Prompt 28 added the final Phase 1 release packaging and handoff bundle without breaking the locked architecture. The repo is ready for Prompt 29 as a UAT issue-fix sprint or final deployment/tagging support phase, depending on stakeholder UAT outcome.
+Backend foundations through Prompt 11 remain intact. Prompt 12 established the authenticated frontend shell and Org & Security baseline, Prompt 13 added the Accounting Core UI, Prompt 14 added the Project & Real-Estate Master UI, Prompt 15 added the frontend CRM & Property Desk operational UI, Prompt 16 added the frontend HR Core operational UI, Prompt 17 added the frontend Payroll Core operational UI, Prompt 18 added the frontend Audit & Documents operational UI, Prompt 19 added the backend financial reporting API, Prompt 20 added the frontend financial reporting UI, Prompt 21 added the frontend operational dashboard/home experience, Prompt 22 hardened runtime, origin, Docker Compose, CI, and deployment reliability, Prompt 23 hardened backend authorization consistency plus role-aware frontend navigation, route gating, forbidden UX, and dashboard visibility, Prompt 24 added Phase 1 export + print readiness, Prompt 25 added Phase 1 PostgreSQL backup/restore plus operations-readiness runbooks, Prompt 26 completed the Phase 1 release-candidate audit plus UAT/release documentation, Prompt 27 added the Phase 1 UAT, stakeholder demo, issue-log, known-limitations, sign-off, and handoff documentation package, Prompt 28 added the final Phase 1 release packaging and handoff bundle, and Prompt 29 completed final deployment/tag/release handoff verification and documentation without breaking the locked architecture. The repo is ready for Prompt 30 as a UAT blocker fix sprint, production deployment assistance phase, or Phase 2 roadmap phase, depending on stakeholder outcome.

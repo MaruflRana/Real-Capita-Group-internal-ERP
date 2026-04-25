@@ -166,6 +166,7 @@ PostgreSQL backup helpers do not back up MinIO/S3 object bytes. Pair database ba
 - [Demo readiness guide](demo-readiness-guide.md)
 - [Artifact inventory](phase-1-artifact-inventory.md)
 - [Verification summary](phase-1-verification-summary.md)
+- [Tagging and release guidance](tagging-and-release.md)
 - [Architecture baseline](../architecture/phase-1-architecture-baseline.md)
 - [Deployment guide](../operations/deployment.md)
 - [Release checklist](../operations/phase-1-release-checklist.md)
@@ -176,12 +177,41 @@ PostgreSQL backup helpers do not back up MinIO/S3 object bytes. Pair database ba
 
 ## Where To Continue Phase 2
 
-Phase 2 should start only after Phase 1 UAT results are reviewed. Use [prompt-29-scope.md](../handoffs/prompt-29-scope.md) to decide whether the next step is:
+Phase 2 should start only after Phase 1 UAT results are reviewed. Use [prompt-30-scope.md](../handoffs/prompt-30-scope.md) to decide whether the next step is:
 
 - UAT issue-fix sprint, if stakeholder UAT produces defects.
-- Final deployment/tagging support, if no UAT blockers exist.
+- Production deployment assistance, if the team is ready to deploy.
+- Phase 2 roadmap, if Phase 1 is accepted.
 
 For any new Phase 2 feature request, first confirm that it is intentionally assigned and still preserves the locked stack and REST-only architecture.
+
+## Prompt 29 Final Pre-Deploy Sequence
+
+Use this sequence after the target `.env` exists and before handing a VM to operators or stakeholders:
+
+```powershell
+git status --short
+corepack pnpm verify
+corepack pnpm ops:env-check -- --strict
+docker compose up -d postgres minio
+corepack pnpm backup:db
+corepack pnpm verify:backup -- --file backups/postgres/<backup>.dump
+corepack pnpm restore:db -- --file backups/postgres/<backup>.dump --dry-run
+docker compose up -d --build
+corepack pnpm docker:migrate
+corepack pnpm docker:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "<replace-with-strong-password>"
+corepack pnpm docker:smoke
+docker compose ps
+```
+
+Notes:
+
+- Run bootstrap only when the first company admin is missing or must be created.
+- Replace all production secrets before strict env validation.
+- Production browser origins outside localhost must use HTTPS.
+- `S3_PUBLIC_ENDPOINT` must be browser-resolvable; do not use the internal `minio` hostname for browser upload/download links.
+- Back up MinIO/S3 object storage in the same maintenance window as the PostgreSQL backup.
+- Keep the previous known-good revision and matching database/object backups available until smoke and UAT handoff checks pass.
 
 ## Deployment Handoff Checklist
 

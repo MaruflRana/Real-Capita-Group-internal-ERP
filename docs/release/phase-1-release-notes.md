@@ -6,10 +6,11 @@
 | --- | --- |
 | Release name | Real Capita ERP Phase 1 Release Candidate |
 | Version / tag | `<release-version-or-tag>` |
-| Release date | `<release-date>` |
-| Final git revision | `<final-git-revision>` |
+| Release date | `2026-04-25` release-candidate deployment/UAT handoff date; production acceptance pending |
+| Final git revision | `c04c93e5874f369b3bb47721e0c98bdcbd2b2532` |
 | Prompt 27 checkpoint reference | `3bf83f5e` |
-| Release status | Release candidate; stakeholder UAT and sign-off still required. |
+| Prompt 29 verification checkpoint | `c04c93e5874f369b3bb47721e0c98bdcbd2b2532` |
+| Release status | Release candidate; technically verified for deployment/UAT handoff; stakeholder UAT and sign-off still required. |
 
 ## System Purpose
 
@@ -67,6 +68,19 @@ Prompt 27 verification recorded:
 
 Prompt 28 final verification is recorded in [phase-1-verification-summary.md](phase-1-verification-summary.md).
 
+Prompt 29 deployment/tag handoff verification recorded:
+
+- Starting `git status --short` was clean.
+- `HEAD` matched `c04c93e5874f369b3bb47721e0c98bdcbd2b2532`.
+- `corepack pnpm verify` passed with pre-existing lint warnings only.
+- `docker compose up -d --build` rebuilt and started the release-minded runner services.
+- `corepack pnpm docker:migrate` found no pending migrations.
+- `corepack pnpm docker:smoke` passed for web, API readiness, and Swagger.
+- PostgreSQL backup `backups/postgres/real_capita_erp-20260425T142454Z.dump` was created and verified.
+- Restore dry-run completed without database mutation.
+- No destructive restore was run.
+- Final post-documentation `corepack pnpm verify` also passed.
+
 ## Known Limitations
 
 - Stakeholder UAT has not yet been executed or signed off.
@@ -107,6 +121,7 @@ Prompt 28 final verification is recorded in [phase-1-verification-summary.md](ph
 - [Demo readiness guide](demo-readiness-guide.md)
 - [Artifact inventory](phase-1-artifact-inventory.md)
 - [Verification summary](phase-1-verification-summary.md)
+- [Tagging and release guidance](tagging-and-release.md)
 - [Route inventory](../operations/phase-1-route-inventory.md)
 - [Release checklist](../operations/phase-1-release-checklist.md)
 - [Deployment guide](../operations/deployment.md)

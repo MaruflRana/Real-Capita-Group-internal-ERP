@@ -11,6 +11,8 @@ This inventory points handoff owners to the files that define the current Phase 
 - Prompt 28 scope: [../handoffs/prompt-28-scope.md](../handoffs/prompt-28-scope.md)
 - Prompt 28 status: [../handoffs/prompt-28-status.md](../handoffs/prompt-28-status.md)
 - Prompt 29 scope: [../handoffs/prompt-29-scope.md](../handoffs/prompt-29-scope.md)
+- Prompt 29 status: [../handoffs/prompt-29-status.md](../handoffs/prompt-29-status.md)
+- Prompt 30 scope: [../handoffs/prompt-30-scope.md](../handoffs/prompt-30-scope.md)
 
 ## Release Package
 
@@ -20,6 +22,7 @@ This inventory points handoff owners to the files that define the current Phase 
 - Demo readiness guide: [demo-readiness-guide.md](demo-readiness-guide.md)
 - Artifact inventory: [phase-1-artifact-inventory.md](phase-1-artifact-inventory.md)
 - Verification summary: [phase-1-verification-summary.md](phase-1-verification-summary.md)
+- Tagging and release guidance: [tagging-and-release.md](tagging-and-release.md)
 
 ## Operations Documents
 

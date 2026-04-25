@@ -41,6 +41,27 @@ corepack pnpm test
 
 `corepack pnpm verify` already runs lint, typecheck, build, and test; the repeated commands are listed because the release-candidate audit records each one explicitly.
 
+## Final Pre-Deploy Command Sequence
+
+For the final Phase 1 deployment/UAT handoff path, run the sequence below from the repository root after the target `.env` has been prepared:
+
+```powershell
+git status --short
+corepack pnpm verify
+corepack pnpm ops:env-check -- --strict
+docker compose up -d postgres minio
+corepack pnpm backup:db
+corepack pnpm verify:backup -- --file backups/postgres/<backup>.dump
+corepack pnpm restore:db -- --file backups/postgres/<backup>.dump --dry-run
+docker compose up -d --build
+corepack pnpm docker:migrate
+corepack pnpm docker:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "<replace-with-strong-password>"
+corepack pnpm docker:smoke
+docker compose ps
+```
+
+Bootstrap is required only when the first company admin must be created. The restore command above must remain a dry-run during release verification; destructive restore requires explicit operator intent and `--confirm-destroy-data`.
+
 ## Backup Before Release
 
 Start only persistence services if needed:
@@ -104,6 +125,7 @@ corepack pnpm restore:db -- --file backups/postgres/<backup>.dump --dry-run
 ## Rollback Notes
 
 - Keep the previous known-good source revision available until smoke and UAT pass.
+- Keep the matching PostgreSQL backup and object-storage backup available until the release is accepted.
 - If app smoke fails after deploy, inspect logs first:
 
 ```powershell
@@ -113,6 +135,10 @@ docker compose logs --no-color api web
 - Redeploy the previous revision and run `corepack pnpm docker:smoke`.
 - Do not run `docker compose down -v` during rollback unless the operator intentionally wants to destroy named volumes.
 - If a migration or restore attempt leaves the database unsafe, keep app traffic stopped and restore from a known-good PostgreSQL backup plus the matching object-storage backup.
+
+## Tagging After Approval
+
+Create a release tag only after the verification result, UAT decision, and sign-off status are recorded. If stakeholder UAT has not signed off, use a release-candidate tag such as `v1.0.0-rc1` or `phase1-rc1`; do not tag as a final production release. See [../release/tagging-and-release.md](../release/tagging-and-release.md).
 
 ## Known Caveats Register
 
@@ -138,7 +164,10 @@ Record:
 - Operator
 - Environment URL
 - Backup file path and verification result
+- Restore dry-run result
+- Object-storage backup location or operator acknowledgement
 - Migration result
 - Smoke result
 - UAT checklist result
+- Stakeholder sign-off status
 - Known unresolved caveats
