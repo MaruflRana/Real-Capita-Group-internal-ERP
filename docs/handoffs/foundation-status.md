@@ -112,7 +112,27 @@
   - tracked generated `*.tsbuildinfo` artifacts were removed and ignored
   - the Phase 1 architecture baseline was refreshed through Prompt 25 behavior
   - no NestJS endpoints, Next.js routes, Prisma schema changes, or business workflows were added
-- The repo is now ready for Prompt 27.
+- Prompt 27 completed the Phase 1 UAT, stakeholder demo, and sign-off documentation package without adding new ERP business modules:
+  - `docs/uat/README.md` indexes the UAT, demo, issue-log, limitation, and sign-off materials
+  - `docs/uat/phase-1-feature-matrix.md` summarizes included modules, capabilities, deferred scope, roles, and verification status
+  - `docs/uat/role-wise-uat-guide.md` provides role-by-role access expectations and UAT checks
+  - `docs/uat/module-wise-uat-scenarios.md` provides structured scenario IDs, steps, expected results, and pass/fail placeholders
+  - `docs/uat/phase-1-demo-walkthrough.md` provides a practical stakeholder demo path and presenter talking points
+  - `docs/uat/uat-issue-log-template.md` provides issue capture fields, severity, priority, status, and retest tracking
+  - `docs/uat/phase-1-signoff-checklist.md` records functional, role, finance, HR/payroll, CRM, document, output, backup, limitation, and acceptance sign-off
+  - `docs/uat/phase-1-known-limitations.md` records known Phase 1 limitations and deferred scope from the handoff and operations docs
+  - `docs/handoffs/prompt-27-status.md` and `docs/handoffs/prompt-28-scope.md` preserve handoff continuity
+  - no application code, backend routes, frontend pages, Prisma schema changes, business workflows, fake/demo data, or output formats were added
+- Prompt 28 completed the final Phase 1 release packaging and handoff bundle without adding new ERP business modules:
+  - `docs/release/phase-1-release-notes.md` records release metadata placeholders, included modules, major capabilities, verification references, limitations, deployment requirements, UAT/sign-off status, and key links
+  - `docs/release/phase-1-technical-handoff.md` records repository structure, stack, run commands, Docker Compose flow, migration/bootstrap, smoke, backup/restore, docs map, Phase 2 continuation, and caveats
+  - `docs/release/operator-quick-start.md` gives operators a short start, login, dashboard/health, smoke, UAT, and backup/restore reference
+  - `docs/release/demo-readiness-guide.md` records demo prep, account/company notes, recommended demo flow, outputs, non-claims, and sparse-data fallback
+  - `docs/release/phase-1-artifact-inventory.md` indexes architecture, route inventory, UAT, release, deployment, backup/restore, handoff, scripts, app paths, and tests
+  - `docs/release/phase-1-verification-summary.md` records Prompt 28 final verification plus prior documented Prompt 26 and Prompt 27 validation
+  - `docs/handoffs/prompt-28-status.md` and `docs/handoffs/prompt-29-scope.md` preserve handoff continuity
+  - no application code, backend routes, frontend pages, Prisma schema changes, business workflows, fake/demo data, dashboards, workflow engines, or output formats were added
+- The repo is now ready for Prompt 29 as a UAT issue-fix sprint or final deployment/tagging support phase, depending on stakeholder UAT outcome.
 
 ## Frontend Routes
 
@@ -197,6 +217,30 @@
   - `docs/handoffs/prompt-26-status.md`
 - Prompt 27 scope:
   - `docs/handoffs/prompt-27-scope.md`
+- Prompt 27 status:
+  - `docs/handoffs/prompt-27-status.md`
+- Prompt 28 scope:
+  - `docs/handoffs/prompt-28-scope.md`
+- Prompt 28 status:
+  - `docs/handoffs/prompt-28-status.md`
+- Prompt 29 scope:
+  - `docs/handoffs/prompt-29-scope.md`
+- Final Phase 1 release packaging and handoff bundle:
+  - `docs/release/phase-1-release-notes.md`
+  - `docs/release/phase-1-technical-handoff.md`
+  - `docs/release/operator-quick-start.md`
+  - `docs/release/demo-readiness-guide.md`
+  - `docs/release/phase-1-artifact-inventory.md`
+  - `docs/release/phase-1-verification-summary.md`
+- UAT, demo, issue-log, limitation, and sign-off package:
+  - `docs/uat/README.md`
+  - `docs/uat/phase-1-feature-matrix.md`
+  - `docs/uat/role-wise-uat-guide.md`
+  - `docs/uat/module-wise-uat-scenarios.md`
+  - `docs/uat/phase-1-demo-walkthrough.md`
+  - `docs/uat/uat-issue-log-template.md`
+  - `docs/uat/phase-1-signoff-checklist.md`
+  - `docs/uat/phase-1-known-limitations.md`
 
 ## Frontend Structure Summary
 
@@ -368,6 +412,28 @@ apps/web/src/
   - `docs/handoffs/prompt-27-scope.md`
   - `*.tsbuildinfo` is ignored and previously tracked build-info files were removed
   - no backend REST routes, frontend routes, Prisma schema changes, or business workflows were added
+- Prompt 27 added only UAT, demo, issue-log, limitation, sign-off, and handoff documentation:
+  - `docs/uat/README.md`
+  - `docs/uat/phase-1-feature-matrix.md`
+  - `docs/uat/role-wise-uat-guide.md`
+  - `docs/uat/module-wise-uat-scenarios.md`
+  - `docs/uat/phase-1-demo-walkthrough.md`
+  - `docs/uat/uat-issue-log-template.md`
+  - `docs/uat/phase-1-signoff-checklist.md`
+  - `docs/uat/phase-1-known-limitations.md`
+  - `docs/handoffs/prompt-27-status.md`
+  - `docs/handoffs/prompt-28-scope.md`
+  - no backend REST routes, frontend routes, Prisma schema changes, business workflows, fake/demo data, dashboards, workflow engines, or output formats were added
+- Prompt 28 added only final release packaging, verification summary, and handoff documentation:
+  - `docs/release/phase-1-release-notes.md`
+  - `docs/release/phase-1-technical-handoff.md`
+  - `docs/release/operator-quick-start.md`
+  - `docs/release/demo-readiness-guide.md`
+  - `docs/release/phase-1-artifact-inventory.md`
+  - `docs/release/phase-1-verification-summary.md`
+  - `docs/handoffs/prompt-28-status.md`
+  - `docs/handoffs/prompt-29-scope.md`
+  - no backend REST routes, frontend routes, Prisma schema changes, business workflows, fake/demo data, dashboards, workflow engines, or output formats were added
 
 ## Financial Reporting API Rules Now In Effect
 
@@ -586,7 +652,7 @@ Live verification completed against the rebuilt running stack for:
 - Prompt 25 restore dry-run completing without database mutation
 - Prompt 25 restore refusal behavior without `--confirm-destroy-data`
 - API health, Swagger, and web root returning HTTP `200` after the Prompt 25 Compose rebuild
-- Prompt 26 live release-candidate smoke against the rebuilt Docker stack:
+  - Prompt 26 live release-candidate smoke against the rebuilt Docker stack:
   - API liveness, readiness, and Swagger returned HTTP `200`
   - browser admin login reached `/dashboard`
   - representative module pages loaded for accounting, financial reports, project/property, CRM/property desk, HR, payroll, audit/documents, and org/security
@@ -594,6 +660,26 @@ Live verification completed against the rebuilt running stack for:
   - trial balance print action invoked browser print
   - controlled UAT-only role users verified representative admin, accountant, HR, payroll, sales, and member access behavior
   - the live admin data set had one active company assignment, so the multi-company selector branch did not appear live; existing Playwright coverage and UAT guidance cover the selector branch when a multi-company user exists
+
+Prompt 28 release-packaging verification completed with:
+
+```powershell
+corepack pnpm verify
+git status --short
+Get-ChildItem -File -LiteralPath docs/release
+```
+
+Observed result:
+
+- `corepack pnpm verify` passed.
+- lint completed with pre-existing warnings only.
+- typecheck passed.
+- build passed.
+- API tests passed: 154.
+- Playwright e2e tests passed: 45.
+- final release docs are visible under `docs/release`.
+- local markdown links in the new release and handoff docs resolved.
+- no destructive restore was run.
 
 ## Current Local URLs
 
@@ -612,4 +698,4 @@ Live verification completed against the rebuilt running stack for:
 
 ## Final Status
 
-Backend foundations through Prompt 11 remain intact. Prompt 12 established the authenticated frontend shell and Org & Security baseline, Prompt 13 added the Accounting Core UI, Prompt 14 added the Project & Real-Estate Master UI, Prompt 15 added the frontend CRM & Property Desk operational UI, Prompt 16 added the frontend HR Core operational UI, Prompt 17 added the frontend Payroll Core operational UI, Prompt 18 added the frontend Audit & Documents operational UI, Prompt 19 added the backend financial reporting API, Prompt 20 added the frontend financial reporting UI, Prompt 21 added the frontend operational dashboard/home experience, Prompt 22 hardened runtime, origin, Docker Compose, CI, and deployment reliability, Prompt 23 hardened backend authorization consistency plus role-aware frontend navigation, route gating, forbidden UX, and dashboard visibility, Prompt 24 added Phase 1 export + print readiness, Prompt 25 added Phase 1 PostgreSQL backup/restore plus operations-readiness runbooks, and Prompt 26 completed the Phase 1 release-candidate audit plus UAT/release documentation without breaking the locked architecture. The repo is ready for Prompt 27.
+Backend foundations through Prompt 11 remain intact. Prompt 12 established the authenticated frontend shell and Org & Security baseline, Prompt 13 added the Accounting Core UI, Prompt 14 added the Project & Real-Estate Master UI, Prompt 15 added the frontend CRM & Property Desk operational UI, Prompt 16 added the frontend HR Core operational UI, Prompt 17 added the frontend Payroll Core operational UI, Prompt 18 added the frontend Audit & Documents operational UI, Prompt 19 added the backend financial reporting API, Prompt 20 added the frontend financial reporting UI, Prompt 21 added the frontend operational dashboard/home experience, Prompt 22 hardened runtime, origin, Docker Compose, CI, and deployment reliability, Prompt 23 hardened backend authorization consistency plus role-aware frontend navigation, route gating, forbidden UX, and dashboard visibility, Prompt 24 added Phase 1 export + print readiness, Prompt 25 added Phase 1 PostgreSQL backup/restore plus operations-readiness runbooks, Prompt 26 completed the Phase 1 release-candidate audit plus UAT/release documentation, Prompt 27 added the Phase 1 UAT, stakeholder demo, issue-log, known-limitations, sign-off, and handoff documentation package, and Prompt 28 added the final Phase 1 release packaging and handoff bundle without breaking the locked architecture. The repo is ready for Prompt 29 as a UAT issue-fix sprint or final deployment/tagging support phase, depending on stakeholder UAT outcome.

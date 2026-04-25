@@ -49,6 +49,16 @@ tests/
 - Phase 1 route/module inventory lives in [docs/operations/phase-1-route-inventory.md](docs/operations/phase-1-route-inventory.md).
 - Phase 1 UAT checklist lives in [docs/operations/phase-1-uat-checklist.md](docs/operations/phase-1-uat-checklist.md).
 - Phase 1 release checklist and caveats register live in [docs/operations/phase-1-release-checklist.md](docs/operations/phase-1-release-checklist.md).
+- Phase 1 UAT, demo, issue-log, and sign-off package lives in [docs/uat/README.md](docs/uat/README.md).
+
+## Phase 1 Release Handoff
+
+- Final release notes: [docs/release/phase-1-release-notes.md](docs/release/phase-1-release-notes.md).
+- Technical handoff: [docs/release/phase-1-technical-handoff.md](docs/release/phase-1-technical-handoff.md).
+- Operator quick start: [docs/release/operator-quick-start.md](docs/release/operator-quick-start.md).
+- UAT package: [docs/uat/README.md](docs/uat/README.md).
+- Deployment guide: [docs/operations/deployment.md](docs/operations/deployment.md).
+- Backup/restore guide: [docs/operations/backup-restore.md](docs/operations/backup-restore.md).
 
 ## Current Frontend Coverage
 
@@ -348,6 +358,7 @@ corepack pnpm prisma:generate
 - Route and module inventory: [docs/operations/phase-1-route-inventory.md](docs/operations/phase-1-route-inventory.md)
 - Human UAT checklist: [docs/operations/phase-1-uat-checklist.md](docs/operations/phase-1-uat-checklist.md)
 - Release checklist and caveats register: [docs/operations/phase-1-release-checklist.md](docs/operations/phase-1-release-checklist.md)
+- UAT, demo, issue-log, and sign-off package: [docs/uat/README.md](docs/uat/README.md)
 
 ## CI Baseline
 
