@@ -1816,6 +1816,8 @@ test('renders the HR navigation and supports employee create with backend errors
   await page.goto('/hr/employees');
 
   await expect(page.getByRole('heading', { name: 'Employees' })).toBeVisible();
+  await expect(page.getByText('People coverage')).toBeVisible();
+  await expect(page.getByText('Attendance movement')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Attendance Devices' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Leave Requests' })).toBeVisible();
 

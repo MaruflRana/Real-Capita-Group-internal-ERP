@@ -373,7 +373,10 @@ export const formatTechnicalLabel = (
     return 'Unclosed earnings adjustment';
   }
 
-  if (!trimmed.includes('_') && trimmed !== trimmed.toUpperCase()) {
+  const hasTechnicalSeparator =
+    trimmed.includes('_') || trimmed.includes('.') || trimmed.includes('-');
+
+  if (!hasTechnicalSeparator && trimmed !== trimmed.toUpperCase()) {
     return trimmed;
   }
 
@@ -382,7 +385,7 @@ export const formatTechnicalLabel = (
   }
 
   return trimmed
-    .replace(/_/g, ' ')
+    .replace(/[._-]/g, ' ')
     .toLowerCase()
     .split(' ')
     .filter(Boolean)
@@ -545,7 +548,7 @@ export const AnalyticsLoadingState = ({ label }: { label: string }) => (
 export const AnalyticsEmptyState = ({
   title,
   description,
-  showDemoHint = true,
+  showDemoHint = false,
 }: {
   title: string;
   description: string;

@@ -1623,6 +1623,8 @@ test('renders CRM/property desk navigation and supports customer and lead operat
 
   await page.goto('/crm-property-desk/customers');
   await expect(page.getByRole('heading', { name: 'Customers' })).toBeVisible();
+  await expect(page.getByText('CRM pipeline')).toBeVisible();
+  await expect(page.getByText('Sales value and collections')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Customers' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Leads' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Bookings' })).toBeVisible();

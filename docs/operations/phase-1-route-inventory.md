@@ -94,6 +94,20 @@ Protected routes redirect unauthenticated sessions to `/login?next=...`. Authent
 
 CSV is the only Phase 1 export file format. Browser print is the only Phase 1 print/PDF-from-browser path.
 
+## Operational Analytics Surfaces
+
+Prompt 38 upgraded the read-only operational analytics panels on non-financial module pages. These panels remain frontend-only aggregations over existing REST list/report data and do not add transactions, schema, seeds, or backend report contracts.
+
+| Module                    | Analytics Coverage                                                                                                                                               |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Accounting                | Chart of accounts and vouchers show voucher control, draft/posted mix, voucher type mix, debit/credit movement, recent posting activity, and attention rows.     |
+| Project & Property Master | Projects, hierarchy masters, unit types/statuses, and units show inventory status, project hierarchy coverage, units by project/type, and top inventory rows.    |
+| CRM & Property Desk       | Customers, leads, bookings, sale contracts, installment schedules, and collections show pipeline, booking/installment risk, sales value, collections, and follow-up rows. |
+| HR                        | Employees, attendance devices/mappings/logs, leave types, and leave requests show people coverage, department/location spread, attendance movement, leave mix, and attention rows. |
+| Payroll                   | Salary structures, payroll runs, and payroll posting show workload, posting readiness, gross/deduction/net trends, scope mix, and recent payroll periods.          |
+| Audit & Documents         | Attachments and audit events show document coverage, attachment movement, audit category/type distribution, and document attention rows.                           |
+| Dashboard                 | `/dashboard` keeps an executive roll-up and surfaces selected operational summaries without duplicating every module metric.                                      |
+
 ## Intentionally Out Of Scope
 
 - New ERP business modules or CRUD domains

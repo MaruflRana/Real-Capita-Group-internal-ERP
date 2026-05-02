@@ -10,6 +10,7 @@ import { Label } from '../../components/ui/label';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
+import { ProjectPropertyAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -159,6 +160,12 @@ export const ProjectPhasesPage = () => {
       />
 
       {actionError ? <ProjectPropertyQueryErrorBanner message={actionError} /> : null}
+
+      <ProjectPropertyAnalyticsPanel
+        companyId={companyId}
+        companySlug={user.currentCompany.slug}
+        enabled={isEnabled}
+      />
 
       <ProjectPropertySection
         title="Project phase hierarchy"

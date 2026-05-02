@@ -11,6 +11,7 @@ import { Label } from '../../components/ui/label';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
+import { HrAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -144,6 +145,12 @@ export const AttendanceDevicesPage = () => {
       />
 
       {actionError ? <HrCoreQueryErrorBanner message={actionError} /> : null}
+
+      <HrAnalyticsPanel
+        companyId={companyId}
+        companySlug={user.currentCompany.slug}
+        enabled={isEnabled}
+      />
 
       <HrCoreSection
         title="Attendance device list"

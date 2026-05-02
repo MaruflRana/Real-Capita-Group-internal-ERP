@@ -95,7 +95,7 @@ The seed covers existing Phase 1 modules only:
 
 ## Dashboard And Report Readiness
 
-The seeded data is intended to make existing pages operationally meaningful without adding frontend chart values or new report endpoints.
+The seeded data is intended to make existing pages operationally meaningful without adding frontend chart values, transactional workflows, seed automation, or new report endpoints.
 
 It provides variation for:
 
@@ -110,17 +110,18 @@ It provides variation for:
 - employee, attendance, and leave summaries
 - payroll posted/finalized/draft summaries
 - attachment and audit activity summaries
+- Prompt 38 operational analytics panels for accounting operations, project/property inventory, CRM/property desk pipeline and collections, HR attendance/leave coverage, payroll posting readiness, and audit/document activity
 
 ## Analytics Demo Workflow
 
-Prompt 31/32 consume the same synthetic company through existing REST endpoints, frontend aggregation, and the read-only business overview report endpoint. For a populated supervisor demo:
+Prompt 31/32/38 consume the same synthetic company through existing REST endpoints, frontend aggregation, and the read-only business overview report endpoint. For a populated supervisor demo:
 
 ```powershell
 corepack pnpm seed:demo
 corepack pnpm seed:demo:verify
 ```
 
-Then sign in as a `demo.realcapita.test` user and review `/dashboard`, `/accounting/reports/business-overview`, `/accounting/reports/daily`, `/accounting/reports/weekly`, `/accounting/reports/monthly`, `/accounting/reports/yearly`, plus representative module pages. Empty analytics/report states should remain honest and may point operators back to these explicit seed commands. The UI must continue to label this as Demo/UAT data when the active company slug is `real-capita-demo-uat`.
+Then sign in as a `demo.realcapita.test` user and review `/dashboard`, `/accounting/reports/business-overview`, `/accounting/reports/daily`, `/accounting/reports/weekly`, `/accounting/reports/monthly`, `/accounting/reports/yearly`, plus representative operational pages such as vouchers, project units, CRM leads/bookings/collections, HR employees/attendance/leave, payroll runs, attachments, and audit events. Empty analytics/report states should remain honest and may point operators back to these explicit seed commands when a populated supervisor demo is relevant. The UI must continue to label this as Demo/UAT data when the active company slug is `real-capita-demo-uat`.
 
 ## Verification
 

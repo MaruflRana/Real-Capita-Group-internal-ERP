@@ -279,6 +279,10 @@ const setupDashboardApiMocks = async (
     },
   ];
   const projects = emptyData ? [] : [{ id: 'project-1' }, { id: 'project-2' }];
+  const costCenters = emptyData ? [] : [{ id: 'cost-center-1' }];
+  const projectPhases = emptyData ? [] : [{ id: 'phase-1' }, { id: 'phase-2' }];
+  const blocks = emptyData ? [] : [{ id: 'block-1' }];
+  const zones = emptyData ? [] : [{ id: 'zone-1' }, { id: 'zone-2' }];
   const unitTypes = emptyData
     ? []
     : [{ id: 'type-2br' }, { id: 'type-3br' }, { id: 'type-studio' }];
@@ -522,6 +526,13 @@ const setupDashboardApiMocks = async (
           updatedAt: '2026-04-01T00:00:00.000Z',
         },
       ];
+  const attendanceDevices = emptyData ? [] : [{ id: 'device-1' }, { id: 'device-2' }];
+  const deviceUsers = emptyData
+    ? []
+    : [
+        { id: 'device-user-1', employeeId: 'employee-1' },
+        { id: 'device-user-2', employeeId: 'employee-2' },
+      ];
   const leaveRequests = emptyData
     ? []
     : [
@@ -631,6 +642,7 @@ const setupDashboardApiMocks = async (
     },
   ];
   const salaryStructures = emptyData ? [] : [{ id: 'salary-1' }, { id: 'salary-2' }];
+  const payrollEmployees = employees;
   const attendanceLogs = emptyData
     ? []
     : [
@@ -982,6 +994,34 @@ const setupDashboardApiMocks = async (
       return;
     }
 
+    if (pathname.endsWith('/companies/company-1/cost-centers')) {
+      await fulfillJson(
+        route,
+        200,
+        createPaginatedResponse(costCenters, pageSize, costCenters.length),
+      );
+      return;
+    }
+
+    if (pathname.endsWith('/companies/company-1/project-phases')) {
+      await fulfillJson(
+        route,
+        200,
+        createPaginatedResponse(projectPhases, pageSize, projectPhases.length),
+      );
+      return;
+    }
+
+    if (pathname.endsWith('/companies/company-1/blocks')) {
+      await fulfillJson(route, 200, createPaginatedResponse(blocks, pageSize, blocks.length));
+      return;
+    }
+
+    if (pathname.endsWith('/companies/company-1/zones')) {
+      await fulfillJson(route, 200, createPaginatedResponse(zones, pageSize, zones.length));
+      return;
+    }
+
     if (pathname.endsWith('/companies/company-1/unit-types')) {
       await fulfillJson(route, 200, createPaginatedResponse(unitTypes, pageSize));
       return;
@@ -1105,6 +1145,28 @@ const setupDashboardApiMocks = async (
       return;
     }
 
+    if (pathname.endsWith('/companies/company-1/attendance-devices')) {
+      await fulfillJson(
+        route,
+        200,
+        createPaginatedResponse(
+          attendanceDevices,
+          pageSize,
+          attendanceDevices.length,
+        ),
+      );
+      return;
+    }
+
+    if (pathname.endsWith('/companies/company-1/device-users')) {
+      await fulfillJson(
+        route,
+        200,
+        createPaginatedResponse(deviceUsers, pageSize, deviceUsers.length),
+      );
+      return;
+    }
+
     if (pathname.endsWith('/companies/company-1/leave-requests')) {
       const status = searchParams.get('status');
       const filtered = status
@@ -1139,6 +1201,19 @@ const setupDashboardApiMocks = async (
           salaryStructures,
           pageSize,
           salaryStructures.length,
+        ),
+      );
+      return;
+    }
+
+    if (pathname.endsWith('/companies/company-1/payroll/references/employees')) {
+      await fulfillJson(
+        route,
+        200,
+        createPaginatedResponse(
+          payrollEmployees,
+          pageSize,
+          payrollEmployees.length,
         ),
       );
       return;
@@ -1226,8 +1301,8 @@ test('renders dashboard summary, recent activity, pending work, and shortcuts', 
   await expect(page.getByText('Business performance')).toBeVisible();
   await expect(page.getByText('Trend scale').first()).toBeVisible();
   await expect(page.getByText('Sales and collections')).toBeVisible();
-  await expect(page.getByText('Voucher distribution')).toBeVisible();
-  await expect(page.getByText('Recent vouchers')).toBeVisible();
+  await expect(page.getByText('Accounting workload')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Recent vouchers' })).toBeVisible();
   await expect(page.getByText('JV-3001')).toBeVisible();
   await expect(page.getByText('Pending work')).toBeVisible();
   await expect(page.getByText('Draft vouchers awaiting posting')).toBeVisible();
@@ -1284,8 +1359,9 @@ test('renders module-level accounting analytics on vouchers page', async ({
 
   await page.goto('/accounting/vouchers');
 
-  await expect(page.getByText('Accounting status')).toBeVisible();
-  await expect(page.getByText('Voucher movement')).toBeVisible();
+  await expect(page.getByTestId('accounting-operational-analytics')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Voucher control' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Accounting structure' })).toBeVisible();
   await expect(page.getByText('Debit').first()).toBeVisible();
   await expect(page.getByText('Credit').first()).toBeVisible();
 });
@@ -1349,25 +1425,30 @@ test('renders representative module analytics across Phase 1 areas', async ({
   await setupDashboardApiMocks(page, { authenticated: true });
 
   await page.goto('/project-property/unit-statuses');
-  await expect(page.getByText('Inventory status')).toBeVisible();
-  await expect(page.getByText('Inventory mix')).toBeVisible();
+  await expect(page.getByTestId('project-property-operational-analytics')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Inventory command center' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Project hierarchy coverage' })).toBeVisible();
 
   await page.goto('/crm-property-desk/customers');
-  await expect(page.getByText('Pipeline status')).toBeVisible();
-  await expect(page.getByText('Collections and installments')).toBeVisible();
+  await expect(page.getByTestId('crm-operational-analytics')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'CRM pipeline' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Sales value and collections' })).toBeVisible();
   await expect(page.getByText('Trend scale').first()).toBeVisible();
 
   await page.goto('/hr/leave-requests');
-  await expect(page.getByText('Employee and leave status')).toBeVisible();
-  await expect(page.getByText('Attendance trend')).toBeVisible();
+  await expect(page.getByTestId('hr-operational-analytics')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'People coverage' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Attendance movement' })).toBeVisible();
 
   await page.goto('/payroll/salary-structures');
-  await expect(page.getByText('Payroll run status')).toBeVisible();
-  await expect(page.getByText('Payroll amount trend')).toBeVisible();
+  await expect(page.getByTestId('payroll-operational-analytics')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Payroll workload' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Payroll period trend' })).toBeVisible();
 
   await page.goto('/audit-documents/audit-events');
-  await expect(page.getByText('Attachment status')).toBeVisible();
-  await expect(page.getByText('Audit activity')).toBeVisible();
+  await expect(page.getByTestId('audit-documents-operational-analytics')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Document coverage' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Audit activity' })).toBeVisible();
 });
 
 test('renders financial report visual summaries from report responses', async ({

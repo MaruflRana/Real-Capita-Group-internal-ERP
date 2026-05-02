@@ -1250,6 +1250,8 @@ test('renders payroll navigation and supports salary structure create with confl
   await expect(
     page.getByRole('heading', { name: 'Salary Structures' }),
   ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Payroll workload' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Posting readiness' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Salary Structures' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Payroll Runs' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Payroll Posting' })).toBeVisible();

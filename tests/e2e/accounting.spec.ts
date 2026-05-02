@@ -657,6 +657,8 @@ test('renders accounting pages and completes an unbalanced-to-posted voucher flo
 
   await page.goto('/accounting/chart-of-accounts');
   await expect(page.getByRole('heading', { name: 'Chart of Accounts' })).toBeVisible();
+  await expect(page.getByText('Voucher control')).toBeVisible();
+  await expect(page.getByText('Accounting structure')).toBeVisible();
   await expect(page.getByText('Current Assets').first()).toBeVisible();
   await expect(page.getByText('Cash Ledger').first()).toBeVisible();
   await expect(page.getByText('Petty Cash').first()).toBeVisible();

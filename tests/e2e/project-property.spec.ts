@@ -798,6 +798,8 @@ test('renders project/property master pages and the read-only unit-status catalo
 
   await page.goto('/project-property/projects');
   await expect(page.getByRole('heading', { name: 'Projects' })).toBeVisible();
+  await expect(page.getByText('Inventory command center')).toBeVisible();
+  await expect(page.getByText('Project hierarchy coverage')).toBeVisible();
   await page.getByRole('button', { name: 'New project' }).click();
   const projectDialog = page.getByRole('dialog');
   await projectDialog.getByLabel('Project code').fill('RCH-VILLA');
@@ -882,11 +884,11 @@ test('supports unit create, edit, and filter flow with hierarchy context', async
   ).toContainText('Booked');
 
   await page.getByLabel('Search').fill('A-1201');
-  await page.getByLabel('Project').selectOption('project-1');
-  await page.getByLabel('Phase').selectOption('phase-1');
-  await page.getByLabel('Block').selectOption('block-1');
-  await page.getByLabel('Zone').selectOption('zone-1');
-  await page.getByLabel('Unit status').selectOption('unit-status-2');
+  await page.getByLabel('Project', { exact: true }).selectOption('project-1');
+  await page.getByLabel('Phase', { exact: true }).selectOption('phase-1');
+  await page.getByLabel('Block', { exact: true }).selectOption('block-1');
+  await page.getByLabel('Zone', { exact: true }).selectOption('zone-1');
+  await page.getByLabel('Unit status', { exact: true }).selectOption('unit-status-2');
 
   await expect(page.getByText('Apartment 1201 Updated')).toBeVisible();
   await expect(page.locator('tr', { hasText: 'Tower 10A' })).toHaveCount(0);

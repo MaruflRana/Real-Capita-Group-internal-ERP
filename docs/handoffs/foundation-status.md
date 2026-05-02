@@ -200,7 +200,13 @@
   - balance sheet presentation now emphasizes `Assets = Liabilities + Equity` and labels `UNCLOSED_EARNINGS` as "Unclosed earnings adjustment" in primary UI
   - validation passed: lint, typecheck, build, test, Docker rebuild, demo seed/verify, Docker smoke, and live checks for all financial report routes at 1440px, 1366px, and 1024px
   - no transactional workflows, database schema changes, migrations, seed-system changes, fake values, `.xlsx`, server-side PDF, or new non-report modules were added
-- The repo is now ready for Prompt 38 as Operational Module Analytics Redesign.
+- Prompt 38 completed Operational Module Analytics Redesign outside the deep financial reports area:
+  - operational analytics panels now tell module-specific stories for accounting operations, project/property inventory, CRM/property desk activity, HR attendance/leave coverage, payroll readiness, and audit/documents
+  - all Prompt 38 analytics use existing REST list/report data and frontend aggregation only; no backend endpoints, schema changes, seed changes, fake values, or transactional workflows were added
+  - dashboard operational roll-up was lightly aligned with the improved module summaries while staying an executive overview
+  - empty/loading/error states were tightened, and sparse demo guidance is shown only where useful
+  - validation passed: lint, typecheck, build, test, Docker rebuild, demo seed/verify, Docker smoke, and live checks for the requested operational routes at 1440px, 1366px, and 1024px
+- The repo is now ready for Prompt 39 as Supervisor Demo Visual QA + Final Polish.
 
 ## Frontend Routes
 
@@ -338,6 +344,10 @@
   - `docs/handoffs/prompt-37-status.md`
 - Prompt 38 scope:
   - `docs/handoffs/prompt-38-scope.md`
+- Prompt 38 status:
+  - `docs/handoffs/prompt-38-status.md`
+- Prompt 39 scope:
+  - `docs/handoffs/prompt-39-scope.md`
 - Synthetic demo/UAT data operations:
   - `docs/operations/demo-data.md`
 - Final Phase 1 release packaging and handoff bundle:
@@ -1012,6 +1022,33 @@ Observed result:
 - Authenticated live chart verification passed at 1440px, 1366px, and 1024px for `/dashboard`, `/accounting/reports/business-overview`, `/accounting/reports/balance-sheet`, `/project-property/projects`, `/crm-property-desk/collections`, `/hr/employees`, `/payroll/runs`, and `/audit-documents/audit-events`.
 - The live chart check found no global horizontal overflow, no clipped numeric values, and visible chart or chart-state roles on every checked route.
 
+Prompt 38 Operational Module Analytics Redesign verification was run on May 2, 2026 with:
+
+```powershell
+corepack pnpm lint
+corepack pnpm typecheck
+corepack pnpm build
+corepack pnpm test
+docker compose up -d --build
+corepack pnpm seed:demo
+corepack pnpm seed:demo:verify
+corepack pnpm docker:smoke
+```
+
+Observed result:
+
+- `corepack pnpm lint` passed with pre-existing warnings only.
+- `corepack pnpm typecheck` passed.
+- `corepack pnpm build` passed.
+- `corepack pnpm test` passed: 161 API tests and 52 Playwright e2e tests.
+- `docker compose up -d --build` completed successfully, and the rebuilt `api` and `web` containers started healthy.
+- `corepack pnpm seed:demo` completed for `Real Capita Demo / UAT`.
+- `corepack pnpm seed:demo:verify` passed, including final Demo/UAT counts for 13 projects, 28 units, 9 leads, 7 bookings, 5 sale contracts, 20 installment schedules, 6 collections, 12 employees, 144 attendance logs, 3 payroll runs, 5 attachments, and 57 audit events.
+- `corepack pnpm docker:smoke` passed for web, API readiness, and Swagger.
+- Authenticated live operational route verification passed at 1440px, 1366px, and 1024px for `/accounting/vouchers`, `/accounting/chart-of-accounts`, `/project-property/projects`, `/project-property/units`, `/crm-property-desk/customers`, `/crm-property-desk/leads`, `/crm-property-desk/bookings`, `/crm-property-desk/sale-contracts`, `/crm-property-desk/collections`, `/hr/employees`, `/hr/attendance-logs`, `/hr/leave-requests`, `/payroll/salary-structures`, `/payroll/runs`, `/audit-documents/attachments`, `/audit-documents/audit-events`, and `/dashboard`.
+- The final live sweep checked 51 route/width combinations with no failures, no global horizontal overflow, no clipped numeric values, and no detected vertical word wrapping.
+- An initial live sweep caught dotted audit event labels wrapping in a chart; Prompt 38 fixed technical label formatting and reran validation successfully.
+
 ## Current Local URLs
 
 - Web: `http://localhost:3000`
@@ -1029,4 +1066,4 @@ Observed result:
 
 ## Final Status
 
-Backend foundations through Prompt 11 remain intact. Prompt 12 established the authenticated frontend shell and Org & Security baseline, Prompt 13 added the Accounting Core UI, Prompt 14 added the Project & Real-Estate Master UI, Prompt 15 added the frontend CRM & Property Desk operational UI, Prompt 16 added the frontend HR Core operational UI, Prompt 17 added the frontend Payroll Core operational UI, Prompt 18 added the frontend Audit & Documents operational UI, Prompt 19 added the backend financial reporting API, Prompt 20 added the frontend financial reporting UI, Prompt 21 added the frontend operational dashboard/home experience, Prompt 22 hardened runtime, origin, Docker Compose, CI, and deployment reliability, Prompt 23 hardened backend authorization consistency plus role-aware frontend navigation, route gating, forbidden UX, and dashboard visibility, Prompt 24 added Phase 1 export + print readiness, Prompt 25 added Phase 1 PostgreSQL backup/restore plus operations-readiness runbooks, Prompt 26 completed the Phase 1 release-candidate audit plus UAT/release documentation, Prompt 27 added the Phase 1 UAT, stakeholder demo, issue-log, known-limitations, sign-off, and handoff documentation package, Prompt 28 added the final Phase 1 release packaging and handoff bundle, Prompt 29 completed final deployment/tag/release handoff verification and documentation, Prompt 30 added the explicit synthetic demo/UAT seed, reset, and verify foundation, Prompt 31 added frontend-only analytics, graphs, and status summaries over existing REST data without breaking the locked architecture or adding new business workflows, Prompt 32 added professional analytics plus daily/weekly/monthly business reporting over existing posted accounting and CRM/property data without adding transactional workflows, Prompt 33 upgraded the existing seed into RCG context-aligned synthetic demo/UAT data while preserving the locked architecture and synthetic-only safeguards, Prompt 34 added the frontend-only ERP design-system foundation for stronger visual contrast, typography, cards, tables, analytics shells, and report primitives without redesigning every page, Prompt 35 completed the frontend-only app shell, navigation, page-frame, and responsive layout redesign while preserving existing REST boundaries, role-aware access, CSV export, and print behavior, Prompt 36 completed the frontend-only professional chart component system plus representative chart replacements over existing REST data and calculations, and Prompt 37 completed the finance-grade Financial Reports Redesign plus the missing yearly report over the existing read-only reporting boundary. The repo is ready for Prompt 38 as Operational Module Analytics Redesign.
+Backend foundations through Prompt 11 remain intact. Prompt 12 established the authenticated frontend shell and Org & Security baseline, Prompt 13 added the Accounting Core UI, Prompt 14 added the Project & Real-Estate Master UI, Prompt 15 added the frontend CRM & Property Desk operational UI, Prompt 16 added the frontend HR Core operational UI, Prompt 17 added the frontend Payroll Core operational UI, Prompt 18 added the frontend Audit & Documents operational UI, Prompt 19 added the backend financial reporting API, Prompt 20 added the frontend financial reporting UI, Prompt 21 added the frontend operational dashboard/home experience, Prompt 22 hardened runtime, origin, Docker Compose, CI, and deployment reliability, Prompt 23 hardened backend authorization consistency plus role-aware frontend navigation, route gating, forbidden UX, and dashboard visibility, Prompt 24 added Phase 1 export + print readiness, Prompt 25 added Phase 1 PostgreSQL backup/restore plus operations-readiness runbooks, Prompt 26 completed the Phase 1 release-candidate audit plus UAT/release documentation, Prompt 27 added the Phase 1 UAT, stakeholder demo, issue-log, known-limitations, sign-off, and handoff documentation package, Prompt 28 added the final Phase 1 release packaging and handoff bundle, Prompt 29 completed final deployment/tag/release handoff verification and documentation, Prompt 30 added the explicit synthetic demo/UAT seed, reset, and verify foundation, Prompt 31 added frontend-only analytics, graphs, and status summaries over existing REST data without breaking the locked architecture or adding new business workflows, Prompt 32 added professional analytics plus daily/weekly/monthly business reporting over existing posted accounting and CRM/property data without adding transactional workflows, Prompt 33 upgraded the existing seed into RCG context-aligned synthetic demo/UAT data while preserving the locked architecture and synthetic-only safeguards, Prompt 34 added the frontend-only ERP design-system foundation for stronger visual contrast, typography, cards, tables, analytics shells, and report primitives without redesigning every page, Prompt 35 completed the frontend-only app shell, navigation, page-frame, and responsive layout redesign while preserving existing REST boundaries, role-aware access, CSV export, and print behavior, Prompt 36 completed the frontend-only professional chart component system plus representative chart replacements over existing REST data and calculations, Prompt 37 completed the finance-grade Financial Reports Redesign plus the missing yearly report over the existing read-only reporting boundary, and Prompt 38 completed the frontend-only Operational Module Analytics Redesign for non-financial operational modules over existing REST data. The repo is ready for Prompt 39 as Supervisor Demo Visual QA + Final Polish.

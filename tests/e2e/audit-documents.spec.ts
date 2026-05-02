@@ -869,6 +869,8 @@ test('supports attachment list, finalize error surfacing, secure upload, linking
   await page.goto('/audit-documents/attachments');
 
   await expect(page.getByRole('heading', { name: 'Attachments' })).toBeVisible();
+  await expect(page.getByText('Document coverage')).toBeVisible();
+  await expect(page.getByText('Audit activity')).toBeVisible();
   await expect(page.getByRole('link', { name: 'Attachments' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Audit Events' })).toBeVisible();
   await expect(page.getByText('pending-contract.pdf')).toBeVisible();
@@ -956,14 +958,14 @@ test('supports audit-event filtering and detail review', async ({ page }) => {
   await page.goto('/audit-documents/audit-events');
 
   await expect(page.getByRole('heading', { name: 'Audit Events' })).toBeVisible();
-  await expect(page.getByText('attachment.linked')).toBeVisible();
-  await expect(page.getByText('auth.login.succeeded')).toBeVisible();
+  await expect(page.locator('tbody tr', { hasText: 'attachment.linked' })).toBeVisible();
+  await expect(page.locator('tbody tr', { hasText: 'auth.login.succeeded' })).toBeVisible();
 
   await page.getByLabel('Category').selectOption('ATTACHMENT');
   await page.getByLabel('Actor').selectOption('user-admin');
 
-  await expect(page.getByText('attachment.linked')).toBeVisible();
-  await expect(page.getByText('auth.login.succeeded')).toHaveCount(0);
+  await expect(page.locator('tbody tr', { hasText: 'attachment.linked' })).toBeVisible();
+  await expect(page.locator('tbody tr', { hasText: 'auth.login.succeeded' })).toHaveCount(0);
 
   await page
     .locator('tbody tr', { hasText: 'attachment.linked' })
