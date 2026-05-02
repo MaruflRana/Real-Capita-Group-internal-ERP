@@ -13,13 +13,17 @@ out
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*.local
 !.env.example
 
 .nx/cache
 .nx/workspace-data
 playwright-report
 test-results
+screenshots
+.playwright-mcp
 backups
+*.dump
 
 .idea
 .vscode/*

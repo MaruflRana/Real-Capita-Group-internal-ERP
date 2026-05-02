@@ -158,8 +158,8 @@ const QUICK_ACTIONS = [
   {
     id: 'financial-reports',
     title: 'Financial reports',
-    description: 'Open the existing reporting workspace.',
-    href: APP_ROUTES.accountingReportsTrialBalance,
+    description: 'Open the business and financial reporting workspace.',
+    href: APP_ROUTES.accountingReportsBusinessOverview,
     icon: FileText,
     isVisible: (access: DashboardAccess) => access.financialReports,
   },

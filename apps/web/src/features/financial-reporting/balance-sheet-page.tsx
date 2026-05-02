@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useAuth } from '../../components/providers/auth-provider';
 import { OutputActionGroup } from '../../components/ui/output-actions';
 import { EmptyState } from '../../components/ui/empty-state';
+import { AppPage } from '../../components/ui/erp-primitives';
 import {
   Table,
   TableBody,
@@ -28,21 +29,21 @@ import {
   BalanceStatusBanner,
   FinancialReportingAccessRequiredState,
   FinancialReportingFilterCard,
+  FinancialReportContextStrip,
   FinancialReportingPageHeader,
   FinancialReportingPrintContext,
   FinancialReportingQueryErrorBanner,
   FinancialReportingReadOnlyNotice,
   FinancialReportingSection,
+  ReportAssumptionNote,
   ReportLoadingState,
   ReportMetricCard,
   ReportMetricGrid,
   ReportRefreshHint,
 } from './shared';
 import { StatementHierarchyTable } from './tables';
-import {
-  buildFinancialReportCsvFileName,
-  getDefaultAsOfDate,
-} from './utils';
+import { buildFinancialReportCsvFileName, getDefaultAsOfDate } from './utils';
+import { BalanceSheetVisualSummary } from './analytics';
 
 const buildBalanceSheetFilters = ({
   asOfDate,
@@ -51,6 +52,14 @@ const buildBalanceSheetFilters = ({
 }): BalanceSheetQueryParams => ({
   asOfDate,
 });
+
+const getBalanceSheetAdjustmentName = ({
+  code,
+  name,
+}: {
+  code: string;
+  name: string;
+}) => (code === 'UNCLOSED_EARNINGS' ? 'Unclosed earnings adjustment' : name);
 
 export const BalanceSheetPage = () => {
   const { canAccessAccounting, user } = useAuth();
@@ -131,7 +140,7 @@ export const BalanceSheetPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <AppPage>
       <FinancialReportingPageHeader
         actions={
           reportQuery.data ? (
@@ -199,22 +208,50 @@ export const BalanceSheetPage = () => {
               },
               {
                 label: 'Balance state',
-                value: reportQuery.data.isBalanced ? 'Balanced' : 'Not balanced',
+                value: reportQuery.data.isBalanced
+                  ? 'Balanced'
+                  : 'Not balanced',
               },
               {
                 label: 'Derived adjustment',
-                value: `UNCLOSED_EARNINGS ${formatAccountingAmount(reportQuery.data.totals.unclosedEarnings)}`,
+                value: `Unclosed earnings adjustment (${formatAccountingAmount(reportQuery.data.totals.unclosedEarnings)})`,
               },
             ]}
             title="Balance sheet print context"
           />
 
-          <BalanceStatusBanner isBalanced={reportQuery.data.isBalanced} />
-
           <FinancialReportingSection
-            description="Assets, liabilities, and equity sections below are rendered directly from the backend hierarchy. Totals remain company-scoped and as-of-date scoped."
-            title="Statement output"
+            description="Assets, liabilities, equity, and the balance equation for the selected as-of date."
+            title="Executive summary"
           >
+            <BalanceStatusBanner isBalanced={reportQuery.data.isBalanced} />
+            <FinancialReportContextStrip
+              items={[
+                {
+                  label: 'As-of date',
+                  value: reportQuery.data.asOfDate,
+                },
+                {
+                  label: 'Balance equation',
+                  value: `${formatAccountingAmount(
+                    reportQuery.data.totals.totalAssets,
+                  )} = ${formatAccountingAmount(
+                    reportQuery.data.totals.totalLiabilitiesAndEquity,
+                  )}`,
+                },
+                {
+                  label: 'Balance status',
+                  tone: reportQuery.data.isBalanced ? 'success' : 'warning',
+                  value: reportQuery.data.isBalanced
+                    ? 'Balanced'
+                    : 'Not balanced',
+                },
+                {
+                  label: 'Derived adjustment',
+                  value: 'Unclosed earnings adjustment',
+                },
+              ]}
+            />
             <ReportMetricGrid>
               <ReportMetricCard
                 label="Total assets"
@@ -258,7 +295,19 @@ export const BalanceSheetPage = () => {
                 }
               />
             </ReportMetricGrid>
+          </FinancialReportingSection>
 
+          <FinancialReportingSection
+            description="Assets and liabilities plus equity are compared using the same totals as the statement."
+            title="Visual analysis"
+          >
+            <BalanceSheetVisualSummary report={reportQuery.data} />
+          </FinancialReportingSection>
+
+          <FinancialReportingSection
+            description="Assets, liabilities, and equity sections are rendered directly from the backend hierarchy."
+            title="Detailed statement table"
+          >
             {reportQuery.data.sections.length === 0 ? (
               <EmptyState
                 description="No balance sheet sections were returned for the selected as-of date."
@@ -275,8 +324,8 @@ export const BalanceSheetPage = () => {
           >
             <ReportMetricGrid>
               <ReportMetricCard
-                description="This total is included in the backend equity calculation."
-                label="Unclosed earnings"
+                description="Backend code: UNCLOSED_EARNINGS. This total is included in the backend equity calculation."
+                label="Unclosed earnings adjustment"
                 value={
                   <span className="font-mono tabular-nums">
                     {formatAccountingAmount(
@@ -306,10 +355,10 @@ export const BalanceSheetPage = () => {
                       <TableCell>
                         <div>
                           <p className="font-medium text-foreground">
-                            {adjustment.name}
+                            {getBalanceSheetAdjustmentName(adjustment)}
                           </p>
-                          <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
-                            {adjustment.code}
+                          <p className="mt-1 font-mono text-xs text-muted-foreground">
+                            Backend code: {adjustment.code}
                           </p>
                         </div>
                       </TableCell>
@@ -322,8 +371,30 @@ export const BalanceSheetPage = () => {
               </Table>
             )}
           </FinancialReportingSection>
+
+          <FinancialReportingSection
+            description="Concise statement notes for finance review and print output."
+            title="Assumptions and calculation notes"
+          >
+            <div className="grid gap-3">
+              <ReportAssumptionNote>
+                Assets, liabilities, and equity are calculated from posted
+                accounting balances up to and including the selected as-of date.
+              </ReportAssumptionNote>
+              <ReportAssumptionNote>
+                Because formal closing entries are not part of Phase 1, the
+                backend exposes unclosed earnings as a named equity adjustment
+                instead of hiding it inside equity.
+              </ReportAssumptionNote>
+              <ReportAssumptionNote>
+                The balance equation is presented as Assets = Liabilities +
+                Equity, using the backend totals returned for this company
+                scope.
+              </ReportAssumptionNote>
+            </div>
+          </FinancialReportingSection>
         </>
       ) : null}
-    </div>
+    </AppPage>
   );
 };

@@ -16,7 +16,9 @@ import {
 import { useAuth } from '../../components/providers/auth-provider';
 import { Badge } from '../../components/ui/badge';
 import { EmptyState } from '../../components/ui/empty-state';
+import { AppPage } from '../../components/ui/erp-primitives';
 import { getRoleLabels } from '../../lib/access';
+import { DashboardAnalyticsPanel } from '../analytics/module-panels';
 import {
   formatAttachmentStatusLabel,
   formatAuditEventCategoryLabel,
@@ -140,7 +142,7 @@ export const DashboardPage = () => {
         title: 'Financial summary',
         description:
           'Posted-statement metrics from the existing reporting endpoints for the active company.',
-        href: APP_ROUTES.accountingReportsTrialBalance,
+        href: APP_ROUTES.accountingReportsBusinessOverview,
         items: [
           {
             label: 'Net profit / loss',
@@ -632,38 +634,63 @@ export const DashboardPage = () => {
   ]);
 
   return (
-    <div className="space-y-6">
-      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <Card>
-          <CardHeader>
-            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
+    <AppPage>
+      <section className="grid gap-6 2xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+        <Card className="min-w-0 overflow-hidden" data-testid="dashboard-context">
+          <CardHeader className="border-b border-border bg-surface-raised">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
               Operational home
             </p>
-            <CardTitle>{user.currentCompany.name}</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-2xl leading-8">
+              {user.currentCompany.name}
+            </CardTitle>
+            <CardDescription className="max-w-4xl leading-6">
               Real-time operational snapshot for the active company session,
               using the existing REST modules already available in this ERP.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 lg:grid-cols-[1fr_320px]">
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-3xl border border-border/70 bg-background/80 p-4">
-                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
+          <CardContent className="space-y-4 pt-6">
+            <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(180px,240px)]">
+              <div className="min-w-0 rounded-lg border border-border bg-surface-muted p-4">
+                <p className="text-sm font-medium text-muted-foreground">
                   Current company
                 </p>
-                <p className="mt-3 text-lg font-semibold text-foreground">
+                <p className="mt-2 truncate font-mono text-sm font-semibold text-foreground">
                   {user.currentCompany.slug}
                 </p>
               </div>
-              <div className="rounded-3xl border border-border/70 bg-background/80 p-4">
-                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
-                  Accessible workspaces
+              <div className="min-w-0 rounded-lg border border-border bg-surface-muted p-4">
+                <p className="text-sm font-medium text-muted-foreground">
+                  Last login
                 </p>
-                <div className="mt-3 flex flex-wrap gap-2">
+                <p className="mt-2 whitespace-nowrap text-sm font-semibold leading-6 text-foreground">
+                  {formatDateTime(user.lastLoginAt)}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,22rem),1fr))] gap-4">
+              <div className="min-w-0 rounded-lg border border-border bg-surface-muted p-4">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Accessible workspaces
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {workspaceLabels.length} available
+                  </p>
+                </div>
+                <div
+                  className="mt-3 flex min-w-0 flex-wrap gap-2"
+                  data-testid="dashboard-workspace-chips"
+                >
                   {workspaceLabels.length > 0 ? (
                     workspaceLabels.map((label) => (
-                      <Badge key={label} variant="outline">
-                        {label}
+                      <Badge
+                        className="max-w-full whitespace-nowrap px-3 py-1.5 text-[11px]"
+                        key={label}
+                        variant="outline"
+                      >
+                        <span className="truncate">{label}</span>
                       </Badge>
                     ))
                   ) : (
@@ -673,45 +700,41 @@ export const DashboardPage = () => {
                   )}
                 </div>
               </div>
-              <div className="rounded-3xl border border-border/70 bg-background/80 p-4">
-                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
-                  Last login
-                </p>
-                <p className="mt-3 text-sm font-medium text-foreground">
-                  {formatDateTime(user.lastLoginAt)}
+
+              <div
+                className="min-w-0 rounded-lg border border-border bg-surface-muted p-4"
+                data-testid="dashboard-period-card"
+              >
+                <label
+                  className="text-sm font-medium text-muted-foreground"
+                  htmlFor="dashboard-period"
+                >
+                  Dashboard period
+                </label>
+                <select
+                  className="mt-3 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground"
+                  id="dashboard-period"
+                  onChange={(event) =>
+                    setPeriodPreset(event.target.value as DashboardPeriodPresetId)
+                  }
+                  value={periodPreset}
+                >
+                  {DASHBOARD_PERIOD_PRESETS.map((preset) => {
+                    const option = buildDashboardPeriod(preset);
+
+                    return (
+                      <option key={preset} value={preset}>
+                        {option.label}
+                      </option>
+                    );
+                  })}
+                </select>
+                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                  Financial metrics and recent-count widgets follow{' '}
+                  <span className="font-medium text-foreground">{period.label}</span>.
+                  Recent activity panels always show the latest available records.
                 </p>
               </div>
-            </div>
-            <div className="rounded-3xl border border-border/70 bg-muted/30 p-4">
-              <label
-                className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground"
-                htmlFor="dashboard-period"
-              >
-                Dashboard period
-              </label>
-              <select
-                className="mt-3 w-full rounded-2xl border border-border/70 bg-background px-3 py-2 text-sm text-foreground"
-                id="dashboard-period"
-                onChange={(event) =>
-                  setPeriodPreset(event.target.value as DashboardPeriodPresetId)
-                }
-                value={periodPreset}
-              >
-                {DASHBOARD_PERIOD_PRESETS.map((preset) => {
-                  const option = buildDashboardPeriod(preset);
-
-                  return (
-                    <option key={preset} value={preset}>
-                      {option.label}
-                    </option>
-                  );
-                })}
-              </select>
-              <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                Financial metrics and recent-count widgets follow{' '}
-                <span className="font-medium text-foreground">{period.label}</span>.
-                Recent activity panels always show the latest available records.
-              </p>
             </div>
           </CardContent>
         </Card>
@@ -756,6 +779,19 @@ export const DashboardPage = () => {
             ))}
           </div>
         )}
+      </DashboardSection>
+
+      <DashboardSection
+        description="Visual summaries built from existing Phase 1 REST data for the active company and role set."
+        eyebrow="Analytics"
+        title="Operational analytics"
+      >
+        <DashboardAnalyticsPanel
+          access={access}
+          companyId={user.currentCompany.id}
+          companySlug={user.currentCompany.slug}
+          period={period}
+        />
       </DashboardSection>
 
       <DashboardSection
@@ -846,7 +882,7 @@ export const DashboardPage = () => {
       <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
         <Card>
           <CardHeader>
-            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
+            <p className="text-xs font-semibold text-primary">
               Session context
             </p>
             <CardTitle>Active roles</CardTitle>
@@ -873,7 +909,7 @@ export const DashboardPage = () => {
 
         <Card>
           <CardHeader>
-            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
+            <p className="text-xs font-semibold text-primary">
               Company memberships
             </p>
             <CardTitle>Available company scopes</CardTitle>
@@ -899,7 +935,7 @@ export const DashboardPage = () => {
                       <p className="text-sm font-semibold text-foreground">
                         {assignment.company.name}
                       </p>
-                      <p className="mt-1 font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+                      <p className="mt-1 truncate font-mono text-xs text-muted-foreground">
                         {assignment.company.slug}
                       </p>
                     </div>
@@ -920,6 +956,6 @@ export const DashboardPage = () => {
           </CardContent>
         </Card>
       </section>
-    </div>
+    </AppPage>
   );
 };

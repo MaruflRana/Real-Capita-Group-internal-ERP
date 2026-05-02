@@ -16,6 +16,8 @@ import { ApiErrorResponseDto } from '../common/dto/api-error-response.dto';
 import {
   BalanceSheetQueryDto,
   BalanceSheetResponseDto,
+  BusinessOverviewReportQueryDto,
+  BusinessOverviewReportResponseDto,
   GeneralLedgerQueryDto,
   GeneralLedgerResponseDto,
   ProfitAndLossQueryDto,
@@ -25,6 +27,7 @@ import {
 } from './dto/financial-reporting.dto';
 import {
   buildBalanceSheetCsv,
+  buildBusinessOverviewReportCsv,
   buildGeneralLedgerCsv,
   buildProfitAndLossCsv,
   buildTrialBalanceCsv,
@@ -39,17 +42,18 @@ export class FinancialReportingController {
     private readonly financialReportingService: FinancialReportingService,
   ) {}
 
-  @Get('trial-balance')
+  @Get('business-overview')
   @ApiOperation({
     summary:
-      'Return a company-scoped trial balance built from posted vouchers for the requested period.',
+      'Return a company-scoped daily, weekly, monthly, or yearly business overview from posted accounting and CRM/property data.',
   })
   @ApiOkResponse({
-    description: 'Trial balance was returned.',
-    type: TrialBalanceResponseDto,
+    description: 'Business overview report was returned.',
+    type: BusinessOverviewReportResponseDto,
   })
   @ApiBadRequestResponse({
-    description: 'Validation failed for the requested reporting period or filters.',
+    description:
+      'Validation failed for the requested reporting period or bucket.',
     type: ApiErrorResponseDto,
   })
   @ApiUnauthorizedResponse({
@@ -62,7 +66,69 @@ export class FinancialReportingController {
     type: ApiErrorResponseDto,
   })
   @ApiNotFoundResponse({
-    description: 'Company, ledger account, or particular account was not found.',
+    description: 'Company was not found.',
+    type: ApiErrorResponseDto,
+  })
+  getBusinessOverview(
+    @Param('companyId') companyId: string,
+    @Query() query: BusinessOverviewReportQueryDto,
+  ) {
+    return this.financialReportingService.getBusinessOverviewReport(
+      companyId,
+      query,
+    );
+  }
+
+  @Get('business-overview/export')
+  @ApiOperation({
+    summary:
+      'Return the requested business overview report as a read-only CSV export.',
+  })
+  @ApiOkResponse({
+    description: 'Business overview CSV export was returned.',
+  })
+  async exportBusinessOverview(
+    @Param('companyId') companyId: string,
+    @Query() query: BusinessOverviewReportQueryDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const report =
+      await this.financialReportingService.getBusinessOverviewReport(
+        companyId,
+        query,
+      );
+
+    response.setHeader('Content-Type', 'text/csv; charset=utf-8');
+
+    return buildBusinessOverviewReportCsv(report);
+  }
+
+  @Get('trial-balance')
+  @ApiOperation({
+    summary:
+      'Return a company-scoped trial balance built from posted vouchers for the requested period.',
+  })
+  @ApiOkResponse({
+    description: 'Trial balance was returned.',
+    type: TrialBalanceResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Validation failed for the requested reporting period or filters.',
+    type: ApiErrorResponseDto,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Access token verification failed.',
+    type: ApiErrorResponseDto,
+  })
+  @ApiForbiddenResponse({
+    description:
+      'Company accounting or company admin access is required for the requested company.',
+    type: ApiErrorResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description:
+      'Company, ledger account, or particular account was not found.',
     type: ApiErrorResponseDto,
   })
   getTrialBalance(
@@ -104,7 +170,8 @@ export class FinancialReportingController {
     type: GeneralLedgerResponseDto,
   })
   @ApiBadRequestResponse({
-    description: 'Validation failed for the requested reporting period or filters.',
+    description:
+      'Validation failed for the requested reporting period or filters.',
     type: ApiErrorResponseDto,
   })
   @ApiUnauthorizedResponse({
@@ -184,7 +251,8 @@ export class FinancialReportingController {
 
   @Get('profit-loss/export')
   @ApiOperation({
-    summary: 'Return the requested profit and loss statement as a read-only CSV export.',
+    summary:
+      'Return the requested profit and loss statement as a read-only CSV export.',
   })
   @ApiOkResponse({
     description: 'Profit and loss CSV export was returned.',

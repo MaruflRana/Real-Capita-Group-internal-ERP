@@ -7,7 +7,7 @@ export const Label = ({
   ...props
 }: LabelHTMLAttributes<HTMLLabelElement>) => (
   <label
-    className={cn('text-sm font-medium text-foreground', className)}
+    className={cn('text-sm font-semibold leading-5 text-foreground', className)}
     {...props}
   />
 );

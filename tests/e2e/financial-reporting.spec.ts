@@ -217,6 +217,20 @@ const setupFinancialReportingApiMocks = async (
 
     if (
       pathname.endsWith(
+        '/companies/company-1/accounting/reports/business-overview/export',
+      )
+    ) {
+      await fulfillText(
+        route,
+        200,
+        'Bucket Key,Revenue,Expenses,Net Profit/Loss\r\n2026-03,15000.00,9200.00,5800.00',
+        'text/csv; charset=utf-8',
+      );
+      return;
+    }
+
+    if (
+      pathname.endsWith(
         '/companies/company-1/accounting/reports/trial-balance/export',
       )
     ) {
@@ -268,6 +282,88 @@ const setupFinancialReportingApiMocks = async (
         'Row Type,Amount\r\nTOTAL_ASSETS,25000.00',
         'text/csv; charset=utf-8',
       );
+      return;
+    }
+
+    if (
+      pathname.endsWith(
+        '/companies/company-1/accounting/reports/business-overview',
+      )
+    ) {
+      const bucket = searchParams.get('bucket') ?? 'month';
+      const firstBucket =
+        bucket === 'day'
+          ? {
+              bucketKey: '2026-03-10',
+              bucketLabel: '2026-03-10',
+              bucketStart: '2026-03-10',
+              bucketEnd: '2026-03-10',
+            }
+          : bucket === 'week'
+            ? {
+                bucketKey: '2026-03-09',
+                bucketLabel: '2026-03-09 to 2026-03-15',
+                bucketStart: '2026-03-09',
+                bucketEnd: '2026-03-15',
+              }
+            : bucket === 'year'
+              ? {
+                  bucketKey: '2026',
+                  bucketLabel: '2026',
+                  bucketStart: '2026-01-01',
+                  bucketEnd: '2026-12-31',
+                }
+              : {
+                  bucketKey: '2026-03',
+                  bucketLabel: '2026-03',
+                  bucketStart: '2026-03-01',
+                  bucketEnd: '2026-03-31',
+                };
+
+      await fulfillJson(route, 200, {
+        companyId: 'company-1',
+        dateFrom: searchParams.get('dateFrom'),
+        dateTo: searchParams.get('dateTo'),
+        bucket,
+        totals: {
+          contractedSalesAmount: '12000.00',
+          collectedSalesAmount: '6700.00',
+          revenueAmount: '15000.00',
+          expenseAmount: '9200.00',
+          netProfitLossAmount: '5800.00',
+          profitAmount: '5800.00',
+          lossAmount: '0.00',
+          voucherCount: 4,
+          draftVoucherCount: 1,
+          postedVoucherCount: 3,
+          bookingCount: 2,
+          saleContractCount: 1,
+          collectionCount: 2,
+        },
+        buckets: [
+          {
+            ...firstBucket,
+            contractedSalesAmount: '12000.00',
+            collectedSalesAmount: '6700.00',
+            revenueAmount: '15000.00',
+            expenseAmount: '9200.00',
+            netProfitLossAmount: '5800.00',
+            profitAmount: '5800.00',
+            lossAmount: '0.00',
+            voucherCount: 4,
+            draftVoucherCount: 1,
+            postedVoucherCount: 3,
+            bookingCount: 2,
+            saleContractCount: 1,
+            collectionCount: 2,
+          },
+        ],
+        assumptions: [
+          'Contracted sales are summed from sale contract amounts by contract date.',
+          'Collected sales are summed from collection amounts by collection date.',
+          'Revenue is derived from posted voucher lines in REVENUE account classes as credit minus debit by voucher date.',
+        ],
+      });
       return;
     }
 
@@ -681,15 +777,84 @@ test('renders the trial balance page and financial reports navigation', async ({
   await page.goto('/accounting/reports/trial-balance');
 
   await expect(
-    page.getByRole('heading', { name: 'Trial Balance' }),
+    page.getByRole('heading', { exact: true, name: 'Trial Balance' }),
   ).toBeVisible();
   await expect(
     page.getByRole('link', { name: 'General Ledger' }),
   ).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Yearly Report' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Profit & Loss' })).toBeVisible();
   await expect(page.getByText('Current Assets').first()).toBeVisible();
   await expect(page.getByText('Petty Cash')).toBeVisible();
   await expect(page.getByText('Report totals')).toBeVisible();
+});
+
+test('renders business overview and periodic reports from the reporting endpoint', async ({
+  page,
+  context,
+}) => {
+  await context.addCookies([
+    {
+      name: 'rc_access_token',
+      value: 'dummy-token',
+      url: 'http://localhost:3100',
+    },
+  ]);
+  await setupFinancialReportingApiMocks(page, { authenticated: true });
+
+  await page.goto('/accounting/reports/business-overview');
+
+  await expect(
+    page.getByRole('heading', {
+      exact: true,
+      name: 'Business Overview Report',
+    }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Export CSV' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Print' })).toBeVisible();
+  await expect(
+    page.getByRole('columnheader', { name: 'Contracted sales' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('columnheader', { name: 'Collected sales' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('columnheader', { name: 'Net profit/loss' }),
+  ).toBeVisible();
+  await expect(page.getByText('Detailed period table')).toBeVisible();
+  await expect(
+    page.getByText('posted voucher lines in REVENUE').first(),
+  ).toBeVisible();
+
+  await page.getByLabel('Period type').selectOption('day');
+  await page.getByRole('button', { name: 'Apply filters' }).click();
+  await expect(page.getByText('2026-03-10').first()).toBeVisible();
+
+  await page.goto('/accounting/reports/daily');
+  await expect(
+    page.getByRole('heading', { name: 'Daily Report' }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Export CSV' })).toBeVisible();
+
+  await page.goto('/accounting/reports/weekly');
+  await expect(
+    page.getByRole('heading', { name: 'Weekly Report' }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Print' })).toBeVisible();
+
+  await page.goto('/accounting/reports/monthly');
+  await expect(
+    page.getByRole('heading', { name: 'Monthly Report' }),
+  ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Export CSV' })).toBeVisible();
+
+  await page.goto('/accounting/reports/yearly');
+  await expect(
+    page.getByRole('heading', { name: 'Yearly Report' }),
+  ).toBeVisible();
+  await expect(page.getByText('Yearly buckets')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Export CSV' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Print' })).toBeVisible();
 });
 
 test('supports general ledger account selection and surfaces validation and backend errors', async ({
@@ -727,6 +892,8 @@ test('supports general ledger account selection and surfaces validation and back
   await expect(page.getByText('JV-3001')).toBeVisible();
   await expect(page.getByText('Petty cash replenishment')).toBeVisible();
   await expect(page.getByText('Voucher ID voucher-1')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Export CSV' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Print' })).toBeVisible();
 
   await page.getByLabel('Date from').fill('2026-04-30');
   await page.getByLabel('Date to').fill('2026-04-30');
@@ -759,6 +926,8 @@ test('renders the profit and loss statement', async ({ page, context }) => {
   await expect(
     page.locator('span.font-mono.tabular-nums').filter({ hasText: '5,800.00' }),
   ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Export CSV' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Print' })).toBeVisible();
 });
 
 test('renders the balance sheet and discloses derived equity adjustments', async ({
@@ -777,14 +946,18 @@ test('renders the balance sheet and discloses derived equity adjustments', async
   await page.goto('/accounting/reports/balance-sheet');
 
   await expect(
-    page.getByRole('heading', { name: 'Balance Sheet' }),
+    page.getByRole('heading', { name: 'Balance Sheet', exact: true }),
   ).toBeVisible();
   await expect(page.getByText('Balance sheet is balanced.')).toBeVisible();
   await expect(
-    page.getByText('Unclosed earnings adjustment', { exact: true }),
+    page.getByText('Unclosed earnings adjustment', { exact: true }).first(),
   ).toBeVisible();
-  await expect(page.getByText('UNCLOSED_EARNINGS', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText('Backend code: UNCLOSED_EARNINGS').first(),
+  ).toBeVisible();
   await expect(page.getByText('25,000.00').first()).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Export CSV' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Print' })).toBeVisible();
 });
 
 test('supports trial balance export and print-ready rendering', async ({
@@ -817,7 +990,9 @@ test('supports trial balance export and print-ready rendering', async ({
   await page.emulateMedia({ media: 'print' });
 
   await expect(page.getByText('Trial balance print context')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Apply filters' })).toBeHidden();
+  await expect(
+    page.getByRole('button', { name: 'Apply filters' }),
+  ).toBeHidden();
   await expect(page.locator('aside')).toBeHidden();
 });
 
@@ -839,7 +1014,10 @@ test('surfaces export authorization failures clearly', async ({
       await fulfillJson(
         route,
         403,
-        createApiError(403, 'Company accounting access is required for export.'),
+        createApiError(
+          403,
+          'Company accounting access is required for export.',
+        ),
       );
     },
   );

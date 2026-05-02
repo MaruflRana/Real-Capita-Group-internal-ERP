@@ -92,7 +92,7 @@ Prompt 29 deployment/tag handoff verification recorded:
 - Production browser sessions outside localhost require HTTPS because auth cookies become `Secure`.
 - Real release use requires real secrets, strict env validation, and browser-resolvable `S3_PUBLIC_ENDPOINT`.
 - Swagger should not be publicly exposed in production unless intentionally enabled.
-- Freshly bootstrapped companies may show empty lists and reports until real UAT data exists.
+- Freshly bootstrapped real companies may show empty lists and reports until records exist; optional synthetic demo/UAT data can be seeded only through the explicit `corepack pnpm seed:demo` command.
 - The live company-selection branch appears only for users with multiple active company assignments.
 
 ## Deployment Requirements
@@ -126,6 +126,7 @@ Prompt 29 deployment/tag handoff verification recorded:
 - [Release checklist](../operations/phase-1-release-checklist.md)
 - [Deployment guide](../operations/deployment.md)
 - [Backup/restore runbook](../operations/backup-restore.md)
+- [Synthetic demo/UAT data](../operations/demo-data.md)
 - [UAT package](../uat/README.md)
 - [Known limitations](../uat/phase-1-known-limitations.md)
 - [Sign-off checklist](../uat/phase-1-signoff-checklist.md)

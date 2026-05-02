@@ -47,7 +47,7 @@ const createUser = (
   assignments,
 });
 
-const createPageResponse = <TItem,>(items: TItem[]) => ({
+const createPageResponse = <TItem>(items: TItem[]) => ({
   items,
   meta: {
     page: 1,
@@ -212,6 +212,7 @@ test('admin navigation exposes every Phase 1 module entry point', async ({
   await expect(page.getByText('Company snapshot')).toBeVisible();
   await expect(navLink(page, 'Chart of Accounts')).toBeVisible();
   await expect(navLink(page, 'Trial Balance')).toBeVisible();
+  await expect(navLink(page, 'Yearly Report')).toBeVisible();
   await expect(navLink(page, 'Attachments')).toBeVisible();
   await expect(navLink(page, 'Audit Events')).toBeVisible();
   await expect(navLink(page, 'Payroll Runs')).toBeVisible();
@@ -232,6 +233,7 @@ test('accountant navigation only exposes accounting, reports, documents, and das
   await expect(page.getByText('Company snapshot')).toBeVisible();
   await expect(navLink(page, 'Chart of Accounts')).toBeVisible();
   await expect(navLink(page, 'Trial Balance')).toBeVisible();
+  await expect(navLink(page, 'Yearly Report')).toBeVisible();
   await expect(navLink(page, 'Attachments')).toBeVisible();
   await expect(navLink(page, 'Employees')).toHaveCount(0);
   await expect(navLink(page, 'Payroll Runs')).toHaveCount(0);
@@ -248,7 +250,7 @@ test('accountant sessions expose report output actions on permitted finance page
   await page.goto('/accounting/reports/trial-balance');
 
   await expect(
-    page.getByRole('heading', { name: 'Trial Balance' }),
+    page.getByRole('heading', { exact: true, name: 'Trial Balance' }),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Export CSV' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Print' })).toBeVisible();
@@ -268,7 +270,9 @@ test('accountant sessions get a clear forbidden state on HR routes', async ({
     }),
   ).toBeVisible();
   await expect(page.getByText('Allowed roles')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Return to dashboard' })).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'Return to dashboard' }),
+  ).toBeVisible();
 });
 
 test('hr sessions keep HR and payroll visibility but block accounting operations', async ({

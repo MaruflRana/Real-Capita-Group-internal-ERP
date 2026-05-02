@@ -9,7 +9,8 @@ import {
 
 export class TrialBalanceQueryDto {
   @ApiProperty({
-    description: 'Inclusive lower bound for the reporting period in YYYY-MM-DD format.',
+    description:
+      'Inclusive lower bound for the reporting period in YYYY-MM-DD format.',
   })
   @Matches(ACCOUNTING_DATE_PATTERN, {
     message: 'dateFrom must be a valid YYYY-MM-DD value.',
@@ -17,7 +18,8 @@ export class TrialBalanceQueryDto {
   dateFrom!: string;
 
   @ApiProperty({
-    description: 'Inclusive upper bound for the reporting period in YYYY-MM-DD format.',
+    description:
+      'Inclusive upper bound for the reporting period in YYYY-MM-DD format.',
   })
   @Matches(ACCOUNTING_DATE_PATTERN, {
     message: 'dateTo must be a valid YYYY-MM-DD value.',
@@ -58,7 +60,8 @@ export class GeneralLedgerQueryDto {
   particularAccountId!: string;
 
   @ApiProperty({
-    description: 'Inclusive lower bound for the ledger period in YYYY-MM-DD format.',
+    description:
+      'Inclusive lower bound for the ledger period in YYYY-MM-DD format.',
   })
   @Matches(ACCOUNTING_DATE_PATTERN, {
     message: 'dateFrom must be a valid YYYY-MM-DD value.',
@@ -66,7 +69,8 @@ export class GeneralLedgerQueryDto {
   dateFrom!: string;
 
   @ApiProperty({
-    description: 'Inclusive upper bound for the ledger period in YYYY-MM-DD format.',
+    description:
+      'Inclusive upper bound for the ledger period in YYYY-MM-DD format.',
   })
   @Matches(ACCOUNTING_DATE_PATTERN, {
     message: 'dateTo must be a valid YYYY-MM-DD value.',
@@ -85,7 +89,8 @@ export class GeneralLedgerQueryDto {
 
 export class ProfitAndLossQueryDto {
   @ApiProperty({
-    description: 'Inclusive lower bound for the statement period in YYYY-MM-DD format.',
+    description:
+      'Inclusive lower bound for the statement period in YYYY-MM-DD format.',
   })
   @Matches(ACCOUNTING_DATE_PATTERN, {
     message: 'dateFrom must be a valid YYYY-MM-DD value.',
@@ -93,7 +98,8 @@ export class ProfitAndLossQueryDto {
   dateFrom!: string;
 
   @ApiProperty({
-    description: 'Inclusive upper bound for the statement period in YYYY-MM-DD format.',
+    description:
+      'Inclusive upper bound for the statement period in YYYY-MM-DD format.',
   })
   @Matches(ACCOUNTING_DATE_PATTERN, {
     message: 'dateTo must be a valid YYYY-MM-DD value.',
@@ -109,6 +115,44 @@ export class BalanceSheetQueryDto {
     message: 'asOfDate must be a valid YYYY-MM-DD value.',
   })
   asOfDate!: string;
+}
+
+export const BUSINESS_REPORT_BUCKETS = [
+  'day',
+  'week',
+  'month',
+  'year',
+] as const;
+
+export type BusinessReportBucket = (typeof BUSINESS_REPORT_BUCKETS)[number];
+
+export class BusinessOverviewReportQueryDto {
+  @ApiProperty({
+    description:
+      'Inclusive lower bound for the business reporting period in YYYY-MM-DD format.',
+  })
+  @Matches(ACCOUNTING_DATE_PATTERN, {
+    message: 'dateFrom must be a valid YYYY-MM-DD value.',
+  })
+  dateFrom!: string;
+
+  @ApiProperty({
+    description:
+      'Inclusive upper bound for the business reporting period in YYYY-MM-DD format.',
+  })
+  @Matches(ACCOUNTING_DATE_PATTERN, {
+    message: 'dateTo must be a valid YYYY-MM-DD value.',
+  })
+  dateTo!: string;
+
+  @ApiPropertyOptional({
+    enum: BUSINESS_REPORT_BUCKETS,
+    description:
+      'Date grouping used for the returned business report buckets. Defaults to month when omitted.',
+  })
+  @IsOptional()
+  @IsIn(BUSINESS_REPORT_BUCKETS)
+  bucket?: BusinessReportBucket;
 }
 
 export class TrialBalanceAmountsDto {
@@ -535,4 +579,90 @@ export class BalanceSheetResponseDto {
     type: () => [BalanceSheetDerivedLineDto],
   })
   equityAdjustments!: BalanceSheetDerivedLineDto[];
+}
+
+export class BusinessOverviewReportAmountsDto {
+  @ApiProperty()
+  contractedSalesAmount!: string;
+
+  @ApiProperty()
+  collectedSalesAmount!: string;
+
+  @ApiProperty()
+  revenueAmount!: string;
+
+  @ApiProperty()
+  expenseAmount!: string;
+
+  @ApiProperty()
+  netProfitLossAmount!: string;
+
+  @ApiProperty()
+  profitAmount!: string;
+
+  @ApiProperty()
+  lossAmount!: string;
+
+  @ApiProperty()
+  voucherCount!: number;
+
+  @ApiProperty()
+  draftVoucherCount!: number;
+
+  @ApiProperty()
+  postedVoucherCount!: number;
+
+  @ApiProperty()
+  bookingCount!: number;
+
+  @ApiProperty()
+  saleContractCount!: number;
+
+  @ApiProperty()
+  collectionCount!: number;
+}
+
+export class BusinessOverviewReportBucketDto extends BusinessOverviewReportAmountsDto {
+  @ApiProperty()
+  bucketKey!: string;
+
+  @ApiProperty()
+  bucketLabel!: string;
+
+  @ApiProperty()
+  bucketStart!: string;
+
+  @ApiProperty()
+  bucketEnd!: string;
+}
+
+export class BusinessOverviewReportResponseDto {
+  @ApiProperty()
+  companyId!: string;
+
+  @ApiProperty()
+  dateFrom!: string;
+
+  @ApiProperty()
+  dateTo!: string;
+
+  @ApiProperty({
+    enum: BUSINESS_REPORT_BUCKETS,
+  })
+  bucket!: BusinessReportBucket;
+
+  @ApiProperty({
+    type: () => BusinessOverviewReportAmountsDto,
+  })
+  totals!: BusinessOverviewReportAmountsDto;
+
+  @ApiProperty({
+    type: () => [BusinessOverviewReportBucketDto],
+  })
+  buckets!: BusinessOverviewReportBucketDto[];
+
+  @ApiProperty({
+    type: () => [String],
+  })
+  assumptions!: string[];
 }

@@ -58,12 +58,12 @@ export const SidePanel = ({
       <div
         aria-modal="true"
         className={cn(
-          'absolute right-0 top-0 flex h-full w-full flex-col border-l border-border/70 bg-background shadow-2xl',
+          'absolute right-0 top-0 flex h-full w-full flex-col border-l border-border bg-card shadow-2xl',
           size === 'lg' ? 'max-w-3xl' : 'max-w-xl',
         )}
         role="dialog"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-border/70 px-6 py-5">
+        <div className="flex items-start justify-between gap-4 border-b border-border bg-surface-raised px-6 py-5">
           <div className="space-y-2">
             <h2 className="text-lg font-semibold text-foreground">{title}</h2>
             {description ? (
@@ -81,7 +81,7 @@ export const SidePanel = ({
         </div>
         <div className="flex-1 overflow-y-auto px-6 py-6">{children}</div>
         {actions ? (
-          <div className="border-t border-border/70 px-6 py-4">{actions}</div>
+          <div className="border-t border-border bg-surface-raised px-6 py-4">{actions}</div>
         ) : null}
       </div>
     </div>

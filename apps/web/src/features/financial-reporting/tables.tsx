@@ -35,9 +35,7 @@ const HierarchyLabel = ({
   <div className={levelPadding[level]}>
     <p className="font-medium text-foreground">{name}</p>
     <div className="mt-1 flex flex-wrap items-center gap-2">
-      <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
-        {code}
-      </p>
+      <p className="font-mono text-xs text-muted-foreground">{code}</p>
       {meta}
     </div>
   </div>
@@ -103,7 +101,7 @@ export const TrialBalanceReportTable = ({
     closingCredit: string;
   };
 }) => (
-  <Table>
+  <Table className="min-w-[1120px]">
     <TableHeader>
       <TableRow>
         <TableHead>Hierarchy</TableHead>
@@ -193,7 +191,7 @@ export const StatementHierarchyTable = ({
 }: {
   sections: FinancialStatementSectionRecord[];
 }) => (
-  <Table>
+  <Table className="min-w-[760px]">
     <TableHeader>
       <TableRow>
         <TableHead>Hierarchy</TableHead>
@@ -296,7 +294,7 @@ export const GeneralLedgerLinesTable = ({
   lines: GeneralLedgerLineRecord[];
   totals: GeneralLedgerTotalsRecord;
 }) => (
-  <Table>
+  <Table className="min-w-[1040px]">
     <TableHeader>
       <TableRow>
         <TableHead>Date</TableHead>
@@ -334,7 +332,7 @@ export const GeneralLedgerLinesTable = ({
               <p className="font-medium text-foreground">
                 {line.voucherReference || line.voucherId}
               </p>
-              <p className="mt-1 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {formatVoucherTypeLabel(line.voucherType)}
               </p>
             </div>

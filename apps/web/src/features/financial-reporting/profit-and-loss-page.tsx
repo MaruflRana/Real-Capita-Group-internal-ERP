@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useAuth } from '../../components/providers/auth-provider';
 import { OutputActionGroup } from '../../components/ui/output-actions';
 import { EmptyState } from '../../components/ui/empty-state';
+import { AppPage } from '../../components/ui/erp-primitives';
 import { isApiError } from '../../lib/api/client';
 import { buildQueryString } from '../../lib/api/query-string';
 import type { ProfitAndLossQueryParams } from '../../lib/api/types';
@@ -19,11 +20,13 @@ import { useProfitAndLossReport } from './hooks';
 import {
   FinancialReportingAccessRequiredState,
   FinancialReportingFilterCard,
+  FinancialReportContextStrip,
   FinancialReportingPageHeader,
   FinancialReportingPrintContext,
   FinancialReportingQueryErrorBanner,
   FinancialReportingReadOnlyNotice,
   FinancialReportingSection,
+  ReportAssumptionNote,
   ReportLoadingState,
   ReportMetricCard,
   ReportMetricGrid,
@@ -37,6 +40,7 @@ import {
   getStatementSectionCountLabel,
   isDateRangeInvalid,
 } from './utils';
+import { ProfitAndLossVisualSummary } from './analytics';
 
 const buildProfitAndLossFilters = ({
   dateFrom,
@@ -134,9 +138,10 @@ export const ProfitAndLossPage = () => {
   };
 
   const netProfitLoss = Number(reportQuery.data?.totals.netProfitLoss ?? 0);
+  const netResultLabel = netProfitLoss >= 0 ? 'Net profit' : 'Net loss';
 
   return (
-    <div className="space-y-6">
+    <AppPage>
       <FinancialReportingPageHeader
         actions={
           reportQuery.data ? (
@@ -216,22 +221,52 @@ export const ProfitAndLossPage = () => {
               },
               {
                 label: 'Net profit/loss',
-                value: formatAccountingAmount(reportQuery.data.totals.netProfitLoss),
+                value: formatAccountingAmount(
+                  reportQuery.data.totals.netProfitLoss,
+                ),
               },
             ]}
             title="Profit and loss print context"
           />
 
           <FinancialReportingSection
-            description="Sections, groups, ledgers, and posting accounts are rendered directly from the backend statement response so finance users see the real reporting hierarchy."
-            title="Statement output"
+            description="Headline revenue, expense, and result values for the selected company and statement period."
+            title="Executive summary"
           >
+            <FinancialReportContextStrip
+              items={[
+                {
+                  label: 'Statement period',
+                  value: formatReportDateRangeLabel(
+                    reportQuery.data.dateFrom,
+                    reportQuery.data.dateTo,
+                  ),
+                },
+                {
+                  label: 'Data source',
+                  value: 'Posted vouchers only',
+                },
+                {
+                  label: 'Result',
+                  tone: netProfitLoss >= 0 ? 'success' : 'warning',
+                  value: netResultLabel,
+                },
+                {
+                  label: 'Hierarchy scope',
+                  value: getStatementSectionCountLabel(
+                    reportQuery.data.sections,
+                  ),
+                },
+              ]}
+            />
             <ReportMetricGrid>
               <ReportMetricCard
                 label="Total revenue"
                 value={
                   <span className="font-mono tabular-nums">
-                    {formatAccountingAmount(reportQuery.data.totals.totalRevenue)}
+                    {formatAccountingAmount(
+                      reportQuery.data.totals.totalRevenue,
+                    )}
                   </span>
                 }
               />
@@ -239,18 +274,23 @@ export const ProfitAndLossPage = () => {
                 label="Total expense"
                 value={
                   <span className="font-mono tabular-nums">
-                    {formatAccountingAmount(reportQuery.data.totals.totalExpense)}
+                    {formatAccountingAmount(
+                      reportQuery.data.totals.totalExpense,
+                    )}
                   </span>
                 }
               />
               <ReportMetricCard
-                label="Net profit/loss"
+                description={
+                  netProfitLoss >= 0
+                    ? 'Revenue exceeds expenses for the selected period.'
+                    : 'Expenses exceed revenue for the selected period.'
+                }
+                label={netResultLabel}
                 tone={netProfitLoss >= 0 ? 'success' : 'warning'}
                 value={
                   <span className="font-mono tabular-nums">
-                    {formatAccountingAmount(
-                      reportQuery.data.totals.netProfitLoss,
-                    )}
+                    {formatAccountingAmount(Math.abs(netProfitLoss))}
                   </span>
                 }
               />
@@ -260,7 +300,19 @@ export const ProfitAndLossPage = () => {
                 value={getStatementSectionCountLabel(reportQuery.data.sections)}
               />
             </ReportMetricGrid>
+          </FinancialReportingSection>
 
+          <FinancialReportingSection
+            description="Revenue and expenses are compared with the net result and section totals as text, so the meaning does not rely on color alone."
+            title="Visual analysis"
+          >
+            <ProfitAndLossVisualSummary report={reportQuery.data} />
+          </FinancialReportingSection>
+
+          <FinancialReportingSection
+            description="Sections, groups, ledgers, and posting accounts are rendered directly from the backend statement response."
+            title="Detailed statement table"
+          >
             {reportQuery.data.sections.length === 0 ? (
               <EmptyState
                 description="No posted revenue or expense activity matched the selected date range."
@@ -270,8 +322,28 @@ export const ProfitAndLossPage = () => {
               <StatementHierarchyTable sections={reportQuery.data.sections} />
             )}
           </FinancialReportingSection>
+
+          <FinancialReportingSection
+            description="Concise statement notes for finance review and print output."
+            title="Assumptions and calculation notes"
+          >
+            <div className="grid gap-3">
+              <ReportAssumptionNote>
+                Revenue is derived from posted voucher lines in revenue account
+                classes for the selected period.
+              </ReportAssumptionNote>
+              <ReportAssumptionNote>
+                Expenses are derived from posted voucher lines in expense
+                account classes for the selected period.
+              </ReportAssumptionNote>
+              <ReportAssumptionNote>
+                Net result is revenue less expenses. When expenses exceed
+                revenue, the page labels the result as a net loss.
+              </ReportAssumptionNote>
+            </div>
+          </FinancialReportingSection>
         </>
       ) : null}
-    </div>
+    </AppPage>
   );
 };

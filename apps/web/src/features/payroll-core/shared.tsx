@@ -2,16 +2,13 @@
 
 import type { ReactNode } from 'react';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@real-capita/ui';
-
 import { Badge } from '../../components/ui/badge';
 import { EmptyState } from '../../components/ui/empty-state';
+import {
+  FilterCardShell,
+  ModulePageHeader,
+  ModuleSection,
+} from '../../components/ui/erp-primitives';
 import type { PayrollRunStatus } from '../../lib/api/types';
 import { formatPayrollRunStatusLabel } from './utils';
 
@@ -41,28 +38,14 @@ export const PayrollCorePageHeader = ({
   scopeSlug?: string;
   actions?: ReactNode;
 }) => (
-  <Card>
-    <CardHeader className="flex flex-col gap-4 border-b border-border/70 lg:flex-row lg:items-start lg:justify-between">
-      <div className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
-          Payroll Core
-        </p>
-        <div className="space-y-2">
-          <CardTitle className="text-2xl">{title}</CardTitle>
-          <CardDescription className="max-w-4xl text-sm leading-6">
-            {description}
-          </CardDescription>
-        </div>
-        {scopeName ? (
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline">{scopeName}</Badge>
-            {scopeSlug ? <Badge variant="outline">{scopeSlug}</Badge> : null}
-          </div>
-        ) : null}
-      </div>
-      {actions ? <div className="shrink-0">{actions}</div> : null}
-    </CardHeader>
-  </Card>
+  <ModulePageHeader
+    actions={actions}
+    description={description}
+    eyebrow="Payroll Core"
+    scopeName={scopeName}
+    scopeSlug={scopeSlug}
+    title={title}
+  />
 );
 
 export const PayrollCoreSection = ({
@@ -76,18 +59,9 @@ export const PayrollCoreSection = ({
   actions?: ReactNode;
   children: ReactNode;
 }) => (
-  <Card>
-    <CardHeader className="flex flex-col gap-4 border-b border-border/70 lg:flex-row lg:items-start lg:justify-between">
-      <div className="space-y-2">
-        <CardTitle>{title}</CardTitle>
-        <CardDescription className="max-w-4xl leading-6">
-          {description}
-        </CardDescription>
-      </div>
-      {actions ? <div className="shrink-0">{actions}</div> : null}
-    </CardHeader>
-    <CardContent className="space-y-5 pt-6">{children}</CardContent>
-  </Card>
+  <ModuleSection actions={actions} description={description} title={title}>
+    {children}
+  </ModuleSection>
 );
 
 export const PayrollCoreFilterCard = ({
@@ -95,11 +69,7 @@ export const PayrollCoreFilterCard = ({
 }: {
   children: ReactNode;
 }) => (
-  <Card>
-    <CardContent className="grid gap-4 pt-6 xl:grid-cols-4">
-      {children}
-    </CardContent>
-  </Card>
+  <FilterCardShell>{children}</FilterCardShell>
 );
 
 export const PayrollCoreQueryErrorBanner = ({

@@ -27,6 +27,13 @@ type StatementQueryParams = {
   accountClassCodes: string[];
 };
 
+type BusinessReportQueryParams = {
+  companyId: string;
+  dateFrom: string;
+  dateTo: string;
+  bucket: 'day' | 'week' | 'month' | 'year';
+};
+
 export type ReportingAccountAggregateRow = {
   accountClassId: string;
   accountClassCode: string;
@@ -70,6 +77,21 @@ export type GeneralLedgerEntryRow = {
   lineDescription: string | null;
   debitAmount: DecimalLike;
   creditAmount: DecimalLike;
+};
+
+export type BusinessReportAggregateRow = {
+  bucketStart: Date;
+  bucketEnd: Date;
+  contractedSalesAmount: DecimalLike;
+  collectedSalesAmount: DecimalLike;
+  revenueAmount: DecimalLike;
+  expenseAmount: DecimalLike;
+  voucherCount: number;
+  draftVoucherCount: number;
+  postedVoucherCount: number;
+  bookingCount: number;
+  saleContractCount: number;
+  collectionCount: number;
 };
 
 @Injectable()
@@ -378,5 +400,175 @@ export class FinancialReportingRepository {
     );
 
     return row ?? { debitTotal: 0, creditTotal: 0 };
+  }
+
+  async fetchBusinessReportRows(
+    params: BusinessReportQueryParams,
+  ): Promise<BusinessReportAggregateRow[]> {
+    const { datePart, step } = this.getBusinessReportBucketSql(params.bucket);
+
+    return this.databaseService.queryRaw<BusinessReportAggregateRow>(
+      Prisma.sql`
+        WITH bucket_series AS (
+          SELECT
+            gs::date AS "bucketStart",
+            LEAST(
+              (gs + ${step} - interval '1 day')::date,
+              ${params.dateTo}::date
+            ) AS "bucketEnd"
+          FROM generate_series(
+            date_trunc(${datePart}, ${params.dateFrom}::date)::date,
+            date_trunc(${datePart}, ${params.dateTo}::date)::date,
+            ${step}
+          ) AS gs
+        ),
+        accounting_amounts AS (
+          SELECT
+            date_trunc(${datePart}, v."voucherDate")::date AS "bucketStart",
+            COALESCE(
+              SUM(
+                CASE
+                  WHEN ac."code" = 'REVENUE'
+                    THEN vl."creditAmount" - vl."debitAmount"
+                  ELSE 0
+                END
+              ),
+              0
+            ) AS "revenueAmount",
+            COALESCE(
+              SUM(
+                CASE
+                  WHEN ac."code" = 'EXPENSE'
+                    THEN vl."debitAmount" - vl."creditAmount"
+                  ELSE 0
+                END
+              ),
+              0
+            ) AS "expenseAmount"
+          FROM "voucher_lines" vl
+          INNER JOIN "vouchers" v
+            ON v."id" = vl."voucherId"
+          INNER JOIN "particular_accounts" pa
+            ON pa."id" = vl."particularAccountId"
+          INNER JOIN "ledger_accounts" la
+            ON la."id" = pa."ledgerAccountId"
+          INNER JOIN "account_groups" ag
+            ON ag."id" = la."accountGroupId"
+          INNER JOIN "account_classes" ac
+            ON ac."id" = ag."accountClassId"
+          WHERE v."companyId" = ${params.companyId}::uuid
+            AND v."status" = 'POSTED'
+            AND ac."code" IN ('REVENUE', 'EXPENSE')
+            AND v."voucherDate" >= ${params.dateFrom}::date
+            AND v."voucherDate" <= ${params.dateTo}::date
+          GROUP BY
+            date_trunc(${datePart}, v."voucherDate")::date
+        ),
+        voucher_counts AS (
+          SELECT
+            date_trunc(${datePart}, v."voucherDate")::date AS "bucketStart",
+            COUNT(*)::int AS "voucherCount",
+            COUNT(*) FILTER (WHERE v."status" = 'DRAFT')::int AS "draftVoucherCount",
+            COUNT(*) FILTER (WHERE v."status" = 'POSTED')::int AS "postedVoucherCount"
+          FROM "vouchers" v
+          WHERE v."companyId" = ${params.companyId}::uuid
+            AND v."voucherDate" >= ${params.dateFrom}::date
+            AND v."voucherDate" <= ${params.dateTo}::date
+          GROUP BY
+            date_trunc(${datePart}, v."voucherDate")::date
+        ),
+        booking_counts AS (
+          SELECT
+            date_trunc(${datePart}, b."bookingDate")::date AS "bucketStart",
+            COUNT(*)::int AS "bookingCount"
+          FROM "bookings" b
+          WHERE b."companyId" = ${params.companyId}::uuid
+            AND b."bookingDate" >= ${params.dateFrom}::date
+            AND b."bookingDate" <= ${params.dateTo}::date
+          GROUP BY
+            date_trunc(${datePart}, b."bookingDate")::date
+        ),
+        sale_contract_amounts AS (
+          SELECT
+            date_trunc(${datePart}, sc."contractDate")::date AS "bucketStart",
+            COALESCE(SUM(sc."contractAmount"), 0) AS "contractedSalesAmount",
+            COUNT(*)::int AS "saleContractCount"
+          FROM "sale_contracts" sc
+          WHERE sc."companyId" = ${params.companyId}::uuid
+            AND sc."contractDate" >= ${params.dateFrom}::date
+            AND sc."contractDate" <= ${params.dateTo}::date
+          GROUP BY
+            date_trunc(${datePart}, sc."contractDate")::date
+        ),
+        collection_amounts AS (
+          SELECT
+            date_trunc(${datePart}, c."collectionDate")::date AS "bucketStart",
+            COALESCE(SUM(c."amount"), 0) AS "collectedSalesAmount",
+            COUNT(*)::int AS "collectionCount"
+          FROM "collections" c
+          WHERE c."companyId" = ${params.companyId}::uuid
+            AND c."collectionDate" >= ${params.dateFrom}::date
+            AND c."collectionDate" <= ${params.dateTo}::date
+          GROUP BY
+            date_trunc(${datePart}, c."collectionDate")::date
+        )
+        SELECT
+          bs."bucketStart",
+          bs."bucketEnd",
+          COALESCE(sc."contractedSalesAmount", 0) AS "contractedSalesAmount",
+          COALESCE(ca."collectedSalesAmount", 0) AS "collectedSalesAmount",
+          COALESCE(aa."revenueAmount", 0) AS "revenueAmount",
+          COALESCE(aa."expenseAmount", 0) AS "expenseAmount",
+          COALESCE(vc."voucherCount", 0)::int AS "voucherCount",
+          COALESCE(vc."draftVoucherCount", 0)::int AS "draftVoucherCount",
+          COALESCE(vc."postedVoucherCount", 0)::int AS "postedVoucherCount",
+          COALESCE(bc."bookingCount", 0)::int AS "bookingCount",
+          COALESCE(sc."saleContractCount", 0)::int AS "saleContractCount",
+          COALESCE(ca."collectionCount", 0)::int AS "collectionCount"
+        FROM bucket_series bs
+        LEFT JOIN accounting_amounts aa
+          ON aa."bucketStart" = bs."bucketStart"
+        LEFT JOIN voucher_counts vc
+          ON vc."bucketStart" = bs."bucketStart"
+        LEFT JOIN booking_counts bc
+          ON bc."bucketStart" = bs."bucketStart"
+        LEFT JOIN sale_contract_amounts sc
+          ON sc."bucketStart" = bs."bucketStart"
+        LEFT JOIN collection_amounts ca
+          ON ca."bucketStart" = bs."bucketStart"
+        ORDER BY
+          bs."bucketStart" ASC
+      `,
+    );
+  }
+
+  private getBusinessReportBucketSql(
+    bucket: BusinessReportQueryParams['bucket'],
+  ) {
+    if (bucket === 'day') {
+      return {
+        datePart: Prisma.sql`'day'`,
+        step: Prisma.sql`interval '1 day'`,
+      };
+    }
+
+    if (bucket === 'week') {
+      return {
+        datePart: Prisma.sql`'week'`,
+        step: Prisma.sql`interval '1 week'`,
+      };
+    }
+
+    if (bucket === 'year') {
+      return {
+        datePart: Prisma.sql`'year'`,
+        step: Prisma.sql`interval '1 year'`,
+      };
+    }
+
+    return {
+      datePart: Prisma.sql`'month'`,
+      step: Prisma.sql`interval '1 month'`,
+    };
   }
 }

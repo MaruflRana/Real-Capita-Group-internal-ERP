@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { listParticularAccounts } from '../../lib/api/accounting';
 import {
+  getBusinessOverviewReport,
   getBalanceSheetReport,
   getGeneralLedgerReport,
   getProfitAndLossReport,
@@ -11,6 +12,7 @@ import {
 } from '../../lib/api/financial-reporting';
 import type {
   BalanceSheetQueryParams,
+  BusinessOverviewReportQueryParams,
   GeneralLedgerQueryParams,
   ParticularAccountListQueryParams,
   ProfitAndLossQueryParams,
@@ -37,6 +39,10 @@ export const financialReportingKeys = {
     ['financial-reporting', companyId, 'profit-loss', query] as const,
   balanceSheet: (companyId: string, query: BalanceSheetQueryParams) =>
     ['financial-reporting', companyId, 'balance-sheet', query] as const,
+  businessOverview: (
+    companyId: string,
+    query: BusinessOverviewReportQueryParams,
+  ) => ['financial-reporting', companyId, 'business-overview', query] as const,
   postingAccounts: (
     companyId: string,
     query: ParticularAccountListQueryParams,
@@ -100,6 +106,21 @@ export const useBalanceSheetReport = (
       query,
     ),
     queryFn: () => getBalanceSheetReport(assertCompanyId(companyId), query),
+    enabled: enabled && Boolean(companyId),
+    placeholderData: (previousData) => previousData,
+  });
+
+export const useBusinessOverviewReport = (
+  companyId: string | undefined,
+  query: BusinessOverviewReportQueryParams,
+  enabled = true,
+) =>
+  useQuery({
+    queryKey: financialReportingKeys.businessOverview(
+      companyId ?? 'no-company',
+      query,
+    ),
+    queryFn: () => getBusinessOverviewReport(assertCompanyId(companyId), query),
     enabled: enabled && Boolean(companyId),
     placeholderData: (previousData) => previousData,
   });

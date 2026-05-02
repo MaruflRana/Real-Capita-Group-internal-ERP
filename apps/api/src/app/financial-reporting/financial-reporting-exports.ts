@@ -1,6 +1,7 @@
 import { createCsvString } from '../common/utils/csv.util';
 import type {
   BalanceSheetResponseDto,
+  BusinessOverviewReportResponseDto,
   FinancialStatementAccountGroupDto,
   FinancialStatementLedgerAccountDto,
   FinancialStatementPostingAccountDto,
@@ -72,6 +73,26 @@ const GENERAL_LEDGER_HEADERS = [
   'Credit',
   'Running Debit',
   'Running Credit',
+] as const;
+
+const BUSINESS_OVERVIEW_HEADERS = [
+  'Bucket Key',
+  'Bucket Label',
+  'Bucket Start',
+  'Bucket End',
+  'Contracted Sales',
+  'Collected Sales',
+  'Revenue',
+  'Expenses',
+  'Net Profit/Loss',
+  'Profit',
+  'Loss',
+  'Voucher Count',
+  'Draft Voucher Count',
+  'Posted Voucher Count',
+  'Booking Count',
+  'Sale Contract Count',
+  'Collection Count',
 ] as const;
 
 const toTrialBalanceRow = ({
@@ -492,6 +513,52 @@ export const buildGeneralLedgerCsv = (
   ]);
 
   return createCsvString([...GENERAL_LEDGER_HEADERS], rows);
+};
+
+export const buildBusinessOverviewReportCsv = (
+  report: BusinessOverviewReportResponseDto,
+): string => {
+  const rows: CsvRowValue[][] = report.buckets.map((bucket) => [
+    bucket.bucketKey,
+    bucket.bucketLabel,
+    bucket.bucketStart,
+    bucket.bucketEnd,
+    bucket.contractedSalesAmount,
+    bucket.collectedSalesAmount,
+    bucket.revenueAmount,
+    bucket.expenseAmount,
+    bucket.netProfitLossAmount,
+    bucket.profitAmount,
+    bucket.lossAmount,
+    bucket.voucherCount,
+    bucket.draftVoucherCount,
+    bucket.postedVoucherCount,
+    bucket.bookingCount,
+    bucket.saleContractCount,
+    bucket.collectionCount,
+  ]);
+
+  rows.push([
+    'TOTAL',
+    'Report totals',
+    report.dateFrom,
+    report.dateTo,
+    report.totals.contractedSalesAmount,
+    report.totals.collectedSalesAmount,
+    report.totals.revenueAmount,
+    report.totals.expenseAmount,
+    report.totals.netProfitLossAmount,
+    report.totals.profitAmount,
+    report.totals.lossAmount,
+    report.totals.voucherCount,
+    report.totals.draftVoucherCount,
+    report.totals.postedVoucherCount,
+    report.totals.bookingCount,
+    report.totals.saleContractCount,
+    report.totals.collectionCount,
+  ]);
+
+  return createCsvString([...BUSINESS_OVERVIEW_HEADERS], rows);
 };
 
 export const buildProfitAndLossCsv = (

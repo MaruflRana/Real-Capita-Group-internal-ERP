@@ -6,12 +6,14 @@ import { Button } from '@real-capita/ui';
 
 import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
+import { AppPage } from '../../components/ui/erp-primitives';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { OutputActionGroup } from '../../components/ui/output-actions';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
+import { HrAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -242,7 +244,7 @@ export const EmployeesPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <AppPage>
       <HrCorePageHeader
         title="Employees"
         description="Operate the company-scoped employee master used by attendance devices, device mappings, leave requests, and downstream HR workflows."
@@ -269,6 +271,12 @@ export const EmployeesPage = () => {
 
       {actionError ? <HrCoreQueryErrorBanner message={actionError} /> : null}
       {exportError ? <HrCoreQueryErrorBanner message={exportError} /> : null}
+
+      <HrAnalyticsPanel
+        companyId={companyId}
+        companySlug={user.currentCompany.slug}
+        enabled={isEnabled}
+      />
 
       <HrCoreSection
         title="Employee master list"
@@ -500,6 +508,6 @@ export const EmployeesPage = () => {
           </div>
         ) : null}
       </SidePanel>
-    </div>
+    </AppPage>
   );
 };

@@ -5,6 +5,7 @@ import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
 import { PaginationControls } from '../../components/ui/pagination-controls';
+import { ProjectPropertyAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -73,6 +74,12 @@ export const UnitStatusesPage = () => {
         description="Review the fixed backend unit-status master data used by units. This page is intentionally read-only because the backend controls the canonical status set."
         scopeName={user.currentCompany.name}
         scopeSlug={user.currentCompany.slug}
+      />
+
+      <ProjectPropertyAnalyticsPanel
+        companyId={companyId}
+        companySlug={user.currentCompany.slug}
+        enabled={isEnabled}
       />
 
       <ProjectPropertySection

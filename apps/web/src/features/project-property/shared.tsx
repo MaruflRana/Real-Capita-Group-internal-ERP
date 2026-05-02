@@ -2,16 +2,13 @@
 
 import type { ReactNode } from 'react';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@real-capita/ui';
-
 import { Badge } from '../../components/ui/badge';
 import { EmptyState } from '../../components/ui/empty-state';
+import {
+  FilterCardShell,
+  ModulePageHeader,
+  ModuleSection,
+} from '../../components/ui/erp-primitives';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Select } from '../../components/ui/select';
@@ -29,28 +26,14 @@ export const ProjectPropertyPageHeader = ({
   scopeSlug?: string;
   actions?: ReactNode;
 }) => (
-  <Card>
-    <CardHeader className="flex flex-col gap-4 border-b border-border/70 lg:flex-row lg:items-start lg:justify-between">
-      <div className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
-          Project & Property Master
-        </p>
-        <div className="space-y-2">
-          <CardTitle className="text-2xl">{title}</CardTitle>
-          <CardDescription className="max-w-4xl text-sm leading-6">
-            {description}
-          </CardDescription>
-        </div>
-        {scopeName ? (
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline">{scopeName}</Badge>
-            {scopeSlug ? <Badge variant="outline">{scopeSlug}</Badge> : null}
-          </div>
-        ) : null}
-      </div>
-      {actions ? <div className="shrink-0">{actions}</div> : null}
-    </CardHeader>
-  </Card>
+  <ModulePageHeader
+    actions={actions}
+    description={description}
+    eyebrow="Project & Property Master"
+    scopeName={scopeName}
+    scopeSlug={scopeSlug}
+    title={title}
+  />
 );
 
 export const ProjectPropertySection = ({
@@ -64,18 +47,9 @@ export const ProjectPropertySection = ({
   actions?: ReactNode;
   children: ReactNode;
 }) => (
-  <Card>
-    <CardHeader className="flex flex-col gap-4 border-b border-border/70 lg:flex-row lg:items-start lg:justify-between">
-      <div className="space-y-2">
-        <CardTitle>{title}</CardTitle>
-        <CardDescription className="max-w-4xl leading-6">
-          {description}
-        </CardDescription>
-      </div>
-      {actions ? <div className="shrink-0">{actions}</div> : null}
-    </CardHeader>
-    <CardContent className="space-y-5 pt-6">{children}</CardContent>
-  </Card>
+  <ModuleSection actions={actions} description={description} title={title}>
+    {children}
+  </ModuleSection>
 );
 
 export const ProjectPropertyQueryErrorBanner = ({
@@ -137,36 +111,34 @@ export const MasterFilterCard = ({
   searchPlaceholder?: string;
   children?: ReactNode;
 }) => (
-  <Card>
-    <CardContent className="grid gap-4 pt-6 xl:grid-cols-4">
-      <div className="space-y-2 xl:col-span-2">
-        <Label htmlFor="master-search">Search</Label>
-        <Input
-          id="master-search"
-          onChange={(event) => onSearchChange(event.target.value)}
-          placeholder={searchPlaceholder}
-          value={searchValue}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="master-status-filter">Status</Label>
-        <Select
-          id="master-status-filter"
-          onChange={(event) =>
-            onStatusFilterChange(
-              event.target.value as 'all' | 'active' | 'inactive',
-            )
-          }
-          value={statusFilter}
-        >
-          <option value="all">All statuses</option>
-          <option value="active">Active only</option>
-          <option value="inactive">Inactive only</option>
-        </Select>
-      </div>
-      {children ? <div className="space-y-2">{children}</div> : <div />}
-    </CardContent>
-  </Card>
+  <FilterCardShell>
+    <div className="space-y-2 xl:col-span-2">
+      <Label htmlFor="master-search">Search</Label>
+      <Input
+        id="master-search"
+        onChange={(event) => onSearchChange(event.target.value)}
+        placeholder={searchPlaceholder}
+        value={searchValue}
+      />
+    </div>
+    <div className="space-y-2">
+      <Label htmlFor="master-status-filter">Status</Label>
+      <Select
+        id="master-status-filter"
+        onChange={(event) =>
+          onStatusFilterChange(
+            event.target.value as 'all' | 'active' | 'inactive',
+          )
+        }
+        value={statusFilter}
+      >
+        <option value="all">All statuses</option>
+        <option value="active">Active only</option>
+        <option value="inactive">Inactive only</option>
+      </Select>
+    </div>
+    {children ? <div className="space-y-2">{children}</div> : <div />}
+  </FilterCardShell>
 );
 
 export const FormErrorText = ({

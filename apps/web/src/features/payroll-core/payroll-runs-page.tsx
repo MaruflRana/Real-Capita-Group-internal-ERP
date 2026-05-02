@@ -7,12 +7,14 @@ import { Button, buttonVariants, cn } from '@real-capita/ui';
 
 import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
+import { AppPage } from '../../components/ui/erp-primitives';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { OutputActionGroup } from '../../components/ui/output-actions';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
+import { PayrollAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -235,7 +237,7 @@ export const PayrollRunsPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <AppPage>
       <PayrollCorePageHeader
         title="Payroll Runs"
         description="Create payroll periods, keep draft scope clean, and move payroll runs toward finalized and posted states without bypassing backend lifecycle rules."
@@ -262,6 +264,12 @@ export const PayrollRunsPage = () => {
 
       {actionError ? <PayrollCoreQueryErrorBanner message={actionError} /> : null}
       {exportError ? <PayrollCoreQueryErrorBanner message={exportError} /> : null}
+
+      <PayrollAnalyticsPanel
+        companyId={companyId}
+        companySlug={user.currentCompany.slug}
+        enabled={isEnabled}
+      />
 
       <PayrollCoreSection
         title="Payroll run list"
@@ -491,6 +499,6 @@ export const PayrollRunsPage = () => {
           projects={projectsQuery.data?.items ?? []}
         />
       </SidePanel>
-    </div>
+    </AppPage>
   );
 };

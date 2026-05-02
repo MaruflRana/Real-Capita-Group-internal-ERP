@@ -10,8 +10,9 @@ Checkpoint reference: `3bf83f5e`
 
 ## Test Data Guidance
 
-- Empty lists and empty financial reports are acceptable in a freshly bootstrapped company when no real records have been entered.
-- Do not create fake production data. Create only controlled UAT records needed to validate a scenario.
+- Empty lists and empty financial reports are acceptable in a freshly bootstrapped real company when no records have been entered.
+- For demos and supervisor walkthroughs, operators may use the explicit synthetic demo/UAT seed documented in `docs/operations/demo-data.md`.
+- Do not create fake production data. Create only controlled UAT records or clearly marked synthetic demo/UAT records needed to validate a scenario.
 - Use the role access guide to choose the correct tester role.
 
 ## Scenarios

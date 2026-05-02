@@ -6,12 +6,14 @@ import { Button } from '@real-capita/ui';
 
 import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
+import { AppPage } from '../../components/ui/erp-primitives';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { OutputActionGroup } from '../../components/ui/output-actions';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
+import { CrmAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -181,7 +183,7 @@ export const CustomersPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <AppPage>
       <CrmPropertyDeskPageHeader
         title="Customers"
         description="Operate the company-scoped customer directory used by bookings, contracts, installment schedules, and collections."
@@ -208,6 +210,12 @@ export const CustomersPage = () => {
 
       {actionError ? <CrmPropertyDeskQueryErrorBanner message={actionError} /> : null}
       {exportError ? <CrmPropertyDeskQueryErrorBanner message={exportError} /> : null}
+
+      <CrmAnalyticsPanel
+        companyId={companyId}
+        companySlug={user.currentCompany.slug}
+        enabled={isEnabled}
+      />
 
       <CrmPropertyDeskSection
         title="Customer master list"
@@ -377,6 +385,6 @@ export const CustomersPage = () => {
           }
         />
       </SidePanel>
-    </div>
+    </AppPage>
   );
 };

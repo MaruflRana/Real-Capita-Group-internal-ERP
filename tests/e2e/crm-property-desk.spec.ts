@@ -1744,33 +1744,50 @@ test('supports sale contract creation plus installment schedule CRUD and invalid
   await scheduleDialog.locator('#schedule-sequence-0').fill('1');
   await scheduleDialog.locator('#schedule-date-0').fill(today);
   await scheduleDialog.locator('#schedule-amount-0').fill('250000.00');
-  await scheduleDialog.locator('#schedule-description-0').fill('Down payment');
+  await scheduleDialog.locator('#schedule-description-0').fill('Down payment created');
   await scheduleDialog.getByRole('button', { name: 'Add row' }).click();
   await scheduleDialog.locator('#schedule-sequence-1').fill('2');
   await scheduleDialog.locator('#schedule-date-1').fill('2026-04-17');
   await scheduleDialog.locator('#schedule-amount-1').fill('250000.00');
-  await scheduleDialog.locator('#schedule-description-1').fill('Milestone installment');
+  await scheduleDialog
+    .locator('#schedule-description-1')
+    .fill('Milestone installment created');
   await scheduleDialog.getByRole('button', { name: 'Create schedules' }).click();
   await expect(scheduleDialog).toBeHidden();
 
   const primaryScheduleRow = page
     .locator('tbody tr')
     .filter({ hasText: 'B-201' })
-    .filter({ hasText: '#1' });
-  await expect(primaryScheduleRow).toContainText('Down payment');
+    .filter({ hasText: '#1' })
+    .filter({ hasText: 'Down payment created' });
+  await expect(primaryScheduleRow).toBeVisible();
   await primaryScheduleRow.getByRole('button', { name: 'Edit' }).click();
 
   const editScheduleDialog = page.getByRole('dialog');
   await editScheduleDialog.getByLabel('Description').fill('Down payment revised');
+  const scheduleUpdateResponse = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/v1/companies/company-1/installment-schedules/') &&
+      response.request().method() === 'PATCH' &&
+      response.status() === 200,
+  );
   await editScheduleDialog.getByRole('button', { name: 'Save changes' }).click();
+  await scheduleUpdateResponse;
   await expect(editScheduleDialog).toBeHidden();
-  await expect(primaryScheduleRow).toContainText('Down payment revised');
+  await page.reload();
+  await expect(
+    page
+      .locator('tbody tr')
+      .filter({ hasText: 'B-201' })
+      .filter({ hasText: '#1' })
+      .filter({ hasText: 'Down payment revised' }),
+  ).toBeVisible();
 
   const milestoneRow = page
     .locator('tbody tr')
     .filter({ hasText: 'B-201' })
     .filter({ hasText: '#2' });
-  await expect(milestoneRow).toContainText('Milestone installment');
+  await expect(milestoneRow).toContainText('Milestone installment created');
   await milestoneRow.getByRole('button', { name: 'Delete' }).click();
   await expect(milestoneRow).toHaveCount(0);
 });

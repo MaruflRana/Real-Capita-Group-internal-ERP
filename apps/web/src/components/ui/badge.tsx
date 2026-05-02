@@ -3,11 +3,13 @@ import type { HTMLAttributes } from 'react';
 import { cn } from '@real-capita/ui';
 
 const badgeVariants = {
-  default: 'bg-secondary text-secondary-foreground',
-  success: 'bg-emerald-100 text-emerald-800',
-  warning: 'bg-amber-100 text-amber-900',
-  danger: 'bg-rose-100 text-rose-800',
-  outline: 'border border-border bg-background text-foreground',
+  default: 'border border-status-info/25 bg-status-infoSoft text-status-info',
+  success:
+    'border border-status-success/25 bg-status-successSoft text-status-success',
+  warning:
+    'border border-status-warning/30 bg-status-warningSoft text-status-warning',
+  danger: 'border border-status-danger/25 bg-status-dangerSoft text-status-danger',
+  outline: 'border border-border bg-surface-raised text-foreground',
 } as const;
 
 export const Badge = ({
@@ -23,7 +25,7 @@ export const Badge = ({
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold tracking-wide',
+        'inline-flex max-w-full items-center whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold leading-4',
         badgeVariants[variant],
         className,
       )}

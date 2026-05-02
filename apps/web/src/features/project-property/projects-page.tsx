@@ -6,10 +6,12 @@ import { Button } from '@real-capita/ui';
 
 import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
+import { AppPage } from '../../components/ui/erp-primitives';
 import { Label } from '../../components/ui/label';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
+import { ProjectPropertyAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -122,7 +124,7 @@ export const ProjectsPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <AppPage>
       <ProjectPropertyPageHeader
         title="Projects"
         description="Manage the company-scoped project master list, including optional location visibility, active state, and the core metadata used by downstream hierarchy masters."
@@ -142,6 +144,12 @@ export const ProjectsPage = () => {
       />
 
       {actionError ? <ProjectPropertyQueryErrorBanner message={actionError} /> : null}
+
+      <ProjectPropertyAnalyticsPanel
+        companyId={companyId}
+        companySlug={user.currentCompany.slug}
+        enabled={isEnabled}
+      />
 
       <ProjectPropertySection
         title="Project master list"
@@ -322,6 +330,6 @@ export const ProjectsPage = () => {
           project={projectForForm}
         />
       </SidePanel>
-    </div>
+    </AppPage>
   );
 };

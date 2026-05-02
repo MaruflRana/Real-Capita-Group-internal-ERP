@@ -14,6 +14,7 @@ import { OutputActionGroup } from '../../components/ui/output-actions';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
+import { AuditDocumentAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -310,6 +311,20 @@ export const AttachmentsPage = () => {
           description="This session has document access, but non-admin attachment listing still requires a linked entity filter. Upload and detail operations continue to use the same backend authorization model."
         />
       ) : null}
+
+      <AuditDocumentAnalyticsPanel
+        companyId={companyId}
+        companySlug={user.currentCompany.slug}
+        enabled={isEnabled && isAdmin}
+        period={
+          dateFrom && dateTo
+            ? {
+                dateFrom,
+                dateTo,
+              }
+            : undefined
+        }
+      />
 
       <AttachmentActionSurface
         title="Secure upload workflow"

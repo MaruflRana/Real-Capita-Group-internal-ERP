@@ -171,19 +171,24 @@ PostgreSQL backup helpers do not back up MinIO/S3 object bytes. Pair database ba
 - [Deployment guide](../operations/deployment.md)
 - [Release checklist](../operations/phase-1-release-checklist.md)
 - [Route inventory](../operations/phase-1-route-inventory.md)
+- [Synthetic demo/UAT data](../operations/demo-data.md)
 - [Backup/restore runbook](../operations/backup-restore.md)
 - [UAT package](../uat/README.md)
 - [Known limitations](../uat/phase-1-known-limitations.md)
 
 ## Where To Continue Phase 2
 
-Phase 2 should start only after Phase 1 UAT results are reviewed. Use [prompt-30-scope.md](../handoffs/prompt-30-scope.md) to decide whether the next step is:
+Phase 2 should start only after Phase 1 UAT results are reviewed. Prompt 30 added explicit synthetic demo/UAT seed, reset, and verify commands. Prompt 31 added frontend-only analytics, graphs, and status summaries over existing endpoints. Prompt 32 added professional business overview plus daily, weekly, and monthly reporting. Prompt 33 upgraded the seed into RCG context-aligned synthetic demo/UAT data while keeping customers, employees, contracts, amounts, payroll, attendance, attachments, and audit activity synthetic. Prompt 37 added yearly reporting over the existing read-only business overview endpoint and redesigned the financial report pages for finance-grade demo review. Use [prompt-38-scope.md](../handoffs/prompt-38-scope.md) for the next scoped continuation.
 
-- UAT issue-fix sprint, if stakeholder UAT produces defects.
-- Production deployment assistance, if the team is ready to deploy.
-- Phase 2 roadmap, if Phase 1 is accepted.
+Synthetic demo/UAT data commands:
 
-For any new Phase 2 feature request, first confirm that it is intentionally assigned and still preserves the locked stack and REST-only architecture.
+```powershell
+corepack pnpm seed:demo
+corepack pnpm seed:demo:verify
+corepack pnpm seed:demo:reset
+```
+
+For any new Phase 2 feature request beyond analytics/status presentation or demo-data refinement, first confirm that it is intentionally assigned and still preserves the locked stack and REST-only architecture.
 
 ## Prompt 29 Final Pre-Deploy Sequence
 

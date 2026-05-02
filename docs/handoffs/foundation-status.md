@@ -139,7 +139,68 @@
   - `docs/release/tagging-and-release.md` now records safe release-candidate and final-tag guidance
   - `docs/handoffs/prompt-29-status.md` and `docs/handoffs/prompt-30-scope.md` preserve handoff continuity
   - no application code, backend routes, frontend pages, Prisma schema changes, business workflows, fake/demo data, destructive restore, production deployment, dashboards, workflow engines, or output formats were added
-- The repo is now ready for Prompt 30 as a UAT blocker fix sprint, production deployment assistance phase, or Phase 2 roadmap phase, depending on stakeholder outcome.
+- Prompt 30 was reassigned to Synthetic Demo/UAT Data Foundation and adds an explicit, resettable seed-data layer without adding new ERP business features:
+  - root scripts now exist for `corepack pnpm seed:demo`, `corepack pnpm seed:demo:reset`, and `corepack pnpm seed:demo:verify`
+  - synthetic data targets only the clearly named `Real Capita Demo / UAT` company with slug `real-capita-demo-uat`
+  - seed coverage spans existing Phase 1 org/security, accounting, reports, project/property, CRM/property desk, HR, payroll, audit/documents, and audit event surfaces
+  - reset is guarded by the synthetic company identity plus `DEMO-`, `UAT-`, and `SYNTH-DEMO-UAT` markers and refuses unmarked records
+  - demo data is never wired into startup, Docker startup, migrations, or normal bootstrap
+  - `docs/operations/demo-data.md`, `docs/handoffs/prompt-30-status.md`, and `docs/handoffs/prompt-31-scope.md` preserve handoff continuity
+  - no frontend graphs/charts, new dashboard widgets, new modules, new CRUD screens, new reports, workflows, migrations, production deployment changes, `.xlsx`, server-side PDF, or automatic seeding were added
+- Prompt 31 completed Analytics/Graphs/Status UI Enhancement without adding new ERP business modules:
+  - shared frontend analytics components now support metric cards, distribution bars, compact trend bars, loading/error/empty states, and Demo/UAT guidance
+  - frontend-only aggregation helpers reuse existing Phase 1 REST list and report APIs for dashboard and module analytics
+  - `/dashboard` now includes role-aware operational analytics widgets for financial, accounting, property, CRM, HR, payroll, and document/audit activity where the signed-in role can access those modules
+  - module pages now surface practical visual summaries across accounting, financial reports, project/property, CRM/property desk, HR, payroll, and audit/documents
+  - financial report pages now visualize existing backend report totals without changing calculations, including explicit `UNCLOSED_EARNINGS` visibility on balance sheet summaries
+  - sparse-data empty states point operators to explicit `corepack pnpm seed:demo` and `corepack pnpm seed:demo:verify` commands when useful
+  - no backend routes, Prisma schema changes, Next.js server actions, seed-data redesign, workflow engines, import systems, `.xlsx`, server-side PDF, or production deployment changes were added
+- Prompt 32 completed Professional Analytics + Periodic Business Reports without adding transactional workflows:
+  - added read-only backend business overview reporting and CSV export under the existing financial-reporting API
+  - added `/accounting/reports/business-overview`, `/daily`, `/weekly`, and `/monthly` frontend report pages
+  - business reports expose contracted sales, collected sales, posted-voucher revenue, posted-voucher expenses, net profit/loss, voucher status counts, and booking/contract/collection counts by `day`, `week`, or `month`
+  - dashboard analytics now use the business overview report for business performance and sales/collections trends
+  - shared analytics/report components now use stronger responsive grids, clearer chart spacing, readable legends, and reduced small-label letter spacing
+  - financial report visual summaries continue to preserve backend calculations, including plain-language `Unclosed earnings adjustment` display for `UNCLOSED_EARNINGS`
+  - no Prisma schema changes, Next.js server actions, seed-data redesign, fake analytics values, CRUD modules, or write workflows were added
+- Prompt 33 completed RCG Context-Aligned Synthetic Demo/UAT Data Upgrade without adding new ERP business features:
+  - the existing `corepack pnpm seed:demo`, `corepack pnpm seed:demo:reset`, and `corepack pnpm seed:demo:verify` commands remain intact
+  - the guarded synthetic company remains `Real Capita Demo / UAT` with slug `real-capita-demo-uat`
+  - public Real Capita Group context is used only for company/family labels, project names, project locations, block/zone/size/type patterns, and amenities/context labels
+  - customers, employees, contacts, contracts, voucher amounts, collections, payroll, attendance, leave, attachments, and audit events remain synthetic Demo/UAT records
+  - project/property, CRM, accounting/reporting, HR/payroll, and audit/document seed coverage was expanded for dashboard analytics, business overview, daily/weekly/monthly reports, financial reports, and module walkthroughs
+  - reset remains scoped to marked synthetic records only, and verify now checks RCG-context project coverage, block/zone/type patterns, synthetic private-data safeguards, report activity, status coverage, voucher balance, and marker cleanliness
+  - no frontend dashboard features, charts, backend routes, Prisma schema changes, seed-data command changes, production auto-seeding, migrations, `.xlsx`, server-side PDF, or deployment changes were added
+- Prompt 34 completed the UI/UX Audit + ERP Design System Foundation without redesigning every page:
+  - global web CSS and Tailwind tokens now define a stronger ERP canvas, surface, border, text, status, and chart palette
+  - shared card, button, table, badge, input, select, empty-state, and side-panel primitives now use higher contrast, tighter radii, clearer focus treatment, and admin-oriented density
+  - new frontend-only ERP primitives provide PageSection, ReportSection, KPI/metric cards, StatusChip, ChartCardShell, AnalyticsGrid, ReportGrid, DataSourceNote, EmptyStateBlock, and TableShell foundations
+  - shared analytics components now use professional chart-card shells, stable chart height, readable legends, stronger bar colors, clearer loading/empty/error states, and scroll only when bucket counts require it
+  - representative wiring was limited to dashboard summary/section primitives, financial report section/assumption notes, and shared module analytics panels
+  - no backend routes, Prisma schema changes, database migrations, seed-data changes, new frontend routes, business workflows, hardcoded chart values, `.xlsx`, server-side PDF, or production deployment changes were added
+- Prompt 35 completed App Shell + Navigation + Page Layout Redesign without redesigning every chart/report/module:
+  - the authenticated app shell now uses a darker ERP canvas, clear sidebar/header/content separation, a compact sticky workspace header, and a bounded centered page frame
+  - sidebar navigation now has denser route grouping, stronger active/hover/focus states, `aria-current` on active routes, compact company context, smaller role badges, and mobile drawer behavior
+  - shared frontend-only layout primitives now provide AppPage, ModulePageHeader, ModuleSection, and FilterCardShell for consistent page width, section spacing, filter grids, and route wrapper alignment
+  - dashboard, business overview, trial balance, balance sheet, projects, customers, employees, payroll runs, and audit events were aligned to the new page-frame rhythm for verification
+  - internal table horizontal scrolling remains scoped to table shells, and print behavior continues to hide shell/navigation chrome
+  - no backend routes, Prisma schema changes, database migrations, seed-data changes, new frontend routes, business workflows, chart-system redesign, hardcoded values, `.xlsx`, server-side PDF, or deployment changes were added
+- Prompt 36 completed Professional Chart Component System without redesigning every report/module page:
+  - shared chart tokens now define semantic ERP chart colors for revenue, expense, balance, warning, sales, property, HR, payroll, audit, and document surfaces
+  - shared frontend chart primitives now cover trend, comparison, distribution, stacked-status, KPI-trend, mini-table hybrid, legend, and loading/empty/error chart states
+  - representative weak progress-bar-only visuals were replaced across dashboard, property/unit distribution, CRM/collections, HR/leave or attendance, payroll, audit/document, and financial-reporting surfaces
+  - finance report chart primitives now support revenue-vs-expense, profit/loss, balance comparison, trial-balance debit/credit comparison, and section-total comparison over existing calculations
+  - formatting helpers now cover compact/full currency, counts, percentages, date buckets, long label truncation, and readable technical labels such as `UNCLOSED_EARNINGS`
+  - no backend routes, Prisma schema changes, database migrations, seed-data changes, new frontend routes, business workflows, new reporting calculations, hardcoded chart values, `.xlsx`, server-side PDF, or deployment changes were added
+- Prompt 37 completed Financial Reports Redesign + Yearly Report:
+  - the existing read-only business overview endpoint now supports `bucket=year` in addition to `day`, `week`, and `month`
+  - `/accounting/reports/yearly` now exists beside business overview, daily, weekly, and monthly reports with CSV export and browser print support
+  - financial report pages now follow a consistent finance-grade structure: report header/actions, filters, executive summary, visual analysis, detailed table, and concise calculation notes
+  - trial balance, general ledger, profit & loss, and balance sheet pages were redesigned around Prompt 34 design tokens, Prompt 35 page frame, and Prompt 36 chart primitives
+  - balance sheet presentation now emphasizes `Assets = Liabilities + Equity` and labels `UNCLOSED_EARNINGS` as "Unclosed earnings adjustment" in primary UI
+  - validation passed: lint, typecheck, build, test, Docker rebuild, demo seed/verify, Docker smoke, and live checks for all financial report routes at 1440px, 1366px, and 1024px
+  - no transactional workflows, database schema changes, migrations, seed-system changes, fake values, `.xlsx`, server-side PDF, or new non-report modules were added
+- The repo is now ready for Prompt 38 as Operational Module Analytics Redesign.
 
 ## Frontend Routes
 
@@ -151,6 +212,11 @@
 - `/org-security/users`
 - `/org-security/role-assignments`
 - `/accounting/chart-of-accounts`
+- `/accounting/reports/business-overview`
+- `/accounting/reports/daily`
+- `/accounting/reports/weekly`
+- `/accounting/reports/monthly`
+- `/accounting/reports/yearly`
 - `/accounting/reports/trial-balance`
 - `/accounting/reports/general-ledger`
 - `/accounting/reports/profit-loss`
@@ -190,6 +256,10 @@
 ## Phase 1 Output Surfaces Now In Effect
 
 - Financial Reports:
+  - `/accounting/reports/business-overview`: CSV export + print-friendly output
+  - `/accounting/reports/daily`: CSV export + print-friendly output
+  - `/accounting/reports/weekly`: CSV export + print-friendly output
+  - `/accounting/reports/monthly`: CSV export + print-friendly output
   - `/accounting/reports/trial-balance`: CSV export + print-friendly output
   - `/accounting/reports/general-ledger`: CSV export + print-friendly output
   - `/accounting/reports/profit-loss`: CSV export + print-friendly output
@@ -236,6 +306,40 @@
   - `docs/handoffs/prompt-29-status.md`
 - Prompt 30 scope:
   - `docs/handoffs/prompt-30-scope.md`
+- Prompt 30 status:
+  - `docs/handoffs/prompt-30-status.md`
+- Prompt 31 scope:
+  - `docs/handoffs/prompt-31-scope.md`
+- Prompt 31 status:
+  - `docs/handoffs/prompt-31-status.md`
+- Prompt 32 scope:
+  - `docs/handoffs/prompt-32-scope.md`
+- Prompt 32 status:
+  - `docs/handoffs/prompt-32-status.md`
+- Prompt 33 scope:
+  - `docs/handoffs/prompt-33-scope.md`
+- Prompt 33 status:
+  - `docs/handoffs/prompt-33-status.md`
+- Prompt 34 scope:
+  - `docs/handoffs/prompt-34-scope.md`
+- Prompt 34 status:
+  - `docs/handoffs/prompt-34-status.md`
+- Prompt 35 scope:
+  - `docs/handoffs/prompt-35-scope.md`
+- Prompt 35 status:
+  - `docs/handoffs/prompt-35-status.md`
+- Prompt 36 scope:
+  - `docs/handoffs/prompt-36-scope.md`
+- Prompt 36 status:
+  - `docs/handoffs/prompt-36-status.md`
+- Prompt 37 scope:
+  - `docs/handoffs/prompt-37-scope.md`
+- Prompt 37 status:
+  - `docs/handoffs/prompt-37-status.md`
+- Prompt 38 scope:
+  - `docs/handoffs/prompt-38-scope.md`
+- Synthetic demo/UAT data operations:
+  - `docs/operations/demo-data.md`
 - Final Phase 1 release packaging and handoff bundle:
   - `docs/release/phase-1-release-notes.md`
   - `docs/release/phase-1-technical-handoff.md`
@@ -451,6 +555,16 @@ apps/web/src/
 
 - All Prompt 19 financial statements and ledger views are read-only and company-scoped.
 - Formal statement data uses `POSTED` vouchers only as the accounting source of truth.
+- Business overview reporting supports:
+  - `GET /companies/:companyId/accounting/reports/business-overview`
+  - `GET /companies/:companyId/accounting/reports/business-overview/export`
+  - `dateFrom`
+  - `dateTo`
+  - optional `bucket=day|week|month|year`
+  - contracted sales from sale contracts by contract date
+  - collected sales from collections by collection date
+  - revenue and expenses from posted voucher lines only
+  - net profit/loss as revenue minus expenses
 - Trial balance supports:
   - `dateFrom`
   - `dateTo`
@@ -473,6 +587,11 @@ apps/web/src/
 ## Financial Reporting UI Rules Now In Effect
 
 - The authenticated shell now includes a dedicated `Financial Reports` navigation section with:
+  - `Business Overview`
+  - `Daily Report`
+  - `Weekly Report`
+  - `Monthly Report`
+  - `Yearly Report`
   - `Trial Balance`
   - `General Ledger`
   - `Profit & Loss`
@@ -495,6 +614,11 @@ apps/web/src/
   - renders grouped assets, liabilities, and equity sections from the backend response contract
   - surfaces the backend balance state clearly
   - presents the derived `UNCLOSED_EARNINGS` adjustment explicitly in a dedicated equity-adjustments section instead of hiding it
+- Business overview, daily, weekly, monthly, and yearly report pages:
+  - company-aware date-range filters plus supported `day`, `week`, `month`, or `year` grouping
+  - render contracted sales and collected sales separately from CRM/property data
+  - render revenue, expenses, and net profit/loss from posted accounting vouchers only
+  - provide executive summary cards, trend charts, operating-count mix, detailed period table, CSV export, print context, and backend calculation assumptions
 - Shared Prompt 20 reporting UI infrastructure includes:
   - typed reporting client methods
   - TanStack Query hooks
@@ -506,6 +630,11 @@ apps/web/src/
 ## Phase 1 Export And Print Rules Now In Effect
 
 - Supported finance report outputs:
+  - business overview: CSV export + browser print-friendly rendering
+  - daily report: CSV export + browser print-friendly rendering
+  - weekly report: CSV export + browser print-friendly rendering
+  - monthly report: CSV export + browser print-friendly rendering
+  - yearly report: CSV export + browser print-friendly rendering
   - trial balance: CSV export + browser print-friendly rendering
   - general ledger: CSV export + browser print-friendly rendering
   - profit & loss: CSV export + browser print-friendly rendering
@@ -681,7 +810,7 @@ git status --short
 Get-ChildItem -File -LiteralPath docs/release
 ```
 
-Observed result:
+Observed result on April 28, 2026:
 
 - `corepack pnpm verify` passed.
 - lint completed with pre-existing warnings only.
@@ -725,6 +854,164 @@ Observed result:
 - no production deployment or release tag was created.
 - final post-documentation `corepack pnpm verify` also passed.
 
+Prompt 31 analytics verification completed with:
+
+```powershell
+corepack pnpm lint
+corepack pnpm typecheck
+corepack pnpm build
+corepack pnpm test
+docker compose up -d --build
+corepack pnpm docker:migrate
+corepack pnpm seed:demo
+corepack pnpm seed:demo:verify
+corepack pnpm docker:smoke
+```
+
+Observed result:
+
+- lint passed with pre-existing warnings only.
+- typecheck passed.
+- build passed.
+- API and Playwright tests passed.
+- Docker Compose rebuilt and started successfully.
+- `corepack pnpm docker:migrate` completed with no pending migrations.
+- `corepack pnpm seed:demo` and `corepack pnpm seed:demo:verify` completed successfully for `Real Capita Demo / UAT`.
+- `corepack pnpm docker:smoke` passed for web, API readiness, and Swagger.
+- Live browser verification confirmed seeded Demo/UAT analytics on `/dashboard` plus representative accounting, financial reporting, property, CRM, HR, payroll, and audit/document pages.
+
+Prompt 32 Professional Analytics + Periodic Business Reports verification was re-run on April 27, 2026 with:
+
+```powershell
+corepack pnpm lint
+corepack pnpm typecheck
+corepack pnpm build
+corepack pnpm test
+docker compose up -d --build
+corepack pnpm docker:migrate
+corepack pnpm seed:demo
+corepack pnpm seed:demo:verify
+corepack pnpm docker:smoke
+```
+
+Observed result:
+
+- `corepack pnpm lint` passed with pre-existing warnings only.
+- `corepack pnpm typecheck` passed.
+- `corepack pnpm build` passed.
+- `corepack pnpm test` passed: 160 API tests and 52 Playwright e2e tests passed.
+- Docker Compose rebuilt and started successfully.
+- `corepack pnpm docker:migrate` completed with no pending migrations.
+- `corepack pnpm seed:demo` and `corepack pnpm seed:demo:verify` completed successfully for `Real Capita Demo / UAT`.
+- `corepack pnpm docker:smoke` passed for web, API readiness, and Swagger.
+- Live browser verification confirmed the dashboard analytics, business overview report, daily report, weekly report, monthly report, profit & loss report, balance sheet equity/unclosed-earnings reporting, CRM collections charts, payroll charts, and audit/document analytics at 1440px, 1366px, and 1024px widths without global horizontal overflow, clipped numbers, or vertical word wrapping.
+
+Prompt 33 RCG Context-Aligned Synthetic Demo/UAT Data Upgrade verification should be run with:
+
+```powershell
+corepack pnpm lint
+corepack pnpm typecheck
+corepack pnpm build
+corepack pnpm test
+docker compose up -d --build
+corepack pnpm docker:migrate
+corepack pnpm seed:demo:reset
+corepack pnpm seed:demo
+corepack pnpm seed:demo:verify
+corepack pnpm docker:smoke
+```
+
+Observed result:
+
+- `corepack pnpm lint` passed with pre-existing warnings only.
+- `corepack pnpm typecheck` passed.
+- `corepack pnpm build` passed.
+- `corepack pnpm test` passed: 160 API tests and 52 Playwright e2e tests.
+- Docker Compose rebuilt and started successfully.
+- `corepack pnpm docker:migrate` completed with no pending migrations.
+- `corepack pnpm seed:demo:reset` completed and removed only guarded Demo/UAT records.
+- `corepack pnpm seed:demo` completed with RCG-context synthetic coverage: 13 projects, 28 units, 8 customers, 9 leads, 7 bookings, 5 sale contracts, 20 installment schedules, 6 collections, 21 vouchers, 12 employees, 144 attendance logs, 3 payroll runs, 5 attachments, and 8 seeded audit events.
+- `corepack pnpm seed:demo:verify` passed, including RCG project coverage, block A-H coverage, zone B/D/N/M/E/S/ES/DV/TV coverage, unit-type coverage, synthetic customer/employee safeguards, voucher balance, report activity, and reset marker cleanliness.
+- `corepack pnpm docker:smoke` passed for web, API readiness, and Swagger.
+- Authenticated live browser verification passed for 16 Phase 1 routes, including dashboard, business overview, daily/weekly/monthly reports, project/property master, CRM bookings/contracts/collections, profit & loss, balance sheet, HR employees, payroll runs, attachments, and audit events.
+
+Prompt 34 UI/UX Audit + ERP Design System Foundation verification was run on April 30, 2026 with:
+
+```powershell
+corepack pnpm lint
+corepack pnpm typecheck
+corepack pnpm build
+corepack pnpm test
+docker compose up -d --build
+corepack pnpm seed:demo
+corepack pnpm seed:demo:verify
+corepack pnpm docker:smoke
+```
+
+Observed result:
+
+- `corepack pnpm lint` passed with pre-existing warnings only.
+- `corepack pnpm typecheck` passed.
+- `corepack pnpm build` passed.
+- `corepack pnpm test` passed: 160 API tests and 52 Playwright e2e tests.
+- Docker Compose rebuilt and started successfully.
+- `corepack pnpm seed:demo` and `corepack pnpm seed:demo:verify` completed successfully for `Real Capita Demo / UAT`.
+- `corepack pnpm docker:smoke` passed for web, API readiness, and Swagger.
+- Authenticated visual spot-check passed for dashboard, business overview, balance sheet, CRM bookings, and HR employees with no global horizontal overflow.
+
+Prompt 35 App Shell + Navigation + Page Layout Redesign verification was run on April 30, 2026 with:
+
+```powershell
+corepack pnpm lint
+corepack pnpm typecheck
+corepack pnpm build
+corepack pnpm test
+docker compose up -d --build
+corepack pnpm seed:demo
+corepack pnpm seed:demo:verify
+corepack pnpm docker:smoke
+```
+
+Observed result:
+
+- `corepack pnpm lint` passed with pre-existing warnings only.
+- `corepack pnpm typecheck` passed.
+- `corepack pnpm build` passed.
+- `corepack pnpm test` passed: 160 API tests and 52 Playwright e2e tests.
+- `docker compose up -d --build` completed successfully after a transient stale app-container conflict from an earlier timed-out build resolved through a clean rerun; the rebuilt `api` and `web` containers started healthy.
+- `corepack pnpm seed:demo` completed for `Real Capita Demo / UAT`.
+- `corepack pnpm seed:demo:verify` passed, including RCG context coverage, synthetic safeguards, status coverage, voucher balance, and report readiness checks.
+- `corepack pnpm docker:smoke` passed for web, API readiness, and Swagger.
+- Authenticated live width verification passed at 1440px, 1366px, and 1024px for `/dashboard`, `/accounting/reports/business-overview`, `/accounting/reports/trial-balance`, `/accounting/reports/balance-sheet`, `/project-property/projects`, `/crm-property-desk/customers`, `/hr/employees`, `/payroll/runs`, and `/audit-documents/audit-events`.
+- The live width check found no global horizontal overflow, no sidebar/content overlap, no vertical nav-label wrapping, exactly one active nav item per route, and a compact workspace header on each checked route.
+- Visual check screenshots were written under `test-results/prompt-35-visual-check`.
+
+Prompt 36 Professional Chart Component System verification was run on May 1, 2026 with:
+
+```powershell
+corepack pnpm lint
+corepack pnpm typecheck
+corepack pnpm build
+corepack pnpm test
+docker compose up -d --build
+corepack pnpm seed:demo
+corepack pnpm seed:demo:verify
+corepack pnpm docker:smoke
+```
+
+Observed result:
+
+- `corepack pnpm lint` passed with pre-existing warnings only.
+- `corepack pnpm typecheck` passed.
+- `corepack pnpm build` passed.
+- `corepack pnpm test` passed: 160 API tests and 52 Playwright e2e tests.
+- `docker compose up -d --build` completed successfully, and the rebuilt `api` and `web` containers started healthy.
+- `corepack pnpm seed:demo` completed for `Real Capita Demo / UAT`.
+- `corepack pnpm seed:demo:verify` passed, including RCG context coverage, synthetic safeguards, status coverage, voucher balance, and report readiness checks.
+- `corepack pnpm docker:smoke` passed for web, API readiness, and Swagger.
+- Authenticated live chart verification passed at 1440px, 1366px, and 1024px for `/dashboard`, `/accounting/reports/business-overview`, `/accounting/reports/balance-sheet`, `/project-property/projects`, `/crm-property-desk/collections`, `/hr/employees`, `/payroll/runs`, and `/audit-documents/audit-events`.
+- The live chart check found no global horizontal overflow, no clipped numeric values, and visible chart or chart-state roles on every checked route.
+
 ## Current Local URLs
 
 - Web: `http://localhost:3000`
@@ -742,4 +1029,4 @@ Observed result:
 
 ## Final Status
 
-Backend foundations through Prompt 11 remain intact. Prompt 12 established the authenticated frontend shell and Org & Security baseline, Prompt 13 added the Accounting Core UI, Prompt 14 added the Project & Real-Estate Master UI, Prompt 15 added the frontend CRM & Property Desk operational UI, Prompt 16 added the frontend HR Core operational UI, Prompt 17 added the frontend Payroll Core operational UI, Prompt 18 added the frontend Audit & Documents operational UI, Prompt 19 added the backend financial reporting API, Prompt 20 added the frontend financial reporting UI, Prompt 21 added the frontend operational dashboard/home experience, Prompt 22 hardened runtime, origin, Docker Compose, CI, and deployment reliability, Prompt 23 hardened backend authorization consistency plus role-aware frontend navigation, route gating, forbidden UX, and dashboard visibility, Prompt 24 added Phase 1 export + print readiness, Prompt 25 added Phase 1 PostgreSQL backup/restore plus operations-readiness runbooks, Prompt 26 completed the Phase 1 release-candidate audit plus UAT/release documentation, Prompt 27 added the Phase 1 UAT, stakeholder demo, issue-log, known-limitations, sign-off, and handoff documentation package, Prompt 28 added the final Phase 1 release packaging and handoff bundle, and Prompt 29 completed final deployment/tag/release handoff verification and documentation without breaking the locked architecture. The repo is ready for Prompt 30 as a UAT blocker fix sprint, production deployment assistance phase, or Phase 2 roadmap phase, depending on stakeholder outcome.
+Backend foundations through Prompt 11 remain intact. Prompt 12 established the authenticated frontend shell and Org & Security baseline, Prompt 13 added the Accounting Core UI, Prompt 14 added the Project & Real-Estate Master UI, Prompt 15 added the frontend CRM & Property Desk operational UI, Prompt 16 added the frontend HR Core operational UI, Prompt 17 added the frontend Payroll Core operational UI, Prompt 18 added the frontend Audit & Documents operational UI, Prompt 19 added the backend financial reporting API, Prompt 20 added the frontend financial reporting UI, Prompt 21 added the frontend operational dashboard/home experience, Prompt 22 hardened runtime, origin, Docker Compose, CI, and deployment reliability, Prompt 23 hardened backend authorization consistency plus role-aware frontend navigation, route gating, forbidden UX, and dashboard visibility, Prompt 24 added Phase 1 export + print readiness, Prompt 25 added Phase 1 PostgreSQL backup/restore plus operations-readiness runbooks, Prompt 26 completed the Phase 1 release-candidate audit plus UAT/release documentation, Prompt 27 added the Phase 1 UAT, stakeholder demo, issue-log, known-limitations, sign-off, and handoff documentation package, Prompt 28 added the final Phase 1 release packaging and handoff bundle, Prompt 29 completed final deployment/tag/release handoff verification and documentation, Prompt 30 added the explicit synthetic demo/UAT seed, reset, and verify foundation, Prompt 31 added frontend-only analytics, graphs, and status summaries over existing REST data without breaking the locked architecture or adding new business workflows, Prompt 32 added professional analytics plus daily/weekly/monthly business reporting over existing posted accounting and CRM/property data without adding transactional workflows, Prompt 33 upgraded the existing seed into RCG context-aligned synthetic demo/UAT data while preserving the locked architecture and synthetic-only safeguards, Prompt 34 added the frontend-only ERP design-system foundation for stronger visual contrast, typography, cards, tables, analytics shells, and report primitives without redesigning every page, Prompt 35 completed the frontend-only app shell, navigation, page-frame, and responsive layout redesign while preserving existing REST boundaries, role-aware access, CSV export, and print behavior, Prompt 36 completed the frontend-only professional chart component system plus representative chart replacements over existing REST data and calculations, and Prompt 37 completed the finance-grade Financial Reports Redesign plus the missing yearly report over the existing read-only reporting boundary. The repo is ready for Prompt 38 as Operational Module Analytics Redesign.

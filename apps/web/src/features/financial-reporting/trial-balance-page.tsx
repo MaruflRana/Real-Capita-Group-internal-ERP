@@ -5,13 +5,14 @@ import { useState } from 'react';
 import { useAuth } from '../../components/providers/auth-provider';
 import { OutputActionGroup } from '../../components/ui/output-actions';
 import { EmptyState } from '../../components/ui/empty-state';
+import { AppPage } from '../../components/ui/erp-primitives';
 import { buildQueryString } from '../../lib/api/query-string';
 import { isApiError } from '../../lib/api/client';
 import type {
   AccountingVoucherType,
   TrialBalanceQueryParams,
 } from '../../lib/api/types';
-import { formatDate } from '../../lib/format';
+import { formatAccountingAmount, formatDate } from '../../lib/format';
 import { downloadApiCsv, printCurrentPage } from '../../lib/output';
 import {
   DateRangeFields,
@@ -23,12 +24,14 @@ import { useTrialBalanceReport } from './hooks';
 import {
   FinancialReportingAccessRequiredState,
   FinancialReportingFilterCard,
+  FinancialReportContextStrip,
   FinancialReportingPageHeader,
   FinancialReportingPrintContext,
   FinancialReportingQueryErrorBanner,
   FinancialReportingReadOnlyNotice,
   FinancialReportingSection,
   ReportAmountPair,
+  ReportAssumptionNote,
   ReportLoadingState,
   ReportMetricCard,
   ReportMetricGrid,
@@ -41,6 +44,7 @@ import {
   getDefaultReportDateRange,
   isDateRangeInvalid,
 } from './utils';
+import { TrialBalanceVisualSummary } from './analytics';
 
 const buildTrialBalanceFilters = ({
   dateFrom,
@@ -163,9 +167,14 @@ export const TrialBalancePage = () => {
       setIsExporting(false);
     }
   };
+  const report = reportQuery.data;
+  const closingDebit = Number(report?.totals.closingDebit ?? 0);
+  const closingCredit = Number(report?.totals.closingCredit ?? 0);
+  const closingDifference = Math.abs(closingDebit - closingCredit);
+  const isClosingBalanced = closingDifference < 0.005;
 
   return (
-    <div className="space-y-6">
+    <AppPage>
       <FinancialReportingPageHeader
         actions={
           reportQuery.data ? (
@@ -225,7 +234,7 @@ export const TrialBalancePage = () => {
         ) : null}
       </div>
 
-      {reportQuery.data ? (
+      {report ? (
         <>
           <FinancialReportingPrintContext
             items={[
@@ -236,35 +245,56 @@ export const TrialBalancePage = () => {
               {
                 label: 'Period',
                 value: formatReportDateRangeLabel(
-                  reportQuery.data.dateFrom,
-                  reportQuery.data.dateTo,
+                  report.dateFrom,
+                  report.dateTo,
                 ),
               },
               {
                 label: 'Voucher scope',
-                value: reportQuery.data.voucherType
-                  ? reportQuery.data.voucherType
+                value: report.voucherType
+                  ? report.voucherType
                   : 'All posted voucher types',
               },
               {
                 label: 'Period end',
-                value: formatDate(reportQuery.data.dateTo),
+                value: formatDate(report.dateTo),
               },
             ]}
             title="Trial balance print context"
           />
 
           <FinancialReportingSection
-            description="The hierarchy below follows the backend report contract directly: account class, account group, ledger account, and posting account where available."
-            title="Report output"
+            description="Debit and credit control totals for the selected company, period, and voucher scope."
+            title="Executive summary"
           >
+            <FinancialReportContextStrip
+              items={[
+                {
+                  label: 'Report period',
+                  value: formatReportDateRangeLabel(report.dateFrom, report.dateTo),
+                },
+                {
+                  label: 'Voucher scope',
+                  value: report.voucherType ?? 'All posted voucher types',
+                },
+                {
+                  label: 'Balance status',
+                  tone: isClosingBalanced ? 'success' : 'warning',
+                  value: isClosingBalanced ? 'Balanced' : 'Out of balance',
+                },
+                {
+                  label: 'Closing difference',
+                  value: formatAccountingAmount(closingDifference),
+                },
+              ]}
+            />
             <ReportMetricGrid>
               <ReportMetricCard
                 label="Opening balance"
                 value={
                   <ReportAmountPair
-                    credit={reportQuery.data.totals.openingCredit}
-                    debit={reportQuery.data.totals.openingDebit}
+                    credit={report.totals.openingCredit}
+                    debit={report.totals.openingDebit}
                   />
                 }
               />
@@ -272,8 +302,8 @@ export const TrialBalancePage = () => {
                 label="Period movement"
                 value={
                   <ReportAmountPair
-                    credit={reportQuery.data.totals.movementCredit}
-                    debit={reportQuery.data.totals.movementDebit}
+                    credit={report.totals.movementCredit}
+                    debit={report.totals.movementDebit}
                   />
                 }
               />
@@ -281,36 +311,70 @@ export const TrialBalancePage = () => {
                 label="Closing balance"
                 value={
                   <ReportAmountPair
-                    credit={reportQuery.data.totals.closingCredit}
-                    debit={reportQuery.data.totals.closingDebit}
+                    credit={report.totals.closingCredit}
+                    debit={report.totals.closingDebit}
                   />
                 }
               />
               <ReportMetricCard
                 description={
-                  reportQuery.data.voucherType
-                    ? `Limited to ${reportQuery.data.voucherType.toLowerCase()} vouchers.`
+                  report.voucherType
+                    ? `Limited to ${report.voucherType.toLowerCase()} vouchers.`
                     : 'All posted voucher types are included.'
                 }
                 label="Source of truth"
                 value="Posted vouchers only"
               />
             </ReportMetricGrid>
+          </FinancialReportingSection>
 
-            {reportQuery.data.sections.length === 0 ? (
+          <FinancialReportingSection
+            description="Opening, period movement, and closing balances are compared without changing backend calculations."
+            title="Visual analysis"
+          >
+            <TrialBalanceVisualSummary report={report} />
+          </FinancialReportingSection>
+
+          <FinancialReportingSection
+            description="The hierarchy follows the backend report contract directly: account class, account group, ledger account, and posting account where available."
+            title="Detailed hierarchy table"
+          >
+            {report.sections.length === 0 ? (
               <EmptyState
                 description="No posted voucher activity matched the selected period and filters."
                 title="No balances found"
               />
             ) : (
               <TrialBalanceReportTable
-                sections={reportQuery.data.sections}
-                totals={reportQuery.data.totals}
+                sections={report.sections}
+                totals={report.totals}
               />
             )}
           </FinancialReportingSection>
+
+          <FinancialReportingSection
+            description="Concise calculation notes for finance review and print output."
+            title="Assumptions and calculation notes"
+          >
+            <div className="grid gap-3">
+              <ReportAssumptionNote>
+                Opening values include posted voucher lines before the selected
+                start date; movement values include posted voucher lines inside
+                the selected period.
+              </ReportAssumptionNote>
+              <ReportAssumptionNote>
+                Closing debit and credit totals are compared as a control
+                status. Any mismatch should be reviewed as a posting or data
+                issue.
+              </ReportAssumptionNote>
+              <ReportAssumptionNote>
+                This page is read-only and does not post adjustments, create
+                closing entries, or alter the accounting ledger.
+              </ReportAssumptionNote>
+            </div>
+          </FinancialReportingSection>
         </>
       ) : null}
-    </div>
+    </AppPage>
   );
 };

@@ -74,7 +74,7 @@ export const PHASE1_ACCESS_MATRIX: Record<
   financialReports: {
     label: 'Financial Reports',
     description:
-      'Read-only trial balance, general ledger, profit and loss, and balance sheet views.',
+      'Read-only business overview, periodic daily/weekly/monthly/yearly reporting, trial balance, general ledger, profit and loss, and balance sheet views.',
     allowedRoles: [COMPANY_ROLE_CODES.admin, COMPANY_ROLE_CODES.accountant],
   },
   projectProperty: {
@@ -119,8 +119,7 @@ export const PHASE1_ACCESS_MATRIX: Record<
   },
   auditEvents: {
     label: 'Audit Events',
-    description:
-      'Read-only audit trail browsing for the active company scope.',
+    description: 'Read-only audit trail browsing for the active company scope.',
     allowedRoles: [COMPANY_ROLE_CODES.admin],
   },
 };

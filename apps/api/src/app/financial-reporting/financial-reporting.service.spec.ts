@@ -8,9 +8,7 @@ const {
 } = require('@nestjs/common');
 const { Prisma } = require('@prisma/client');
 
-const {
-  FinancialReportingService,
-} = require('./financial-reporting.service');
+const { FinancialReportingService } = require('./financial-reporting.service');
 
 const createService = ({
   prismaOverrides = {},
@@ -65,6 +63,7 @@ const createService = ({
       debitTotal: new Prisma.Decimal('0.00'),
       creditTotal: new Prisma.Decimal('0.00'),
     }),
+    fetchBusinessReportRows: async () => [],
     ...repositoryOverrides,
   };
 
@@ -115,6 +114,22 @@ const makeStatementRow = (overrides = {}) => ({
   ...overrides,
 });
 
+const makeBusinessReportRow = (overrides = {}) => ({
+  bucketStart: new Date('2026-04-01T00:00:00.000Z'),
+  bucketEnd: new Date('2026-04-30T00:00:00.000Z'),
+  contractedSalesAmount: new Prisma.Decimal('1000.00'),
+  collectedSalesAmount: new Prisma.Decimal('750.00'),
+  revenueAmount: new Prisma.Decimal('900.00'),
+  expenseAmount: new Prisma.Decimal('250.00'),
+  voucherCount: 4,
+  draftVoucherCount: 1,
+  postedVoucherCount: 3,
+  bookingCount: 2,
+  saleContractCount: 1,
+  collectionCount: 3,
+  ...overrides,
+});
+
 test('financial reporting service builds a grouped trial balance with totals', async () => {
   const service = createService({
     repositoryOverrides: {
@@ -140,7 +155,8 @@ test('financial reporting service builds a grouped trial balance with totals', a
 
   assert.equal(response.sections.length, 1);
   assert.equal(
-    response.sections[0].accountGroups[0].ledgerAccounts[0].postingAccounts.length,
+    response.sections[0].accountGroups[0].ledgerAccounts[0].postingAccounts
+      .length,
     2,
   );
   assert.equal(response.totals.openingDebit, '200.00');
@@ -268,6 +284,76 @@ test('financial reporting service computes profit and loss totals by account hie
   assert.equal(response.totals.totalExpense, '125.00');
   assert.equal(response.totals.netProfitLoss, '375.00');
   assert.equal(response.sections.length, 2);
+});
+
+test('financial reporting service returns bucketed business overview totals', async () => {
+  const service = createService({
+    repositoryOverrides: {
+      fetchBusinessReportRows: async () => [
+        makeBusinessReportRow(),
+        makeBusinessReportRow({
+          bucketStart: new Date('2026-05-01T00:00:00.000Z'),
+          bucketEnd: new Date('2026-05-31T00:00:00.000Z'),
+          contractedSalesAmount: new Prisma.Decimal('500.00'),
+          collectedSalesAmount: new Prisma.Decimal('600.00'),
+          revenueAmount: new Prisma.Decimal('200.00'),
+          expenseAmount: new Prisma.Decimal('450.00'),
+          voucherCount: 2,
+          draftVoucherCount: 0,
+          postedVoucherCount: 2,
+          bookingCount: 1,
+          saleContractCount: 1,
+          collectionCount: 2,
+        }),
+      ],
+    },
+  });
+
+  const response = await service.getBusinessOverviewReport('company-1', {
+    dateFrom: '2026-04-01',
+    dateTo: '2026-05-31',
+    bucket: 'month',
+  });
+
+  assert.equal(response.bucket, 'month');
+  assert.equal(response.buckets.length, 2);
+  assert.equal(response.buckets[0].bucketLabel, '2026-04');
+  assert.equal(response.buckets[0].profitAmount, '650.00');
+  assert.equal(response.buckets[1].netProfitLossAmount, '-250.00');
+  assert.equal(response.buckets[1].lossAmount, '250.00');
+  assert.equal(response.totals.contractedSalesAmount, '1500.00');
+  assert.equal(response.totals.collectedSalesAmount, '1350.00');
+  assert.equal(response.totals.netProfitLossAmount, '400.00');
+  assert.equal(response.totals.voucherCount, 6);
+  assert.ok(
+    response.assumptions.some((assumption) =>
+      assumption.includes('posted voucher lines'),
+    ),
+  );
+});
+
+test('financial reporting service supports yearly business overview buckets', async () => {
+  const service = createService({
+    repositoryOverrides: {
+      fetchBusinessReportRows: async () => [
+        makeBusinessReportRow({
+          bucketStart: new Date('2026-01-01T00:00:00.000Z'),
+          bucketEnd: new Date('2026-12-31T00:00:00.000Z'),
+        }),
+      ],
+    },
+  });
+
+  const response = await service.getBusinessOverviewReport('company-1', {
+    dateFrom: '2026-01-01',
+    dateTo: '2026-12-31',
+    bucket: 'year',
+  });
+
+  assert.equal(response.bucket, 'year');
+  assert.equal(response.buckets.length, 1);
+  assert.equal(response.buckets[0].bucketKey, '2026');
+  assert.equal(response.buckets[0].bucketLabel, '2026');
 });
 
 test('financial reporting service derives unclosed earnings to balance the balance sheet', async () => {

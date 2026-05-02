@@ -4,24 +4,54 @@
 
 @layer base {
   :root {
-    --background: 210 24% 97%;
-    --foreground: 222 38% 12%;
+    --app-canvas: 214 29% 89%;
+    --app-canvas-strong: 216 24% 82%;
+    --surface: 0 0% 100%;
+    --surface-raised: 210 29% 96%;
+    --surface-muted: 214 24% 92%;
+    --surface-sidebar: 218 34% 13%;
+    --background: 214 29% 89%;
+    --foreground: 222 43% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 222 38% 12%;
+    --card-foreground: 222 43% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 38% 12%;
-    --primary: 205 84% 36%;
+    --popover-foreground: 222 43% 10%;
+    --primary: 204 83% 31%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 20% 92%;
-    --secondary-foreground: 222 38% 12%;
-    --muted: 210 18% 92%;
-    --muted-foreground: 215 14% 39%;
-    --accent: 201 74% 94%;
-    --accent-foreground: 222 38% 12%;
-    --border: 214 22% 84%;
-    --input: 214 22% 84%;
-    --ring: 205 84% 36%;
-    --radius: 1.35rem;
+    --secondary: 214 22% 86%;
+    --secondary-foreground: 222 43% 10%;
+    --muted: 214 22% 88%;
+    --muted-foreground: 215 18% 31%;
+    --accent: 196 70% 90%;
+    --accent-foreground: 221 48% 13%;
+    --border: 215 24% 74%;
+    --input: 215 24% 70%;
+    --ring: 204 83% 31%;
+    --radius: 0.5rem;
+    --status-success: 158 76% 25%;
+    --status-success-soft: 151 55% 91%;
+    --status-warning: 35 92% 31%;
+    --status-warning-soft: 42 100% 90%;
+    --status-danger: 352 73% 40%;
+    --status-danger-soft: 355 85% 94%;
+    --status-info: 204 83% 31%;
+    --status-info-soft: 201 82% 92%;
+    --chart-blue: 204 83% 38%;
+    --chart-teal: 176 66% 32%;
+    --chart-amber: 36 91% 45%;
+    --chart-rose: 350 72% 47%;
+    --chart-indigo: 232 55% 52%;
+    --chart-slate: 215 24% 42%;
+    --chart-revenue: 158 76% 29%;
+    --chart-expense: 352 73% 42%;
+    --chart-balance: 204 83% 36%;
+    --chart-warning: 35 92% 39%;
+    --chart-sales: 176 66% 30%;
+    --chart-property: 232 50% 48%;
+    --chart-hr: 262 47% 48%;
+    --chart-payroll: 191 64% 32%;
+    --chart-audit: 215 24% 36%;
+    --chart-documents: 201 82% 34%;
   }
 
   * {
@@ -30,14 +60,15 @@
 
   html {
     @apply bg-background text-foreground;
+    scroll-behavior: smooth;
   }
 
   body {
-    @apply min-h-screen bg-background text-foreground;
-    background-image:
-      radial-gradient(circle at top left, rgba(14, 116, 144, 0.09), transparent 30%),
-      radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.09), transparent 34%),
-      linear-gradient(180deg, rgba(246, 248, 251, 1), rgba(238, 243, 248, 1));
+    @apply min-h-screen bg-background text-foreground antialiased;
+    background:
+      radial-gradient(circle at 12% 0%, rgba(14, 116, 144, 0.12), transparent 28rem),
+      linear-gradient(135deg, hsl(var(--app-canvas)) 0%, hsl(var(--app-canvas-strong)) 100%);
+    overflow-x: hidden;
   }
 
   ::selection {
@@ -47,10 +78,54 @@
 
 @layer utilities {
   .bg-admin-canvas {
-    background-image:
-      linear-gradient(180deg, rgba(246, 248, 251, 1), rgba(238, 243, 248, 1)),
-      radial-gradient(circle at top left, rgba(14, 116, 144, 0.08), transparent 28%),
-      radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.08), transparent 30%);
+    background:
+      radial-gradient(circle at 12% 0%, rgba(14, 116, 144, 0.1), transparent 28rem),
+      linear-gradient(135deg, hsl(var(--app-canvas)) 0%, hsl(var(--app-canvas-strong)) 100%);
+  }
+
+  .app-shell,
+  .app-shell-main,
+  .app-page-frame {
+    min-width: 0;
+  }
+
+  .app-shell-sidebar {
+    scrollbar-color: rgba(226, 232, 240, 0.34) transparent;
+    scrollbar-width: thin;
+  }
+
+  .app-shell-sidebar::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .app-shell-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(226, 232, 240, 0.24);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
+  }
+
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  .erp-label {
+    @apply text-sm font-semibold leading-5 text-muted-foreground;
+  }
+
+  .erp-kpi-value {
+    @apply break-words font-mono text-2xl font-semibold leading-8 tracking-normal text-foreground tabular-nums [overflow-wrap:anywhere];
+  }
+
+  .tracking-\[0\.32em\],
+  .tracking-\[0\.28em\] {
+    letter-spacing: 0.14em;
+  }
+
+  .tracking-\[0\.24em\],
+  .tracking-\[0\.22em\] {
+    letter-spacing: 0.1em;
   }
 }
 
@@ -78,6 +153,7 @@
 
   .app-shell,
   .app-shell-main,
+  .app-page-frame,
   .table-shell {
     display: block !important;
     width: 100% !important;
@@ -99,7 +175,8 @@
 
   .rounded-\[2rem\],
   .rounded-3xl,
-  .rounded-2xl {
+  .rounded-2xl,
+  .rounded-lg {
     border-radius: 0 !important;
   }
 
@@ -109,6 +186,8 @@
   }
 
   .bg-admin-canvas,
+  .bg-canvas,
+  .bg-canvas-strong,
   .bg-card,
   .bg-card\/80,
   .bg-card\/95,
@@ -120,7 +199,17 @@
   .bg-muted\/25,
   .bg-muted\/35,
   .bg-muted\/50,
+  .bg-surface,
+  .bg-surface-muted,
+  .bg-surface-raised,
   .bg-primary\/5 {
+    background: #ffffff !important;
+  }
+
+  .bg-status-successSoft,
+  .bg-status-warningSoft,
+  .bg-status-dangerSoft,
+  .bg-status-infoSoft {
     background: #ffffff !important;
   }
 

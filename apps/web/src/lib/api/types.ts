@@ -448,6 +448,14 @@ export interface BalanceSheetQueryParams {
   asOfDate: string;
 }
 
+export type BusinessReportBucket = 'day' | 'week' | 'month' | 'year';
+
+export interface BusinessOverviewReportQueryParams {
+  dateFrom: string;
+  dateTo: string;
+  bucket?: BusinessReportBucket;
+}
+
 export interface TrialBalanceAmountsRecord {
   openingDebit: string;
   openingCredit: string;
@@ -616,6 +624,39 @@ export interface BalanceSheetResponseRecord {
   totals: BalanceSheetTotalsRecord;
   sections: FinancialStatementSectionRecord[];
   equityAdjustments: BalanceSheetDerivedLineRecord[];
+}
+
+export interface BusinessOverviewReportAmountsRecord {
+  contractedSalesAmount: string;
+  collectedSalesAmount: string;
+  revenueAmount: string;
+  expenseAmount: string;
+  netProfitLossAmount: string;
+  profitAmount: string;
+  lossAmount: string;
+  voucherCount: number;
+  draftVoucherCount: number;
+  postedVoucherCount: number;
+  bookingCount: number;
+  saleContractCount: number;
+  collectionCount: number;
+}
+
+export interface BusinessOverviewReportBucketRecord extends BusinessOverviewReportAmountsRecord {
+  bucketKey: string;
+  bucketLabel: string;
+  bucketStart: string;
+  bucketEnd: string;
+}
+
+export interface BusinessOverviewReportResponseRecord {
+  companyId: string;
+  dateFrom: string;
+  dateTo: string;
+  bucket: BusinessReportBucket;
+  totals: BusinessOverviewReportAmountsRecord;
+  buckets: BusinessOverviewReportBucketRecord[];
+  assumptions: string[];
 }
 
 export interface ProjectListQueryParams extends ListQueryParams {

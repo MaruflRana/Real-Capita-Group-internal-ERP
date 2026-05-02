@@ -6,24 +6,28 @@ import type {
 } from 'react';
 
 import { cn } from '@real-capita/ui';
+import { TableShell } from './erp-primitives';
 
 export const Table = ({
   className,
   ...props
 }: TableHTMLAttributes<HTMLTableElement>) => (
-  <div className="table-shell overflow-x-auto">
+  <TableShell>
     <table
-      className={cn('min-w-full border-separate border-spacing-0', className)}
+      className={cn(
+        'min-w-full border-separate border-spacing-0 text-sm',
+        className,
+      )}
       {...props}
     />
-  </div>
+  </TableShell>
 );
 
 export const TableHeader = ({
   className,
   ...props
 }: HTMLAttributes<HTMLTableSectionElement>) => (
-  <thead className={cn('bg-muted/70', className)} {...props} />
+  <thead className={cn('bg-surface-muted', className)} {...props} />
 );
 
 export const TableBody = ({
@@ -39,7 +43,7 @@ export const TableRow = ({
 }: HTMLAttributes<HTMLTableRowElement>) => (
   <tr
     className={cn(
-      '[&:not(:last-child)>td]:border-b [&:not(:last-child)>td]:border-border/70',
+      'transition-colors hover:bg-surface-raised/70 [&:not(:last-child)>td]:border-b [&:not(:last-child)>td]:border-border',
       className,
     )}
     {...props}
@@ -52,7 +56,7 @@ export const TableHead = ({
 }: ThHTMLAttributes<HTMLTableCellElement>) => (
   <th
     className={cn(
-      'px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground',
+      'whitespace-nowrap px-4 py-3 text-left text-xs font-semibold leading-5 text-foreground',
       className,
     )}
     {...props}
@@ -63,5 +67,8 @@ export const TableCell = ({
   className,
   ...props
 }: TdHTMLAttributes<HTMLTableCellElement>) => (
-  <td className={cn('px-4 py-3 align-top text-sm', className)} {...props} />
+  <td
+    className={cn('px-4 py-3 align-top text-sm leading-6 text-foreground', className)}
+    {...props}
+  />
 );

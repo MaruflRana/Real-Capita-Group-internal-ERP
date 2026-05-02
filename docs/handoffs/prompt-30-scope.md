@@ -1,20 +1,16 @@
 # Prompt 30 Scope
 
-Prompt 30 must continue from the Prompt 29 final Phase 1 deployment/tag/release handoff package.
+Prompt 30 was reassigned by supervisor requirement to **Synthetic Demo/UAT Data Foundation**.
 
-## Default Purpose
+## Purpose
 
-Prompt 30 is reserved for one of three directions:
+Build a safe, explicit, resettable seed-data foundation so supervisors can review Phase 1 with meaningful synthetic demo/UAT records across the existing ERP modules.
 
-- UAT blocker fix sprint, if stakeholder UAT produces confirmed issues.
-- Production deployment assistance, if the team is ready to deploy the Phase 1 release candidate.
-- Phase 2 roadmap, if Phase 1 is accepted and the team explicitly starts planning next scope.
-
-Prompt 30 should not start new feature work by default.
+This is a controlled seed-data phase. It is not a new business-feature phase, dashboard phase, analytics phase, or chart UI phase.
 
 ## Must Preserve
 
-- the locked stack:
+- locked stack:
   - Nx + pnpm
   - Next.js App Router frontend-only `apps/web`
   - NestJS REST-only `apps/api`
@@ -34,87 +30,70 @@ Prompt 30 should not start new feature work by default.
 - Prompt 28 release handoff bundle
 - Prompt 29 verification, deployment handoff, and tagging guidance
 
-## Must Not Regress
+## Allowed Work
 
-- backup files must remain ignored by git
-- generated `*.tsbuildinfo` files must remain ignored by git
-- PostgreSQL restore must remain explicitly confirmed before destructive changes
-- restore dry-run must remain non-mutating
-- backup/restore helpers must not embed secrets
-- MinIO/S3 browser-resolvable `S3_PUBLIC_ENDPOINT` behavior must remain intact
-- Docker Compose must remain the approved Phase 1 deployment baseline
-- unauthenticated protected routes must redirect to `/login?next=...`
-- authenticated unauthorized sessions must receive stable API `403` behavior and clear frontend forbidden states
-- Phase 1 CSV/print output surfaces must remain read-only and role-scoped
-- UAT and release docs must remain honest about known limitations and deferred scope
-- stakeholder UAT/sign-off must not be marked complete without actual signed evidence
+- explicit synthetic demo/UAT seed scripts
+- explicit synthetic demo/UAT reset scripts
+- seed helpers/factories
+- package scripts for seeding, resetting, and verifying demo data
+- small backend-safe support only if strictly needed for reliable seeding
+- documentation for safe demo seed usage
+- handoff docs
 
-## Allowed Prompt 30 Directions
+## Must Not Build
 
-If stakeholder UAT produces issues:
-
-- classify each issue by severity and priority
-- fix confirmed defects only
-- update UAT issue status and retest notes
-- run focused tests plus required verification
-
-If production deployment assistance is requested:
-
-- execute or guide the documented deployment checklist
-- confirm target `.env` and secrets are ready for strict validation
-- run backup, migration, smoke, and restore dry-run checks as requested
-- record deployment evidence honestly
-- do not run destructive restore or production deployment actions without explicit operator intent
-
-If Phase 2 roadmap is requested:
-
-- review Phase 1 sign-off, deferred scope, and known limitations first
-- identify candidate Phase 2 work without implementing it by default
-- confirm any new feature request is intentionally assigned and preserves the locked architecture
-
-## Out Of Scope Unless Explicitly Assigned
-
+- frontend graphs/charts
+- dashboard widgets
 - new ERP business modules
-- new CRUD domains
-- new dashboards or reports
-- approval workflows
-- notifications
-- import systems
-- public-facing features
-- fake/demo ERP data
+- new CRUD screens
+- new reports beyond data needed to populate existing reports
+- new workflows
+- fake real customer data presented as actual company data
+- automatic seeding during app startup
+- automatic seeding during migrations
+- production deployment changes
 - `.xlsx` generation
 - server-side PDF rendering
-- automated scheduled backup infrastructure
-- point-in-time recovery
-- Kubernetes or redesigned runtime architecture
+- scheduled backup infrastructure
+- Kubernetes or runtime redesign
 
-## Required Starting Point For Prompt 30
+## Data Safety Rules
 
-Read:
+- Call the data synthetic demo/UAT data.
+- Do not call it real data.
+- Do not use real NIDs, real phone numbers, real bank accounts, or real personal records.
+- Do not auto-seed demo data in production, migrations, Docker startup, or normal bootstrap.
+- Demo seed must run only through an explicit command.
+- Demo reset must delete only guarded synthetic demo/UAT data.
+- Use obvious prefixes/markers such as `DEMO-`, `UAT-`, or `SYNTH-DEMO-UAT`.
+- Do not delete or overwrite existing real/user-created data.
+- If reset cannot distinguish demo data from non-demo data, it must refuse and document the limitation.
+- Keep generated data internally consistent enough to drive dashboard/report/chart work later.
 
-- `AGENTS.md`
+## Target Strategy
+
+Preferred target is a clearly named synthetic company:
+
+```text
+Real Capita Demo / UAT
+real-capita-demo-uat
+```
+
+The seed must create or ensure demo users and company role assignments sufficient to view the seeded data.
+
+## Required Commands
+
+- `corepack pnpm seed:demo`
+- `corepack pnpm seed:demo:reset`
+- `corepack pnpm seed:demo:verify`
+
+## Handoff Requirement
+
+Create/update:
+
+- `docs/operations/demo-data.md`
 - `docs/handoffs/foundation-status.md`
-- `docs/handoffs/prompt-29-status.md`
-- `docs/handoffs/prompt-30-scope.md`
-- `docs/release/phase-1-release-notes.md`
-- `docs/release/phase-1-technical-handoff.md`
-- `docs/release/phase-1-verification-summary.md`
-- `docs/release/tagging-and-release.md`
-- `docs/operations/phase-1-release-checklist.md`
-- `docs/operations/deployment.md`
-- `docs/operations/backup-restore.md`
-- `docs/uat/README.md`
-- any stakeholder UAT issue log, sign-off record, deployment target details, or explicit Prompt 30 user scope
+- `docs/handoffs/prompt-30-status.md`
+- `docs/handoffs/prompt-31-scope.md`
 
-## Prompt 30 Decision Gate
-
-Before implementing anything in Prompt 30, classify the request as one of:
-
-- UAT defect fix
-- issue triage only
-- production deployment assistance
-- Phase 2 roadmap/planning
-- documentation correction
-- out-of-scope new feature request
-
-If the request is a new feature request, confirm that it is intentionally assigned and does not violate the locked architecture.
+Prompt 31 should be **Analytics/Graphs/Status UI Enhancement** using seeded synthetic demo/UAT data and existing backend endpoints.

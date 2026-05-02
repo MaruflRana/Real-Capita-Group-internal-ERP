@@ -3,6 +3,7 @@ import test from 'node:test';
 
 import {
   buildBalanceSheetCsv,
+  buildBusinessOverviewReportCsv,
   buildGeneralLedgerCsv,
   buildProfitAndLossCsv,
   buildTrialBalanceCsv,
@@ -100,6 +101,56 @@ test('general ledger export keeps opening lines and period totals', () => {
   assert.match(csv, /OPENING_BALANCE,ASSET,Assets/u);
   assert.match(csv, /LEDGER_LINE,ASSET,Assets,CURRENT_ASSETS/u);
   assert.match(csv, /PERIOD_TOTAL,ASSET,Assets/u);
+});
+
+test('business overview export keeps bucket rows and totals', () => {
+  const csv = buildBusinessOverviewReportCsv({
+    companyId: 'company-1',
+    dateFrom: '2026-01-01',
+    dateTo: '2026-01-31',
+    bucket: 'month',
+    totals: {
+      contractedSalesAmount: '100.00',
+      collectedSalesAmount: '80.00',
+      revenueAmount: '90.00',
+      expenseAmount: '40.00',
+      netProfitLossAmount: '50.00',
+      profitAmount: '50.00',
+      lossAmount: '0.00',
+      voucherCount: 3,
+      draftVoucherCount: 1,
+      postedVoucherCount: 2,
+      bookingCount: 1,
+      saleContractCount: 1,
+      collectionCount: 2,
+    },
+    buckets: [
+      {
+        bucketKey: '2026-01',
+        bucketLabel: '2026-01',
+        bucketStart: '2026-01-01',
+        bucketEnd: '2026-01-31',
+        contractedSalesAmount: '100.00',
+        collectedSalesAmount: '80.00',
+        revenueAmount: '90.00',
+        expenseAmount: '40.00',
+        netProfitLossAmount: '50.00',
+        profitAmount: '50.00',
+        lossAmount: '0.00',
+        voucherCount: 3,
+        draftVoucherCount: 1,
+        postedVoucherCount: 2,
+        bookingCount: 1,
+        saleContractCount: 1,
+        collectionCount: 2,
+      },
+    ],
+    assumptions: [],
+  });
+
+  assert.match(csv, /^Bucket Key,Bucket Label,Bucket Start,/u);
+  assert.match(csv, /2026-01,2026-01,2026-01-01,2026-01-31/u);
+  assert.match(csv, /TOTAL,Report totals,2026-01-01,2026-01-31/u);
 });
 
 test('statement exports keep total and adjustment disclosure rows', () => {

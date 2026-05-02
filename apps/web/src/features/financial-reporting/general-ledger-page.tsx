@@ -5,6 +5,7 @@ import { useDeferredValue, useMemo, useState } from 'react';
 import { useAuth } from '../../components/providers/auth-provider';
 import { OutputActionGroup } from '../../components/ui/output-actions';
 import { EmptyState } from '../../components/ui/empty-state';
+import { AppPage } from '../../components/ui/erp-primitives';
 import { isApiError } from '../../lib/api/client';
 import { buildQueryString } from '../../lib/api/query-string';
 import type {
@@ -24,12 +25,14 @@ import { useGeneralLedgerReport, useReportingPostingAccounts } from './hooks';
 import {
   FinancialReportingAccessRequiredState,
   FinancialReportingFilterCard,
+  FinancialReportContextStrip,
   FinancialReportingPageHeader,
   FinancialReportingPrintContext,
   FinancialReportingQueryErrorBanner,
   FinancialReportingReadOnlyNotice,
   FinancialReportingSection,
   ReportAmountPair,
+  ReportAssumptionNote,
   ReportLoadingState,
   ReportMetricCard,
   ReportMetricGrid,
@@ -41,9 +44,11 @@ import {
   buildFinancialReportCsvFileName,
   REPORTING_OPTION_PAGE_SIZE,
   formatReportDateRangeLabel,
+  formatRunningBalance,
   getDefaultReportDateRange,
   isDateRangeInvalid,
 } from './utils';
+import { GeneralLedgerVisualSummary } from './analytics';
 
 const buildGeneralLedgerFilters = ({
   particularAccountId,
@@ -196,7 +201,7 @@ export const GeneralLedgerPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <AppPage>
       <FinancialReportingPageHeader
         actions={
           reportQuery.data ? (
@@ -299,16 +304,45 @@ export const GeneralLedgerPage = () => {
               },
               {
                 label: 'Voucher scope',
-                value: reportQuery.data.voucherType ?? 'All posted voucher types',
+                value:
+                  reportQuery.data.voucherType ?? 'All posted voucher types',
               },
             ]}
             title="General ledger print context"
           />
 
           <FinancialReportingSection
-            description="Voucher references, voucher IDs, and line descriptions come directly from the backend ledger response for finance-side traceability."
-            title="Ledger output"
+            description="Posting-account identity, period movement, and closing balance for the selected ledger scope."
+            title="Executive summary"
           >
+            <FinancialReportContextStrip
+              items={[
+                {
+                  label: 'Report period',
+                  value: formatReportDateRangeLabel(
+                    reportQuery.data.dateFrom,
+                    reportQuery.data.dateTo,
+                  ),
+                },
+                {
+                  label: 'Posting account',
+                  value: reportQuery.data.account.particularAccountCode,
+                },
+                {
+                  label: 'Voucher scope',
+                  value:
+                    reportQuery.data.voucherType ?? 'All posted voucher types',
+                },
+                {
+                  label: 'Closing balance',
+                  value: formatRunningBalance(
+                    reportQuery.data.totals.closingDebit,
+                    reportQuery.data.totals.closingCredit,
+                  ),
+                },
+              ]}
+            />
+
             <ReportValueList
               items={[
                 {
@@ -366,7 +400,19 @@ export const GeneralLedgerPage = () => {
                 }`}
               />
             </ReportMetricGrid>
+          </FinancialReportingSection>
 
+          <FinancialReportingSection
+            description="Debit and credit movement is shown across opening, period, closing, and voucher-date activity."
+            title="Visual analysis"
+          >
+            <GeneralLedgerVisualSummary report={reportQuery.data} />
+          </FinancialReportingSection>
+
+          <FinancialReportingSection
+            description="Voucher references, voucher IDs, descriptions, and running balances come directly from the backend ledger response."
+            title="Detailed transaction table"
+          >
             <GeneralLedgerLinesTable
               dateFrom={reportQuery.data.dateFrom}
               lines={reportQuery.data.lines}
@@ -377,14 +423,37 @@ export const GeneralLedgerPage = () => {
             <div className="rounded-2xl border border-border/70 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
               Current closing balance{' '}
               <span className="font-mono font-semibold text-foreground tabular-nums">
-                {formatAccountingAmount(reportQuery.data.totals.closingDebit)} Dr
-                / {formatAccountingAmount(reportQuery.data.totals.closingCredit)}{' '}
+                {formatAccountingAmount(reportQuery.data.totals.closingDebit)}{' '}
+                Dr /{' '}
+                {formatAccountingAmount(reportQuery.data.totals.closingCredit)}{' '}
                 Cr
               </span>
             </div>
           </FinancialReportingSection>
+
+          <FinancialReportingSection
+            description="Concise ledger notes for finance review and print output."
+            title="Assumptions and calculation notes"
+          >
+            <div className="grid gap-3">
+              <ReportAssumptionNote>
+                Opening balance is calculated from posted voucher lines before
+                the selected start date for this posting account.
+              </ReportAssumptionNote>
+              <ReportAssumptionNote>
+                Period movement and running balances include only posted voucher
+                lines that match the selected posting account, date range, and
+                optional voucher type.
+              </ReportAssumptionNote>
+              <ReportAssumptionNote>
+                This page is read-only and keeps voucher context visible for
+                traceability; voucher editing and posting remain outside this
+                report.
+              </ReportAssumptionNote>
+            </div>
+          </FinancialReportingSection>
         </>
       ) : null}
-    </div>
+    </AppPage>
   );
 };

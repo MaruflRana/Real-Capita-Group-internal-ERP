@@ -2,16 +2,17 @@
 
 import type { ReactNode } from 'react';
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@real-capita/ui';
+import { Card, CardContent } from '@real-capita/ui';
 
-import { Badge } from '../../components/ui/badge';
 import { EmptyState } from '../../components/ui/empty-state';
+import {
+  DataSourceNote,
+  KpiCard,
+  ModulePageHeader,
+  ReportSection,
+  ReportGrid,
+  StatusChip,
+} from '../../components/ui/erp-primitives';
 import { formatAccountingAmount } from '../../lib/format';
 
 export const FinancialReportingPageHeader = ({
@@ -27,28 +28,14 @@ export const FinancialReportingPageHeader = ({
   scopeSlug?: string;
   actions?: ReactNode;
 }) => (
-  <Card>
-    <CardHeader className="flex flex-col gap-4 border-b border-border/70 lg:flex-row lg:items-start lg:justify-between">
-      <div className="space-y-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
-          Financial Reports
-        </p>
-        <div className="space-y-2">
-          <CardTitle className="text-2xl">{title}</CardTitle>
-          <CardDescription className="max-w-4xl text-sm leading-6">
-            {description}
-          </CardDescription>
-        </div>
-        {scopeName ? (
-          <div className="flex flex-wrap gap-2">
-            <Badge variant="outline">{scopeName}</Badge>
-            {scopeSlug ? <Badge variant="outline">{scopeSlug}</Badge> : null}
-          </div>
-        ) : null}
-      </div>
-      {actions ? <div className="shrink-0">{actions}</div> : null}
-    </CardHeader>
-  </Card>
+  <ModulePageHeader
+    actions={actions}
+    description={description}
+    eyebrow="Financial Reports"
+    scopeName={scopeName}
+    scopeSlug={scopeSlug}
+    title={title}
+  />
 );
 
 export const FinancialReportingSection = ({
@@ -60,17 +47,9 @@ export const FinancialReportingSection = ({
   description: string;
   children: ReactNode;
 }) => (
-  <Card>
-    <CardHeader className="border-b border-border/70">
-      <div className="space-y-2">
-        <CardTitle>{title}</CardTitle>
-        <CardDescription className="max-w-4xl leading-6">
-          {description}
-        </CardDescription>
-      </div>
-    </CardHeader>
-    <CardContent className="space-y-5 pt-6">{children}</CardContent>
-  </Card>
+  <ReportSection description={description} title={title}>
+    {children}
+  </ReportSection>
 );
 
 export const FinancialReportingFilterCard = ({
@@ -79,7 +58,7 @@ export const FinancialReportingFilterCard = ({
   children: ReactNode;
 }) => (
   <Card>
-    <CardContent className="space-y-4 pt-6">{children}</CardContent>
+    <CardContent className="space-y-4 pt-5 sm:pt-6">{children}</CardContent>
   </Card>
 );
 
@@ -88,7 +67,7 @@ export const FinancialReportingQueryErrorBanner = ({
 }: {
   message: string;
 }) => (
-  <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+  <div className="rounded-lg border border-status-danger/25 bg-status-dangerSoft px-4 py-3 text-sm font-medium text-status-danger">
     {message}
   </div>
 );
@@ -100,9 +79,37 @@ export const FinancialReportingReadOnlyNotice = ({
   title: string;
   description: string;
 }) => (
-  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+  <div className="rounded-lg border border-status-warning/30 bg-status-warningSoft px-4 py-3 text-sm text-status-warning">
     <p className="font-semibold">{title}</p>
     <p className="mt-1">{description}</p>
+  </div>
+);
+
+export const FinancialReportContextStrip = ({
+  items,
+}: {
+  items: Array<{
+    label: string;
+    value: ReactNode;
+    tone?: 'default' | 'info' | 'success' | 'warning' | 'danger';
+  }>;
+}) => (
+  <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr))]">
+    {items.map((item) => (
+      <div
+        className="min-w-0 rounded-lg border border-border bg-surface-raised px-3.5 py-3"
+        key={item.label}
+      >
+        <p className="erp-label">{item.label}</p>
+        <div className="mt-2 min-w-0 text-sm font-semibold leading-6 text-foreground">
+          {item.tone ? (
+            <StatusChip tone={item.tone}>{item.value}</StatusChip>
+          ) : (
+            item.value
+          )}
+        </div>
+      </div>
+    ))}
   </div>
 );
 
@@ -114,20 +121,20 @@ export const FinancialReportingAccessRequiredState = () => (
 );
 
 export const ReportLoadingState = ({ label }: { label: string }) => (
-  <div className="rounded-2xl border border-border/70 bg-background/80 px-4 py-8 text-sm text-muted-foreground">
+  <div className="rounded-lg border border-border bg-surface-muted px-4 py-8 text-sm text-muted-foreground">
     {label}
   </div>
 );
 
 export const ReportRefreshHint = ({ isFetching }: { isFetching: boolean }) =>
   isFetching ? (
-    <div className="rounded-2xl border border-border/70 bg-muted/25 px-4 py-3 text-sm text-muted-foreground">
+    <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm text-muted-foreground">
       Refreshing the report with the current filters.
     </div>
   ) : null;
 
 export const ReportMetricGrid = ({ children }: { children: ReactNode }) => (
-  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">{children}</div>
+  <ReportGrid>{children}</ReportGrid>
 );
 
 export const ReportMetricCard = ({
@@ -141,24 +148,18 @@ export const ReportMetricCard = ({
   description?: string;
   tone?: 'default' | 'success' | 'warning';
 }) => (
-  <div
-    className={[
-      'rounded-3xl border px-4 py-4',
+  <KpiCard
+    helper={description}
+    label={label}
+    tone={
       tone === 'success'
-        ? 'border-emerald-200 bg-emerald-50'
+        ? 'success'
         : tone === 'warning'
-          ? 'border-amber-200 bg-amber-50'
-          : 'border-border/70 bg-muted/20',
-    ].join(' ')}
-  >
-    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-      {label}
-    </p>
-    <div className="mt-3 text-lg font-semibold text-foreground">{value}</div>
-    {description ? (
-      <p className="mt-2 text-sm text-muted-foreground">{description}</p>
-    ) : null}
-  </div>
+          ? 'warning'
+          : 'default'
+    }
+    value={value}
+  />
 );
 
 export const ReportAmountPair = ({
@@ -174,7 +175,7 @@ export const ReportAmountPair = ({
 }) => (
   <div className="grid grid-cols-2 gap-3">
     <div>
-      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+      <p className="text-sm font-semibold text-muted-foreground">
         {debitLabel}
       </p>
       <p className="mt-1 font-mono text-sm tabular-nums text-foreground">
@@ -182,7 +183,7 @@ export const ReportAmountPair = ({
       </p>
     </div>
     <div>
-      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+      <p className="text-sm font-semibold text-muted-foreground">
         {creditLabel}
       </p>
       <p className="mt-1 font-mono text-sm tabular-nums text-foreground">
@@ -200,16 +201,18 @@ export const ReportValueList = ({
     value: ReactNode;
   }>;
 }) => (
-  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+  <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr))]">
     {items.map((item) => (
       <div
-        className="rounded-2xl border border-border/70 bg-muted/20 px-4 py-3"
+        className="min-w-0 rounded-lg border border-border bg-surface-muted px-4 py-3"
         key={item.label}
       >
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+        <p className="text-sm font-semibold leading-5 text-muted-foreground">
           {item.label}
         </p>
-        <div className="mt-2 text-sm text-foreground">{item.value}</div>
+        <div className="mt-2 break-words text-sm text-foreground [overflow-wrap:anywhere]">
+          {item.value}
+        </div>
       </div>
     ))}
   </div>
@@ -225,12 +228,12 @@ export const FinancialReportingPrintContext = ({
   }>;
   title: string;
 }) => (
-  <div className="print-only rounded-2xl border border-border/70 bg-background px-4 py-4">
+  <div className="print-only rounded-lg border border-border bg-background px-4 py-4">
     <p className="text-sm font-semibold text-foreground">{title}</p>
     <div className="mt-3 grid gap-3 md:grid-cols-2">
       {items.map((item) => (
         <div key={item.label}>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+          <p className="text-xs font-semibold text-muted-foreground">
             {item.label}
           </p>
           <div className="mt-1 text-sm text-foreground">{item.value}</div>
@@ -247,10 +250,10 @@ export const BalanceStatusBanner = ({
 }) => (
   <div
     className={[
-      'rounded-2xl px-4 py-3 text-sm',
+      'rounded-lg px-4 py-3 text-sm',
       isBalanced
-        ? 'border border-emerald-200 bg-emerald-50 text-emerald-900'
-        : 'border border-rose-200 bg-rose-50 text-rose-900',
+        ? 'border border-status-success/25 bg-status-successSoft text-status-success'
+        : 'border border-status-danger/25 bg-status-dangerSoft text-status-danger',
     ].join(' ')}
   >
     <p className="font-semibold">
@@ -264,4 +267,10 @@ export const BalanceStatusBanner = ({
         : 'The backend reported an imbalance for the selected as-of date. Treat the statement as diagnostic until that issue is resolved.'}
     </p>
   </div>
+);
+
+export const ReportAssumptionNote = ({ children }: { children: ReactNode }) => (
+  <DataSourceNote className="rounded-lg border border-border bg-surface-muted px-4 py-3">
+    {children}
+  </DataSourceNote>
 );

@@ -8,6 +8,10 @@ import { Prisma } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import type {
   BalanceSheetResponseDto,
+  BusinessOverviewReportBucketDto,
+  BusinessOverviewReportQueryDto,
+  BusinessOverviewReportResponseDto,
+  BusinessReportBucket,
   FinancialStatementAccountGroupDto,
   FinancialStatementLedgerAccountDto,
   FinancialStatementPostingAccountDto,
@@ -36,6 +40,7 @@ import {
 } from './financial-reporting.utils';
 import {
   FinancialReportingRepository,
+  type BusinessReportAggregateRow,
   type ReportingAccountAggregateRow,
   type TrialBalanceAggregateRow,
 } from './financial-reporting.repository';
@@ -111,6 +116,29 @@ type StatementSectionState = {
   accountGroups: StatementAccountGroupState[];
 };
 
+type BusinessOverviewAmountState = {
+  contractedSalesAmount: Prisma.Decimal;
+  collectedSalesAmount: Prisma.Decimal;
+  revenueAmount: Prisma.Decimal;
+  expenseAmount: Prisma.Decimal;
+  netProfitLossAmount: Prisma.Decimal;
+  profitAmount: Prisma.Decimal;
+  lossAmount: Prisma.Decimal;
+  voucherCount: number;
+  draftVoucherCount: number;
+  postedVoucherCount: number;
+  bookingCount: number;
+  saleContractCount: number;
+  collectionCount: number;
+};
+
+type BusinessOverviewBucketState = BusinessOverviewAmountState & {
+  bucketKey: string;
+  bucketLabel: string;
+  bucketStart: string;
+  bucketEnd: string;
+};
+
 @Injectable()
 export class FinancialReportingService {
   constructor(
@@ -125,7 +153,10 @@ export class FinancialReportingService {
     // Prompt 19 intentionally keeps project/cost-center filtering out of the API.
     // Posted voucher lines do not carry generic dimensional columns in the current
     // accounting schema, so exposing those filters here would produce misleading reports.
-    const { dateFrom, dateTo } = this.parseDateRange(query.dateFrom, query.dateTo);
+    const { dateFrom, dateTo } = this.parseDateRange(
+      query.dateFrom,
+      query.dateTo,
+    );
 
     await this.assertCompanyExists(companyId);
 
@@ -181,7 +212,9 @@ export class FinancialReportingService {
       ledgerAccountId: query.ledgerAccountId ?? null,
       particularAccountId: query.particularAccountId ?? null,
       totals: this.serializeTrialBalanceAmounts(totals),
-      sections: sections.map((section) => this.serializeTrialBalanceSection(section)),
+      sections: sections.map((section) =>
+        this.serializeTrialBalanceSection(section),
+      ),
     };
   }
 
@@ -189,7 +222,10 @@ export class FinancialReportingService {
     companyId: string,
     query: GeneralLedgerQueryDto,
   ): Promise<GeneralLedgerResponseDto> {
-    const { dateFrom, dateTo } = this.parseDateRange(query.dateFrom, query.dateTo);
+    const { dateFrom, dateTo } = this.parseDateRange(
+      query.dateFrom,
+      query.dateTo,
+    );
 
     await this.assertCompanyExists(companyId);
 
@@ -205,13 +241,14 @@ export class FinancialReportingService {
         dateTo,
         ...(query.voucherType ? { voucherType: query.voucherType } : {}),
       });
-    const lines = await this.financialReportingRepository.fetchGeneralLedgerEntries({
-      companyId,
-      particularAccountId: query.particularAccountId,
-      dateFrom,
-      dateTo,
-      ...(query.voucherType ? { voucherType: query.voucherType } : {}),
-    });
+    const lines =
+      await this.financialReportingRepository.fetchGeneralLedgerEntries({
+        companyId,
+        particularAccountId: query.particularAccountId,
+        dateFrom,
+        dateTo,
+        ...(query.voucherType ? { voucherType: query.voucherType } : {}),
+      });
 
     let runningBalance = totalsToSignedBalance(
       openingRow?.debitTotal,
@@ -272,7 +309,10 @@ export class FinancialReportingService {
       },
       openingBalance: this.serializeDebitCredit(
         signedBalanceToDebitCredit(
-          totalsToSignedBalance(openingRow?.debitTotal, openingRow?.creditTotal),
+          totalsToSignedBalance(
+            openingRow?.debitTotal,
+            openingRow?.creditTotal,
+          ),
         ),
       ),
       totals: {
@@ -289,7 +329,10 @@ export class FinancialReportingService {
     companyId: string,
     query: ProfitAndLossQueryDto,
   ): Promise<ProfitAndLossResponseDto> {
-    const { dateFrom, dateTo } = this.parseDateRange(query.dateFrom, query.dateTo);
+    const { dateFrom, dateTo } = this.parseDateRange(
+      query.dateFrom,
+      query.dateTo,
+    );
 
     await this.assertCompanyExists(companyId);
 
@@ -302,9 +345,11 @@ export class FinancialReportingService {
       omitZeroAccounts: true,
     });
     const revenueSection =
-      sections.find((section) => section.accountClassCode === 'REVENUE') ?? null;
+      sections.find((section) => section.accountClassCode === 'REVENUE') ??
+      null;
     const expenseSection =
-      sections.find((section) => section.accountClassCode === 'EXPENSE') ?? null;
+      sections.find((section) => section.accountClassCode === 'EXPENSE') ??
+      null;
     const totalRevenue = revenueSection?.amount ?? zeroDecimal();
     const totalExpense = expenseSection?.amount ?? zeroDecimal();
 
@@ -317,7 +362,9 @@ export class FinancialReportingService {
         totalExpense: formatDecimal(totalExpense),
         netProfitLoss: formatDecimal(totalRevenue.minus(totalExpense)),
       },
-      sections: sections.map((section) => this.serializeStatementSection(section)),
+      sections: sections.map((section) =>
+        this.serializeStatementSection(section),
+      ),
     };
   }
 
@@ -340,7 +387,8 @@ export class FinancialReportingService {
     const assetsSection =
       sections.find((section) => section.accountClassCode === 'ASSET') ?? null;
     const liabilitiesSection =
-      sections.find((section) => section.accountClassCode === 'LIABILITY') ?? null;
+      sections.find((section) => section.accountClassCode === 'LIABILITY') ??
+      null;
     const equitySection =
       sections.find((section) => section.accountClassCode === 'EQUITY') ?? null;
 
@@ -378,7 +426,9 @@ export class FinancialReportingService {
         unclosedEarnings: formatDecimal(unclosedEarnings),
         totalLiabilitiesAndEquity: formatDecimal(totalLiabilitiesAndEquity),
       },
-      sections: sections.map((section) => this.serializeStatementSection(section)),
+      sections: sections.map((section) =>
+        this.serializeStatementSection(section),
+      ),
       equityAdjustments: [
         {
           code: 'UNCLOSED_EARNINGS',
@@ -386,6 +436,46 @@ export class FinancialReportingService {
           amount: formatDecimal(unclosedEarnings),
         },
       ],
+    };
+  }
+
+  async getBusinessOverviewReport(
+    companyId: string,
+    query: BusinessOverviewReportQueryDto,
+  ): Promise<BusinessOverviewReportResponseDto> {
+    const { dateFrom, dateTo } = this.parseDateRange(
+      query.dateFrom,
+      query.dateTo,
+    );
+    const bucket = query.bucket ?? 'month';
+
+    await this.assertCompanyExists(companyId);
+
+    const rows =
+      await this.financialReportingRepository.fetchBusinessReportRows({
+        companyId,
+        dateFrom,
+        dateTo,
+        bucket,
+      });
+    const buckets = rows.map((row) =>
+      this.createBusinessOverviewBucket(row, bucket),
+    );
+    const totals = buckets.reduce(
+      (result, item) => this.addBusinessOverviewAmounts(result, item),
+      this.emptyBusinessOverviewAmountState(),
+    );
+
+    return {
+      companyId,
+      dateFrom,
+      dateTo,
+      bucket,
+      totals: this.serializeBusinessOverviewAmounts(totals),
+      buckets: buckets.map((bucketState) =>
+        this.serializeBusinessOverviewBucket(bucketState),
+      ),
+      assumptions: this.getBusinessOverviewAssumptions(),
     };
   }
 
@@ -879,5 +969,171 @@ export class FinancialReportingService {
       debit: formatDecimal(balance.debit),
       credit: formatDecimal(balance.credit),
     };
+  }
+
+  private createBusinessOverviewBucket(
+    row: BusinessReportAggregateRow,
+    bucket: BusinessReportBucket,
+  ): BusinessOverviewBucketState {
+    const bucketStart = this.serializeDate(row.bucketStart);
+    const bucketEnd = this.serializeDate(row.bucketEnd);
+    const revenueAmount = toDecimal(row.revenueAmount);
+    const expenseAmount = toDecimal(row.expenseAmount);
+    const netProfitLossAmount = revenueAmount.minus(expenseAmount);
+
+    return {
+      bucketKey:
+        bucket === 'year'
+          ? bucketStart.slice(0, 4)
+          : bucket === 'month'
+            ? bucketStart.slice(0, 7)
+            : bucket === 'week'
+              ? bucketStart
+              : bucketStart,
+      bucketLabel: this.formatBusinessReportBucketLabel(
+        bucket,
+        bucketStart,
+        bucketEnd,
+      ),
+      bucketStart,
+      bucketEnd,
+      contractedSalesAmount: toDecimal(row.contractedSalesAmount),
+      collectedSalesAmount: toDecimal(row.collectedSalesAmount),
+      revenueAmount,
+      expenseAmount,
+      netProfitLossAmount,
+      profitAmount: netProfitLossAmount.gt(0)
+        ? netProfitLossAmount
+        : zeroDecimal(),
+      lossAmount: netProfitLossAmount.lt(0)
+        ? netProfitLossAmount.abs()
+        : zeroDecimal(),
+      voucherCount: Number(row.voucherCount ?? 0),
+      draftVoucherCount: Number(row.draftVoucherCount ?? 0),
+      postedVoucherCount: Number(row.postedVoucherCount ?? 0),
+      bookingCount: Number(row.bookingCount ?? 0),
+      saleContractCount: Number(row.saleContractCount ?? 0),
+      collectionCount: Number(row.collectionCount ?? 0),
+    };
+  }
+
+  private emptyBusinessOverviewAmountState(): BusinessOverviewAmountState {
+    return {
+      contractedSalesAmount: zeroDecimal(),
+      collectedSalesAmount: zeroDecimal(),
+      revenueAmount: zeroDecimal(),
+      expenseAmount: zeroDecimal(),
+      netProfitLossAmount: zeroDecimal(),
+      profitAmount: zeroDecimal(),
+      lossAmount: zeroDecimal(),
+      voucherCount: 0,
+      draftVoucherCount: 0,
+      postedVoucherCount: 0,
+      bookingCount: 0,
+      saleContractCount: 0,
+      collectionCount: 0,
+    };
+  }
+
+  private addBusinessOverviewAmounts<T extends BusinessOverviewAmountState>(
+    target: T,
+    source: BusinessOverviewAmountState,
+  ): T {
+    target.contractedSalesAmount = target.contractedSalesAmount.plus(
+      source.contractedSalesAmount,
+    );
+    target.collectedSalesAmount = target.collectedSalesAmount.plus(
+      source.collectedSalesAmount,
+    );
+    target.revenueAmount = target.revenueAmount.plus(source.revenueAmount);
+    target.expenseAmount = target.expenseAmount.plus(source.expenseAmount);
+    target.netProfitLossAmount = target.netProfitLossAmount.plus(
+      source.netProfitLossAmount,
+    );
+    target.profitAmount = target.netProfitLossAmount.gt(0)
+      ? target.netProfitLossAmount
+      : zeroDecimal();
+    target.lossAmount = target.netProfitLossAmount.lt(0)
+      ? target.netProfitLossAmount.abs()
+      : zeroDecimal();
+    target.voucherCount += source.voucherCount;
+    target.draftVoucherCount += source.draftVoucherCount;
+    target.postedVoucherCount += source.postedVoucherCount;
+    target.bookingCount += source.bookingCount;
+    target.saleContractCount += source.saleContractCount;
+    target.collectionCount += source.collectionCount;
+
+    return target;
+  }
+
+  private serializeBusinessOverviewAmounts(
+    amounts: BusinessOverviewAmountState,
+  ) {
+    return {
+      contractedSalesAmount: formatDecimal(amounts.contractedSalesAmount),
+      collectedSalesAmount: formatDecimal(amounts.collectedSalesAmount),
+      revenueAmount: formatDecimal(amounts.revenueAmount),
+      expenseAmount: formatDecimal(amounts.expenseAmount),
+      netProfitLossAmount: formatDecimal(amounts.netProfitLossAmount),
+      profitAmount: formatDecimal(amounts.profitAmount),
+      lossAmount: formatDecimal(amounts.lossAmount),
+      voucherCount: amounts.voucherCount,
+      draftVoucherCount: amounts.draftVoucherCount,
+      postedVoucherCount: amounts.postedVoucherCount,
+      bookingCount: amounts.bookingCount,
+      saleContractCount: amounts.saleContractCount,
+      collectionCount: amounts.collectionCount,
+    };
+  }
+
+  private serializeBusinessOverviewBucket(
+    bucket: BusinessOverviewBucketState,
+  ): BusinessOverviewReportBucketDto {
+    return {
+      bucketKey: bucket.bucketKey,
+      bucketLabel: bucket.bucketLabel,
+      bucketStart: bucket.bucketStart,
+      bucketEnd: bucket.bucketEnd,
+      ...this.serializeBusinessOverviewAmounts(bucket),
+    };
+  }
+
+  private serializeDate(value: Date | string): string {
+    if (value instanceof Date) {
+      return value.toISOString().slice(0, 10);
+    }
+
+    return String(value).slice(0, 10);
+  }
+
+  private formatBusinessReportBucketLabel(
+    bucket: BusinessReportBucket,
+    bucketStart: string,
+    bucketEnd: string,
+  ) {
+    if (bucket === 'month') {
+      return bucketStart.slice(0, 7);
+    }
+
+    if (bucket === 'year') {
+      return bucketStart.slice(0, 4);
+    }
+
+    if (bucket === 'week') {
+      return `${bucketStart} to ${bucketEnd}`;
+    }
+
+    return bucketStart;
+  }
+
+  private getBusinessOverviewAssumptions() {
+    return [
+      'Contracted sales are summed from sale contract amounts by contract date.',
+      'Collected sales are summed from collection amounts by collection date.',
+      'Revenue is derived from posted voucher lines in REVENUE account classes as credit minus debit by voucher date.',
+      'Expenses are derived from posted voucher lines in EXPENSE account classes as debit minus credit by voucher date.',
+      'Net profit/loss is revenue minus expenses; loss is shown as the absolute amount when net profit/loss is negative.',
+      'Voucher, booking, sale contract, and collection counts are grouped by their own business dates within the selected company scope.',
+    ];
   }
 }

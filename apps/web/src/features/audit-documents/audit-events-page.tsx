@@ -6,12 +6,14 @@ import { Button } from '@real-capita/ui';
 
 import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
+import { AppPage } from '../../components/ui/erp-primitives';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { OutputActionGroup } from '../../components/ui/output-actions';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
+import { AuditDocumentAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -225,7 +227,7 @@ export const AuditEventsPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <AppPage>
       <AuditDocumentsPageHeader
         title="Audit Events"
         description="Browse company-scoped audit events with operational filters, compact metadata previews, and a focused detail surface for traceability."
@@ -241,6 +243,20 @@ export const AuditEventsPage = () => {
 
       {uploadersError ? <AuditDocumentsQueryErrorBanner message={uploadersError} /> : null}
       {exportError ? <AuditDocumentsQueryErrorBanner message={exportError} /> : null}
+
+      <AuditDocumentAnalyticsPanel
+        companyId={companyId}
+        companySlug={user.currentCompany.slug}
+        enabled={isEnabled}
+        period={
+          dateFrom && dateTo
+            ? {
+                dateFrom,
+                dateTo,
+              }
+            : undefined
+        }
+      />
 
       <AuditDocumentsSection
         title="Audit event list"
@@ -489,6 +505,6 @@ export const AuditEventsPage = () => {
           </div>
         ) : null}
       </SidePanel>
-    </div>
+    </AppPage>
   );
 };

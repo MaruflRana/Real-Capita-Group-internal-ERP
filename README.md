@@ -48,6 +48,7 @@ tests/
 - Phase 1 backup, restore, MinIO/S3, and disaster-recovery notes live in [docs/operations/backup-restore.md](docs/operations/backup-restore.md).
 - Phase 1 route/module inventory lives in [docs/operations/phase-1-route-inventory.md](docs/operations/phase-1-route-inventory.md).
 - Phase 1 UAT checklist lives in [docs/operations/phase-1-uat-checklist.md](docs/operations/phase-1-uat-checklist.md).
+- Synthetic demo/UAT seed, reset, and verify commands live in [docs/operations/demo-data.md](docs/operations/demo-data.md).
 - Phase 1 release checklist and caveats register live in [docs/operations/phase-1-release-checklist.md](docs/operations/phase-1-release-checklist.md).
 - Phase 1 UAT, demo, issue-log, and sign-off package lives in [docs/uat/README.md](docs/uat/README.md).
 

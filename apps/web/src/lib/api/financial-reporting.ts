@@ -3,6 +3,8 @@ import { buildQueryString } from './query-string';
 import type {
   BalanceSheetQueryParams,
   BalanceSheetResponseRecord,
+  BusinessOverviewReportQueryParams,
+  BusinessOverviewReportResponseRecord,
   GeneralLedgerQueryParams,
   GeneralLedgerResponseRecord,
   ProfitAndLossQueryParams,
@@ -10,6 +12,14 @@ import type {
   TrialBalanceQueryParams,
   TrialBalanceResponseRecord,
 } from './types';
+
+export const getBusinessOverviewReport = (
+  companyId: string,
+  query: BusinessOverviewReportQueryParams,
+) =>
+  apiRequest<BusinessOverviewReportResponseRecord>(
+    `companies/${companyId}/accounting/reports/business-overview${buildQueryString(query)}`,
+  );
 
 export const getTrialBalanceReport = (
   companyId: string,
