@@ -53,6 +53,9 @@ const toneStyles: Record<
   },
 };
 
+const actionWrapClass =
+  'flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto lg:shrink-0 lg:justify-end';
+
 export const AppPage = ({
   className,
   ...props
@@ -81,7 +84,7 @@ export const ModulePageHeader = ({
   className?: string | undefined;
 }) => (
   <Card className={cn('min-w-0 overflow-hidden', className)}>
-    <CardHeader className="flex flex-col gap-4 border-b border-border bg-surface-raised px-5 py-5 lg:flex-row lg:items-start lg:justify-between sm:px-6">
+    <CardHeader className="flex flex-col gap-4 border-b border-border bg-surface-raised px-5 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
       <div className="min-w-0 space-y-3">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
           {eyebrow}
@@ -105,7 +108,7 @@ export const ModulePageHeader = ({
           </div>
         ) : null}
       </div>
-      {actions ? <div className="shrink-0">{actions}</div> : null}
+      {actions ? <div className={actionWrapClass}>{actions}</div> : null}
     </CardHeader>
   </Card>
 );
@@ -126,14 +129,14 @@ export const ModuleSection = ({
   contentClassName?: string | undefined;
 }) => (
   <Card className={cn('min-w-0 overflow-hidden', className)}>
-    <CardHeader className="flex flex-col gap-4 border-b border-border bg-surface-raised/80 px-5 py-5 lg:flex-row lg:items-start lg:justify-between sm:px-6">
+    <CardHeader className="flex flex-col gap-4 border-b border-border bg-surface-raised/80 px-5 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
       <div className="min-w-0 space-y-2">
         <CardTitle className="text-lg leading-7">{title}</CardTitle>
         <CardDescription className="max-w-4xl leading-6">
           {description}
         </CardDescription>
       </div>
-      {actions ? <div className="shrink-0">{actions}</div> : null}
+      {actions ? <div className={actionWrapClass}>{actions}</div> : null}
     </CardHeader>
     <CardContent className={cn('space-y-4 pt-5 sm:pt-5', contentClassName)}>
       {children}
@@ -194,7 +197,7 @@ export const PageSection = ({
           </p>
         ) : null}
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
+      {action ? <div className={actionWrapClass}>{action}</div> : null}
     </div>
     <div className={cn('space-y-4 xl:space-y-5', contentClassName)}>
       {children}
@@ -419,7 +422,7 @@ export const ChartCardShell = ({
           <CardDescription className="max-w-3xl">{description}</CardDescription>
         ) : null}
       </div>
-      {action ? <div className="shrink-0">{action}</div> : null}
+      {action ? <div className={actionWrapClass}>{action}</div> : null}
     </CardHeader>
     <CardContent className="space-y-5 pt-5">
       {children}
@@ -445,15 +448,17 @@ export const EmptyStateBlock = ({
 }) => (
   <div
     className={cn(
-      'rounded-lg border border-dashed border-border bg-surface-muted px-4 py-5',
+      'min-w-0 rounded-lg border border-dashed border-border bg-surface-muted px-4 py-5',
       className,
     )}
   >
-    <p className="text-sm font-semibold text-foreground">{title}</p>
-    <div className="mt-2 text-sm leading-6 text-muted-foreground">
+    <p className="break-words text-sm font-semibold text-foreground [overflow-wrap:anywhere]">
+      {title}
+    </p>
+    <div className="mt-2 break-words text-sm leading-6 text-muted-foreground [overflow-wrap:anywhere]">
       {description}
     </div>
-    {action ? <div className="mt-4">{action}</div> : null}
+    {action ? <div className="mt-4 flex flex-wrap gap-2">{action}</div> : null}
   </div>
 );
 
@@ -466,7 +471,7 @@ export const DataSourceNote = ({
 }) => (
   <div
     className={cn(
-      'text-sm leading-6 text-muted-foreground',
+      'break-words text-sm leading-6 text-muted-foreground [overflow-wrap:anywhere]',
       className,
     )}
   >
@@ -480,7 +485,7 @@ export const TableShell = ({
 }: HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      'table-shell overflow-x-auto rounded-lg border border-border bg-card shadow-sm',
+      'table-shell max-w-full overflow-x-auto overscroll-x-contain rounded-lg border border-border bg-card shadow-sm',
       className,
     )}
     {...props}
