@@ -4,7 +4,7 @@ This walkthrough supports a 20 to 40 minute Real Capita supervisor or client-fac
 
 Recommended URL: `http://localhost:3000`
 
-Checkpoint reference: `3bf83f5e`
+Supervisor-demo baseline checkpoint: `8ff52398`
 
 ## Demo Preparation Checklist
 
@@ -13,6 +13,7 @@ Before the session:
 - Confirm the stack is running from `docker compose up -d --build`.
 - Confirm migrations have been applied with `corepack pnpm docker:migrate`.
 - Confirm a company admin exists through `corepack pnpm docker:bootstrap -- --company-name ...`.
+- For the seeded supervisor walkthrough, run `corepack pnpm seed:demo` and `corepack pnpm seed:demo:verify`.
 - Confirm `corepack pnpm docker:smoke` passes.
 - Use the canonical browser origin `http://localhost:3000`.
 - Confirm the demo account, password, company, and role labels are known.
@@ -27,12 +28,13 @@ Before the session:
 | --- | --- | --- | --- |
 | 3 min | Login and session | Open `/login`, sign in, show company selection if the account has multiple active companies, land on `/dashboard`. | Phase 1 is company-scoped and role-aware. Single-company users may not see the selector. |
 | 4 min | Dashboard | Show company snapshot, recent activity, pending work, quick actions, and period control. | Dashboard is frontend-only and uses existing REST endpoints; widgets follow role access. |
-| 4 min | Org & Security | Show users and role assignments as admin. | Admin controls company-scoped users and roles. Non-admin users do not receive this module. |
-| 5 min | Accounting | Show chart of accounts, voucher list, voucher detail, draft/posting behavior if data is available. | Accounting is the operational foundation for posted vouchers and financial reports. |
-| 5 min | Financial Reports | Show trial balance, general ledger, profit & loss, and balance sheet. Export one CSV and click Print on one report. | Reports are read-only, company-scoped, and based on posted vouchers. CSV and browser print are Phase 1 output paths. |
-| 4 min | Project/Property and CRM | Show project/property master routes, then customers, bookings, sale contracts, installments, and collections. | Master data supports CRM/property desk workflows. Sales users can access CRM without unrelated admin modules. |
-| 4 min | HR and Payroll | Show employees, leave requests, salary structures, payroll runs, payroll detail, and payroll posting. | HR users can reach HR and payroll; payroll-only users reach payroll but not HR. |
+| 5 min | Financial Reports | Show business overview, daily/weekly/monthly/yearly reports, trial balance, general ledger, profit & loss, and balance sheet. Export one CSV and click Print on one report. | Reports are read-only, company-scoped, and based on posted vouchers plus existing CRM/property records where documented. Select a posting account before demonstrating General Ledger output. |
+| 4 min | Project/Property master | Show projects, cost centers, phases, blocks, zones, unit types/statuses, and units. | Master data supports inventory visibility and downstream CRM/property desk workflows. |
+| 4 min | CRM booking/sales/collections | Show customers, leads, bookings, sale contracts, installment schedules, and collections. | Sales users can access CRM without unrelated admin modules. Collections keep voucher-backed accounting context visible where the workflow expects it. |
+| 4 min | HR attendance/leave | Show employees, attendance devices/mappings/logs, leave types, and leave requests. | HR users can reach HR and payroll; attendance and leave remain within Phase 1 lifecycle scope. |
+| 4 min | Payroll | Show salary structures, payroll runs, run detail, and payroll posting. | Payroll-only users reach payroll but not HR or accounting modules directly. |
 | 4 min | Audit & Documents | Show attachment list/detail, upload/finalize/download flow if storage is ready, and audit events as admin. | Files upload directly from browser to object storage through presigned URLs; audit events are admin-only. |
+| 4 min | Org & Security | Show users and role assignments as admin under `/org-security/...`. | Admin controls company-scoped users and roles. Non-admin users do not receive this module. |
 | 3 min | Role-aware access | Sign in as a restricted role or open a denied route directly. | Navigation hides unavailable modules; direct unauthorized access shows a stable forbidden state. |
 | 3 min | Operations and sign-off | Show backup/restore commands, UAT issue log, known limitations, and sign-off checklist. | Phase 1 handoff depends on UAT evidence, backup verification, restore dry-run, and limitation acknowledgement. |
 
@@ -63,8 +65,9 @@ Recommended opening sequence:
 
 ### Financial Reports
 
-- Trial balance, general ledger, profit & loss, and balance sheet are available.
+- Business overview, daily, weekly, monthly, yearly, trial balance, general ledger, profit & loss, and balance sheet are available.
 - Formal statements use posted vouchers only.
+- General Ledger requires a selected posting account before data, CSV export, or print output is enabled.
 - Balance sheet may show a derived unclosed earnings adjustment because year-end closing entries are not implemented in Phase 1.
 - CSV export and browser print are available for finance outputs.
 

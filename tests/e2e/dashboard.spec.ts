@@ -1302,6 +1302,7 @@ test('renders dashboard summary, recent activity, pending work, and shortcuts', 
   await expect(page.getByText('Trend scale').first()).toBeVisible();
   await expect(page.getByText('Sales and collections')).toBeVisible();
   await expect(page.getByText('Accounting workload')).toBeVisible();
+  await expect(page.getByText(/Share of total:/).first()).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Recent vouchers' })).toBeVisible();
   await expect(page.getByText('JV-3001')).toBeVisible();
   await expect(page.getByText('Pending work')).toBeVisible();

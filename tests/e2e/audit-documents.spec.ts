@@ -4,6 +4,15 @@ import { expect, test, type Page } from '@playwright/test';
 const now = '2026-04-01T00:00:00.000Z';
 const sessionCookieUrl = 'http://localhost:3100';
 
+const getLocalDateStamp = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+
 const baseSession = {
   tokenType: 'Bearer',
   accessToken: 'access-token',
@@ -864,7 +873,7 @@ test('supports attachment list, finalize error surfacing, secure upload, linking
 }) => {
   await setupAuditDocumentsApiMocks(page, { authenticated: true });
   await addAuthenticatedCookie(page);
-  const exportDate = new Date().toISOString().slice(0, 10);
+  const exportDate = getLocalDateStamp();
 
   await page.goto('/audit-documents/attachments');
 

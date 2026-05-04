@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 
 import { APP_ROUTES } from '../../lib/routes';
+import { formatDateInputValue } from '../../lib/format';
 
 import type { DashboardAccess, DashboardPeriod } from '../../lib/api/dashboard';
 
@@ -21,8 +22,6 @@ export type DashboardPeriodPresetId =
   | 'last-30-days'
   | 'last-90-days'
   | 'year-to-date';
-
-const toIsoDate = (date: Date) => date.toISOString().slice(0, 10);
 
 const shiftDateByDays = (value: Date, days: number) => {
   const result = new Date(value);
@@ -36,14 +35,14 @@ export const buildDashboardPeriod = (
   presetId: DashboardPeriodPresetId,
   now = new Date(),
 ): DashboardPeriod => {
-  const today = toIsoDate(now);
+  const today = formatDateInputValue(now);
 
   switch (presetId) {
     case 'last-30-days':
       return {
         id: presetId,
         label: 'Last 30 days',
-        dateFrom: toIsoDate(shiftDateByDays(now, -29)),
+        dateFrom: formatDateInputValue(shiftDateByDays(now, -29)),
         dateTo: today,
         asOfDate: today,
       };
@@ -51,7 +50,7 @@ export const buildDashboardPeriod = (
       return {
         id: presetId,
         label: 'Last 90 days',
-        dateFrom: toIsoDate(shiftDateByDays(now, -89)),
+        dateFrom: formatDateInputValue(shiftDateByDays(now, -89)),
         dateTo: today,
         asOfDate: today,
       };

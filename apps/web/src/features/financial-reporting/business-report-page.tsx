@@ -24,7 +24,7 @@ import type {
   BusinessOverviewReportResponseRecord,
   BusinessReportBucket,
 } from '../../lib/api/types';
-import { formatAccountingAmount } from '../../lib/format';
+import { formatAccountingAmount, formatDateInputValue } from '../../lib/format';
 import { downloadApiCsv, printCurrentPage } from '../../lib/output';
 import { DistributionChartCard, TrendChartCard } from '../analytics/components';
 import {
@@ -117,18 +117,15 @@ const MODE_CONFIG: Record<
   },
 };
 
-const toDateInputString = (value: Date): string =>
-  value.toISOString().slice(0, 10);
-
 const getDefaultBusinessReportRange = (mode: BusinessReportMode) => {
   const today = new Date();
 
   if (mode === 'daily') {
     return {
-      dateFrom: toDateInputString(
+      dateFrom: formatDateInputValue(
         new Date(today.getFullYear(), today.getMonth(), 1),
       ),
-      dateTo: toDateInputString(today),
+      dateTo: formatDateInputValue(today),
     };
   }
 
@@ -138,8 +135,8 @@ const getDefaultBusinessReportRange = (mode: BusinessReportMode) => {
     start.setDate(today.getDate() - 83);
 
     return {
-      dateFrom: toDateInputString(start),
-      dateTo: toDateInputString(today),
+      dateFrom: formatDateInputValue(start),
+      dateTo: formatDateInputValue(today),
     };
   }
 
@@ -147,14 +144,14 @@ const getDefaultBusinessReportRange = (mode: BusinessReportMode) => {
     const start = new Date(today.getFullYear() - 4, 0, 1);
 
     return {
-      dateFrom: toDateInputString(start),
-      dateTo: toDateInputString(today),
+      dateFrom: formatDateInputValue(start),
+      dateTo: formatDateInputValue(today),
     };
   }
 
   return {
-    dateFrom: toDateInputString(new Date(today.getFullYear(), 0, 1)),
-    dateTo: toDateInputString(today),
+    dateFrom: formatDateInputValue(new Date(today.getFullYear(), 0, 1)),
+    dateTo: formatDateInputValue(today),
   };
 };
 
@@ -679,7 +676,7 @@ export const BusinessReportPage = ({ mode }: { mode: BusinessReportMode }) => {
                   {
                     key: 'collectedSales',
                     label: 'Collected sales',
-                    tone: 'revenue',
+                    tone: 'collection',
                   },
                 ]}
                 title="Contracted sales vs collections"

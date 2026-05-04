@@ -22,7 +22,12 @@ import {
 } from '../../components/ui/table';
 import { isApiError } from '../../lib/api/client';
 import type { InstallmentScheduleRecord } from '../../lib/api/types';
-import { formatAccountingAmount, formatDate, formatDateTime } from '../../lib/format';
+import {
+  formatAccountingAmount,
+  formatDate,
+  formatDateInputValue,
+  formatDateTime,
+} from '../../lib/format';
 import {
   InstallmentScheduleEditPanel,
   InstallmentSchedulesCreatePanel,
@@ -52,7 +57,7 @@ import {
 } from './utils';
 
 const getDueState = (dueDate: string): 'upcoming' | 'due' | 'overdue' => {
-  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayKey = formatDateInputValue(new Date());
 
   if (dueDate < todayKey) {
     return 'overdue';

@@ -27,14 +27,18 @@ export type AnalyticsValueFormat =
 type AnalyticsGridColumns = 'two' | 'three';
 export type ChartTone =
   | 'revenue'
+  | 'success'
   | 'positive'
   | 'expense'
+  | 'danger'
   | 'negative'
+  | 'info'
   | 'neutral'
   | 'balance'
   | 'warning'
   | 'pending'
   | 'sales'
+  | 'collection'
   | 'property'
   | 'hr'
   | 'payroll'
@@ -57,13 +61,15 @@ type ChartLegendItem = {
 };
 
 const DEFAULT_TONES: ChartTone[] = [
+  'balance',
   'revenue',
   'expense',
-  'balance',
-  'sales',
-  'property',
-  'payroll',
   'warning',
+  'sales',
+  'collection',
+  'property',
+  'hr',
+  'payroll',
   'audit',
   'documents',
   'neutral',
@@ -85,7 +91,15 @@ const CHART_TONE_STYLES: Record<
     border: 'border-chart-revenue/25',
     soft: 'bg-status-successSoft',
     text: 'text-status-success',
-    marker: 'R',
+    marker: 'Rev',
+    primitiveTone: 'success',
+  },
+  success: {
+    bar: 'bg-chart-revenue',
+    border: 'border-chart-revenue/25',
+    soft: 'bg-status-successSoft',
+    text: 'text-status-success',
+    marker: 'OK',
     primitiveTone: 'success',
   },
   positive: {
@@ -101,7 +115,15 @@ const CHART_TONE_STYLES: Record<
     border: 'border-chart-expense/25',
     soft: 'bg-status-dangerSoft',
     text: 'text-status-danger',
-    marker: 'E',
+    marker: 'Cost',
+    primitiveTone: 'danger',
+  },
+  danger: {
+    bar: 'bg-chart-expense',
+    border: 'border-chart-expense/25',
+    soft: 'bg-status-dangerSoft',
+    text: 'text-status-danger',
+    marker: 'Risk',
     primitiveTone: 'danger',
   },
   negative: {
@@ -109,15 +131,23 @@ const CHART_TONE_STYLES: Record<
     border: 'border-chart-expense/25',
     soft: 'bg-status-dangerSoft',
     text: 'text-status-danger',
-    marker: '-',
+    marker: 'Loss',
     primitiveTone: 'danger',
+  },
+  info: {
+    bar: 'bg-chart-balance',
+    border: 'border-chart-balance/25',
+    soft: 'bg-status-infoSoft',
+    text: 'text-status-info',
+    marker: 'Info',
+    primitiveTone: 'info',
   },
   neutral: {
     bar: 'bg-chart-slate',
     border: 'border-chart-slate/25',
     soft: 'bg-surface-muted',
     text: 'text-muted-foreground',
-    marker: 'N',
+    marker: 'Other',
     primitiveTone: 'default',
   },
   balance: {
@@ -125,7 +155,7 @@ const CHART_TONE_STYLES: Record<
     border: 'border-chart-balance/25',
     soft: 'bg-status-infoSoft',
     text: 'text-status-info',
-    marker: 'B',
+    marker: 'Bal',
     primitiveTone: 'info',
   },
   warning: {
@@ -133,7 +163,7 @@ const CHART_TONE_STYLES: Record<
     border: 'border-chart-warning/30',
     soft: 'bg-status-warningSoft',
     text: 'text-status-warning',
-    marker: 'W',
+    marker: 'Due',
     primitiveTone: 'warning',
   },
   pending: {
@@ -141,7 +171,7 @@ const CHART_TONE_STYLES: Record<
     border: 'border-chart-warning/30',
     soft: 'bg-status-warningSoft',
     text: 'text-status-warning',
-    marker: 'P',
+    marker: 'Pend',
     primitiveTone: 'warning',
   },
   sales: {
@@ -149,7 +179,15 @@ const CHART_TONE_STYLES: Record<
     border: 'border-chart-sales/25',
     soft: 'bg-status-infoSoft',
     text: 'text-status-info',
-    marker: 'S',
+    marker: 'Sales',
+    primitiveTone: 'info',
+  },
+  collection: {
+    bar: 'bg-chart-collection',
+    border: 'border-chart-collection/25',
+    soft: 'bg-status-infoSoft',
+    text: 'text-status-info',
+    marker: 'Coll',
     primitiveTone: 'info',
   },
   property: {
@@ -157,7 +195,7 @@ const CHART_TONE_STYLES: Record<
     border: 'border-chart-property/25',
     soft: 'bg-surface-muted',
     text: 'text-foreground',
-    marker: 'U',
+    marker: 'Units',
     primitiveTone: 'default',
   },
   hr: {
@@ -165,23 +203,23 @@ const CHART_TONE_STYLES: Record<
     border: 'border-chart-hr/25',
     soft: 'bg-surface-muted',
     text: 'text-foreground',
-    marker: 'H',
+    marker: 'HR',
     primitiveTone: 'default',
   },
   payroll: {
     bar: 'bg-chart-payroll',
     border: 'border-chart-payroll/25',
-    soft: 'bg-status-infoSoft',
-    text: 'text-status-info',
-    marker: 'P',
-    primitiveTone: 'info',
+    soft: 'bg-status-warningSoft',
+    text: 'text-status-warning',
+    marker: 'Pay',
+    primitiveTone: 'warning',
   },
   audit: {
     bar: 'bg-chart-audit',
     border: 'border-chart-audit/25',
     soft: 'bg-surface-muted',
     text: 'text-foreground',
-    marker: 'A',
+    marker: 'Audit',
     primitiveTone: 'default',
   },
   documents: {
@@ -189,7 +227,7 @@ const CHART_TONE_STYLES: Record<
     border: 'border-chart-documents/25',
     soft: 'bg-status-infoSoft',
     text: 'text-status-info',
-    marker: 'D',
+    marker: 'Doc',
     primitiveTone: 'info',
   },
 };
@@ -227,24 +265,82 @@ const inferChartTone = (
   const value = `${key} ${label}`.toLowerCase();
 
   if (
+    value.includes('cancelled') ||
+    value.includes('canceled') ||
+    value.includes('rejected') ||
+    value.includes('overdue') ||
+    value.includes('loss')
+  ) {
+    return 'danger';
+  }
+
+  if (
+    value.includes('draft') ||
+    value.includes('pending') ||
+    value.includes('submitted') ||
+    value.includes('awaiting') ||
+    value.includes('due') ||
+    value.includes('ready to post') ||
+    value.includes('needs attention')
+  ) {
+    return 'warning';
+  }
+
+  if (
+    value.includes('posted') ||
+    value.includes('approved') ||
+    value.includes('available') ||
+    value.includes('finalized upload') ||
+    value.includes('available files')
+  ) {
+    return 'success';
+  }
+
+  if (
+    value.includes('booked') ||
+    value.includes('active') ||
+    value.includes('contacted') ||
+    value.includes('contracted') ||
+    value.includes('finalized')
+  ) {
+    return 'info';
+  }
+
+  if (
+    value.includes('unknown') ||
+    value.includes('transferred') ||
+    value.includes('other') ||
+    value.includes('unassigned') ||
+    value.includes('unspecified') ||
+    value.includes('company-wide')
+  ) {
+    return 'neutral';
+  }
+
+  if (
+    value.includes('collection') ||
+    value.includes('collected')
+  ) {
+    return 'collection';
+  }
+
+  if (
     value.includes('expense') ||
     value.includes('deduction') ||
-    value.includes('loss')
+    value.includes('deductions')
   ) {
     return 'expense';
   }
 
   if (
     value.includes('revenue') ||
-    value.includes('profit') ||
-    value.includes('posted')
+    value.includes('profit')
   ) {
     return 'revenue';
   }
 
   if (
     value.includes('contract') ||
-    value.includes('collection') ||
     value.includes('sale') ||
     value.includes('booking') ||
     value.includes('lead') ||
@@ -256,9 +352,8 @@ const inferChartTone = (
   if (
     value.includes('unit') ||
     value.includes('project') ||
-    value.includes('available') ||
-    value.includes('booked') ||
-    value.includes('sold')
+    value.includes('sold') ||
+    value.includes('allotted')
   ) {
     return 'property';
   }
@@ -273,6 +368,10 @@ const inferChartTone = (
     return 'hr';
   }
 
+  if (value === 'net net' || value.includes('net pay')) {
+    return 'success';
+  }
+
   if (
     value.includes('payroll') ||
     value.includes('gross') ||
@@ -281,21 +380,16 @@ const inferChartTone = (
     return 'payroll';
   }
 
-  if (
-    value.includes('pending') ||
-    value.includes('draft') ||
-    value.includes('unknown') ||
-    value.includes('submitted')
-  ) {
-    return 'warning';
-  }
-
-  if (value.includes('attachment') || value.includes('document')) {
-    return 'documents';
-  }
-
   if (value.includes('audit') || value.includes('event')) {
     return 'audit';
+  }
+
+  if (
+    value.includes('attachment') ||
+    value.includes('document') ||
+    value.includes('upload')
+  ) {
+    return 'documents';
   }
 
   if (
@@ -615,7 +709,7 @@ export const ChartLegend = ({
             <span
               aria-hidden="true"
               className={cn(
-                'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-bold leading-none text-white',
+                'inline-flex h-5 min-w-8 shrink-0 items-center justify-center rounded px-1.5 text-[10px] font-bold leading-none text-white shadow-sm ring-1 ring-inset ring-black/10',
                 style.bar,
               )}
             >
@@ -626,7 +720,7 @@ export const ChartLegend = ({
             </span>
           </span>
           {value ? (
-            <span className="pl-7 font-mono text-xs tabular-nums text-muted-foreground">
+            <span className="pl-10 font-mono text-xs tabular-nums text-muted-foreground">
               {value}
             </span>
           ) : null}
@@ -727,7 +821,7 @@ export const ComparisonBarChart = ({
                 <span
                   aria-hidden="true"
                   className={cn(
-                    'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-bold leading-none text-white',
+                    'inline-flex h-5 min-w-8 shrink-0 items-center justify-center rounded px-1.5 text-[10px] font-bold leading-none text-white shadow-sm ring-1 ring-inset ring-black/10',
                     style.bar,
                   )}
                 >
@@ -751,7 +845,10 @@ export const ComparisonBarChart = ({
                 className="h-3 overflow-hidden rounded-full bg-surface-muted"
               >
                 <div
-                  className={cn('h-full rounded-full', style.bar)}
+                  className={cn(
+                    'h-full rounded-full shadow-sm ring-1 ring-inset ring-black/10',
+                    style.bar,
+                  )}
                   style={{ width: `${Math.max(percentOfMax, 2)}%` }}
                 />
               </div>
@@ -789,58 +886,81 @@ export const DistributionChart = ({
   }
 
   return (
-    <div className="min-w-0 space-y-4">
-      <div
-        aria-label={visible
-          .map(
-            (item) =>
-              `${buildLabel(item.label)} ${formatAnalyticsFullValue(item.value, format)}`,
-          )
-          .join(', ')}
-        className="rounded-lg border border-border bg-surface-raised px-3 py-3"
-        role="img"
-      >
-        <div className="flex h-8 overflow-hidden rounded-md bg-surface-muted">
-          {visible.map((item, index) => {
-            const tone = inferChartTone(item.key, item.label, index);
-            const style = getToneStyle(tone);
-            const width = total > 0 ? (Math.abs(item.value) / total) * 100 : 0;
-            const label = buildLabel(item.label);
+    <div
+      aria-label={visible
+        .map(
+          (item) =>
+            `${buildLabel(item.label)} ${formatAnalyticsFullValue(item.value, format)}`,
+        )
+        .join(', ')}
+      className="min-w-0 divide-y divide-border overflow-hidden rounded-lg border border-border bg-card shadow-sm"
+      role="img"
+    >
+      {visible.map((item, index) => {
+        const tone = inferChartTone(item.key, item.label, index);
+        const style = getToneStyle(tone);
+        const width = total > 0 ? (Math.abs(item.value) / total) * 100 : 0;
+        const label = buildLabel(item.label);
+        const value = formatAnalyticsFullValue(item.value, format);
+        const share = formatPercentValue(width / 100);
 
-            return (
+        return (
+          <div
+            className="min-w-0 px-3 py-3"
+            key={item.key}
+            title={`${label}: ${value} (${share} of total)`}
+          >
+            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex min-w-0 items-start gap-2">
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'inline-flex h-5 min-w-8 shrink-0 items-center justify-center rounded px-1.5 text-[10px] font-bold leading-none text-white shadow-sm ring-1 ring-inset ring-black/10',
+                    style.bar,
+                  )}
+                >
+                  {style.marker}
+                </span>
+                <div className="min-w-0">
+                  <p
+                    className="truncate text-sm font-semibold leading-5 text-foreground"
+                    title={label}
+                  >
+                    {label}
+                  </p>
+                  <p className="mt-0.5 text-xs leading-4 text-muted-foreground">
+                    Share of total: {share}
+                  </p>
+                </div>
+              </div>
+              <span className="shrink-0 whitespace-nowrap font-mono text-sm tabular-nums text-foreground">
+                {value}
+              </span>
+            </div>
+            <div className="mt-3 h-3 overflow-hidden rounded-full bg-surface-muted">
               <div
-                className={cn('min-w-2 border-r border-white/40', style.bar)}
-                key={item.key}
+                aria-hidden="true"
+                className={cn(
+                  'relative h-full rounded-full shadow-sm ring-1 ring-inset ring-black/10',
+                  style.bar,
+                )}
                 style={{ width: `${Math.max(width, 2)}%` }}
-                title={`${label}: ${formatAnalyticsFullValue(item.value, format)} (${formatPercentValue(width / 100)})`}
-              />
-            );
-          })}
-        </div>
-      </div>
-
-      <ChartLegend
-        format={format}
-        items={visible.map((item, index) => {
-          const tone = inferChartTone(item.key, item.label, index);
-          const style = getToneStyle(tone);
-
-          return {
-            key: item.key,
-            label: item.label,
-            marker: style.marker,
-            tone,
-            value: item.value,
-          };
-        })}
-      />
-
-      <ComparisonBarChart
-        data={visible}
-        emptyDescription={emptyDescription}
-        emptyTitle={emptyTitle}
-        format={format}
-      />
+              >
+                {index % 2 === 1 ? (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-0 opacity-60"
+                    style={{
+                      backgroundImage:
+                        'repeating-linear-gradient(135deg, rgba(255,255,255,0.45) 0, rgba(255,255,255,0.45) 2px, transparent 2px, transparent 5px)',
+                    }}
+                  />
+                ) : null}
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -861,6 +981,30 @@ export const DistributionBarList = ({
     emptyDescription={emptyDescription}
     emptyTitle={emptyTitle}
     format={format}
+  />
+);
+
+export const DistributionLegend = ({
+  data,
+  format = 'number',
+}: {
+  data: AnalyticsDataPoint[];
+  format?: AnalyticsValueFormat;
+}) => (
+  <ChartLegend
+    format={format}
+    items={data.map((item, index) => {
+      const tone = inferChartTone(item.key, item.label, index);
+      const style = getToneStyle(tone);
+
+      return {
+        key: item.key,
+        label: item.label,
+        marker: style.marker,
+        tone,
+        value: item.value,
+      };
+    })}
   />
 );
 
@@ -977,7 +1121,7 @@ export const TrendBarChart = ({
                         aria-hidden="true"
                         className="absolute inset-x-0 top-0 border-t border-border/70"
                       />
-                      {decoratedSeries.map((item) => {
+                      {decoratedSeries.map((item, seriesIndex) => {
                         const value = toFiniteNumber(point.values[item.key]);
                         const height =
                           maxValue > 0 ? (Math.abs(value) / maxValue) * 100 : 0;
@@ -990,7 +1134,7 @@ export const TrendBarChart = ({
                           <div
                             aria-label={`${label} ${item.label}: ${formatAnalyticsFullValue(value, format)}`}
                             className={cn(
-                              'relative z-10 w-4 max-w-6 rounded-t-sm transition-colors',
+                              'relative z-10 w-4 max-w-6 overflow-hidden rounded-t-sm shadow-sm ring-1 ring-inset ring-black/10 transition-colors',
                               style.bar,
                             )}
                             key={`${point.key}-${item.key}`}
@@ -999,7 +1143,24 @@ export const TrendBarChart = ({
                               height: `${value === 0 ? 0 : Math.max(height, 4)}%`,
                             }}
                             title={`${label} ${item.label}: ${formatAnalyticsFullValue(value, format)}`}
-                          />
+                          >
+                            {seriesIndex % 2 === 1 ? (
+                              <span
+                                aria-hidden="true"
+                                className="absolute inset-0 opacity-55"
+                                style={{
+                                  backgroundImage:
+                                    'repeating-linear-gradient(135deg, rgba(255,255,255,0.5) 0, rgba(255,255,255,0.5) 2px, transparent 2px, transparent 5px)',
+                                }}
+                              />
+                            ) : null}
+                            {seriesIndex % 3 === 2 ? (
+                              <span
+                                aria-hidden="true"
+                                className="absolute inset-x-0 top-0 h-1 bg-white/70"
+                              />
+                            ) : null}
+                          </div>
                         );
                       })}
                     </div>

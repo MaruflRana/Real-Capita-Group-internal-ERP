@@ -206,7 +206,20 @@
   - dashboard operational roll-up was lightly aligned with the improved module summaries while staying an executive overview
   - empty/loading/error states were tightened, and sparse demo guidance is shown only where useful
   - validation passed: lint, typecheck, build, test, Docker rebuild, demo seed/verify, Docker smoke, and live checks for the requested operational routes at 1440px, 1366px, and 1024px
-- The repo is now ready for Prompt 39 as Supervisor Demo Visual QA + Final Polish.
+- Prompt 39 completed Supervisor Demo Visual QA + Final Polish:
+  - the full supervisor demo route path was checked at 1440px, 1366px, and 1024px for overflow, clipped values, readable labels, active navigation, report actions, and restricted-role clarity
+  - date input defaults now use local calendar dates instead of UTC slicing, preventing positive-timezone demo date shifts
+  - General Ledger export and print actions remain visible from initial load and are disabled until a posting account report is available
+  - demo readiness, walkthrough, sign-off, and handoff docs were aligned to the final supervisor story
+  - no new ERP modules, backend endpoints, database schema changes, migrations, seed-system changes, fake metrics, or production deployment/tagging changes were added
+- Prompt 39B completed Chart Color Contrast & Visual Differentiation Fix:
+  - shared chart tokens now use more clearly separated hues/lightness values, with a distinct collection tone beside sales and revenue tones
+  - distribution visuals now show label, value, share-of-total text, and non-color bar cues instead of relying on repeated compact progress bars alone
+  - ambiguous single-letter chart badges were expanded into readable markers such as `Rev`, `Cost`, `Risk`, `Sales`, `Coll`, `Units`, `HR`, `Pay`, `Audit`, and `Doc`
+  - dashboard, financial report, project/property, CRM, HR, payroll, and audit/document analytics now use clearer adjacent series labels and semantic tones
+  - validation passed: lint, typecheck, build, test, Docker rebuild, demo seed/verify, Docker smoke, and live chart-focused checks at 1440px, 1366px, and 1024px
+  - no new ERP modules, backend endpoints, database schema changes, migrations, seed-system changes, fake metrics, workflows, or production deployment/tagging changes were added
+- The repo is now ready for supervisor demo review after the Prompt 39B color-contrast polish; Prompt 40 is reserved for supervisor feedback fixes, final release-candidate checkpoint/tagging if requested, or production deployment assistance if requested.
 
 ## Frontend Routes
 
@@ -1049,6 +1062,67 @@ Observed result:
 - The final live sweep checked 51 route/width combinations with no failures, no global horizontal overflow, no clipped numeric values, and no detected vertical word wrapping.
 - An initial live sweep caught dotted audit event labels wrapping in a chart; Prompt 38 fixed technical label formatting and reran validation successfully.
 
+Prompt 39 Supervisor Demo Visual QA + Final Polish verification was run on May 3, 2026 with:
+
+```powershell
+git status --short
+git log --oneline -5
+docker compose up -d --build
+corepack pnpm seed:demo
+corepack pnpm seed:demo:verify
+corepack pnpm docker:smoke
+corepack pnpm lint
+corepack pnpm typecheck
+corepack pnpm build
+corepack pnpm test
+docker compose up -d --build
+corepack pnpm seed:demo
+corepack pnpm seed:demo:verify
+corepack pnpm docker:smoke
+```
+
+Observed result:
+
+- Starting Git checkpoint was `8ff52398 feat: redesign operational module analytics` on `main`, and the worktree was clean before Prompt 39 changes.
+- `docker compose up -d --build` completed successfully before and after validation, and the rebuilt `api` and `web` containers started healthy.
+- `corepack pnpm seed:demo` completed for `Real Capita Demo / UAT`.
+- `corepack pnpm seed:demo:verify` passed with final Demo/UAT counts including 13 projects, 28 units, 9 leads, 7 bookings, 5 sale contracts, 20 installment schedules, 6 collections, 12 employees, 144 attendance logs, 3 payroll runs, 5 attachments, and 66 audit events.
+- `corepack pnpm docker:smoke` passed for web, API readiness, and Swagger.
+- `corepack pnpm lint` passed with pre-existing warnings only.
+- `corepack pnpm typecheck` passed.
+- `corepack pnpm build` passed.
+- `corepack pnpm test` passed: 161 API tests and 52 Playwright e2e tests.
+- Authenticated live supervisor route verification checked 126 route/width combinations across 42 routes at 1440px, 1366px, and 1024px with no failures.
+- The final live sweep found no global horizontal overflow, no clipped numeric values, no detected tall/wrapped navigation labels, visible report export/print controls where expected, and clear active route state.
+- Restricted-role verification passed: the demo member could use `/dashboard`, did not see Accounting navigation, and received a clear forbidden/access state when directly opening `/accounting/vouchers`.
+- Org & Security canonical routes were verified under `/org-security/...`; no `/org/...` aliases were added because the Phase 1 route inventory and app build use `/org-security/...`.
+
+Prompt 39B Chart Color Contrast & Visual Differentiation Fix verification was run on May 3, 2026 with:
+
+```powershell
+corepack pnpm lint
+corepack pnpm typecheck
+corepack pnpm build
+corepack pnpm test
+docker compose up -d --build
+corepack pnpm seed:demo
+corepack pnpm seed:demo:verify
+corepack pnpm docker:smoke
+```
+
+Observed result:
+
+- `corepack pnpm lint` passed with pre-existing warnings only.
+- `corepack pnpm typecheck` passed.
+- `corepack pnpm build` passed.
+- `corepack pnpm test` passed: 161 API tests and 52 Playwright e2e tests.
+- `docker compose up -d --build` rebuilt the `api` and `web` containers successfully, and the services started healthy.
+- `corepack pnpm seed:demo` and `corepack pnpm seed:demo:verify` passed with final Demo/UAT counts including 13 projects, 28 units, 9 leads, 7 bookings, 5 sale contracts, 20 installment schedules, 6 collections, 12 employees, 144 attendance logs, 3 payroll runs, 5 attachments, and 71 audit events.
+- `corepack pnpm docker:smoke` passed for web, API readiness, and Swagger.
+- Authenticated live chart-focused verification checked 42 route/width combinations across `/dashboard`, requested Project & Property, CRM, HR, Payroll, Audit/Documents, and Business Overview routes at 1440px, 1366px, and 1024px with no failures.
+- The Prompt 39B sweep found no global horizontal overflow, no clipped numeric values, no single-letter uppercase chart markers, and visible Business Overview export/print controls.
+- In-app browser spot checks were captured for `/dashboard` at 1440px and `/accounting/reports/business-overview` at 1024px against the rebuilt Docker stack.
+
 ## Current Local URLs
 
 - Web: `http://localhost:3000`
@@ -1066,4 +1140,4 @@ Observed result:
 
 ## Final Status
 
-Backend foundations through Prompt 11 remain intact. Prompt 12 established the authenticated frontend shell and Org & Security baseline, Prompt 13 added the Accounting Core UI, Prompt 14 added the Project & Real-Estate Master UI, Prompt 15 added the frontend CRM & Property Desk operational UI, Prompt 16 added the frontend HR Core operational UI, Prompt 17 added the frontend Payroll Core operational UI, Prompt 18 added the frontend Audit & Documents operational UI, Prompt 19 added the backend financial reporting API, Prompt 20 added the frontend financial reporting UI, Prompt 21 added the frontend operational dashboard/home experience, Prompt 22 hardened runtime, origin, Docker Compose, CI, and deployment reliability, Prompt 23 hardened backend authorization consistency plus role-aware frontend navigation, route gating, forbidden UX, and dashboard visibility, Prompt 24 added Phase 1 export + print readiness, Prompt 25 added Phase 1 PostgreSQL backup/restore plus operations-readiness runbooks, Prompt 26 completed the Phase 1 release-candidate audit plus UAT/release documentation, Prompt 27 added the Phase 1 UAT, stakeholder demo, issue-log, known-limitations, sign-off, and handoff documentation package, Prompt 28 added the final Phase 1 release packaging and handoff bundle, Prompt 29 completed final deployment/tag/release handoff verification and documentation, Prompt 30 added the explicit synthetic demo/UAT seed, reset, and verify foundation, Prompt 31 added frontend-only analytics, graphs, and status summaries over existing REST data without breaking the locked architecture or adding new business workflows, Prompt 32 added professional analytics plus daily/weekly/monthly business reporting over existing posted accounting and CRM/property data without adding transactional workflows, Prompt 33 upgraded the existing seed into RCG context-aligned synthetic demo/UAT data while preserving the locked architecture and synthetic-only safeguards, Prompt 34 added the frontend-only ERP design-system foundation for stronger visual contrast, typography, cards, tables, analytics shells, and report primitives without redesigning every page, Prompt 35 completed the frontend-only app shell, navigation, page-frame, and responsive layout redesign while preserving existing REST boundaries, role-aware access, CSV export, and print behavior, Prompt 36 completed the frontend-only professional chart component system plus representative chart replacements over existing REST data and calculations, Prompt 37 completed the finance-grade Financial Reports Redesign plus the missing yearly report over the existing read-only reporting boundary, and Prompt 38 completed the frontend-only Operational Module Analytics Redesign for non-financial operational modules over existing REST data. The repo is ready for Prompt 39 as Supervisor Demo Visual QA + Final Polish.
+Backend foundations through Prompt 11 remain intact. Prompt 12 established the authenticated frontend shell and Org & Security baseline, Prompt 13 added the Accounting Core UI, Prompt 14 added the Project & Real-Estate Master UI, Prompt 15 added the frontend CRM & Property Desk operational UI, Prompt 16 added the frontend HR Core operational UI, Prompt 17 added the frontend Payroll Core operational UI, Prompt 18 added the frontend Audit & Documents operational UI, Prompt 19 added the backend financial reporting API, Prompt 20 added the frontend financial reporting UI, Prompt 21 added the frontend operational dashboard/home experience, Prompt 22 hardened runtime, origin, Docker Compose, CI, and deployment reliability, Prompt 23 hardened backend authorization consistency plus role-aware frontend navigation, route gating, forbidden UX, and dashboard visibility, Prompt 24 added Phase 1 export + print readiness, Prompt 25 added Phase 1 PostgreSQL backup/restore plus operations-readiness runbooks, Prompt 26 completed the Phase 1 release-candidate audit plus UAT/release documentation, Prompt 27 added the Phase 1 UAT, stakeholder demo, issue-log, known-limitations, sign-off, and handoff documentation package, Prompt 28 added the final Phase 1 release packaging and handoff bundle, Prompt 29 completed final deployment/tag/release handoff verification and documentation, Prompt 30 added the explicit synthetic demo/UAT seed, reset, and verify foundation, Prompt 31 added frontend-only analytics, graphs, and status summaries over existing REST data without breaking the locked architecture or adding new business workflows, Prompt 32 added professional analytics plus daily/weekly/monthly business reporting over existing posted accounting and CRM/property data without adding transactional workflows, Prompt 33 upgraded the existing seed into RCG context-aligned synthetic demo/UAT data while preserving the locked architecture and synthetic-only safeguards, Prompt 34 added the frontend-only ERP design-system foundation for stronger visual contrast, typography, cards, tables, analytics shells, and report primitives without redesigning every page, Prompt 35 completed the frontend-only app shell, navigation, page-frame, and responsive layout redesign while preserving existing REST boundaries, role-aware access, CSV export, and print behavior, Prompt 36 completed the frontend-only professional chart component system plus representative chart replacements over existing REST data and calculations, Prompt 37 completed the finance-grade Financial Reports Redesign plus the missing yearly report over the existing read-only reporting boundary, Prompt 38 completed the frontend-only Operational Module Analytics Redesign for non-financial operational modules over existing REST data, Prompt 39 completed final supervisor-demo visual QA and polish across the full demo flow without adding feature scope, and Prompt 39B completed final chart color-contrast and non-color-cue polish across dashboard, financial, and operational analytics without adding feature scope. The repo is ready for supervisor demo review; Prompt 40 is reserved for supervisor feedback fixes, final release-candidate checkpoint/tagging if requested, or production deployment assistance if requested.

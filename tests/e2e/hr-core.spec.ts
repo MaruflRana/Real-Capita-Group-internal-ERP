@@ -3,6 +3,15 @@ import { expect, test, type Page } from '@playwright/test';
 const now = '2026-03-17T00:00:00.000Z';
 const sessionCookieUrl = 'http://localhost:3100';
 
+const getLocalDateStamp = () => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+
 const baseSession = {
   tokenType: 'Bearer',
   accessToken: 'access-token',
@@ -1863,7 +1872,7 @@ test('renders the HR navigation and supports employee create with backend errors
 test('supports employee list export for HR users', async ({ page }) => {
   await setupHrCoreApiMocks(page, { authenticated: true });
   await addAuthenticatedCookie(page);
-  const exportDate = new Date().toISOString().slice(0, 10);
+  const exportDate = getLocalDateStamp();
 
   await page.goto('/hr/employees');
 
@@ -1954,7 +1963,7 @@ test('supports attendance log filtering and surfaces manual entry errors', async
   await page
     .getByLabel('Employee')
     .selectOption({ label: 'EMP-001 - Mina Khan' });
-  await page.getByLabel('Direction').selectOption('IN');
+  await page.getByLabel('Direction', { exact: true }).selectOption('IN');
   await page.getByLabel('Date from').fill('2026-03-17');
   await page.getByLabel('Date to').fill('2026-03-17');
 
@@ -1966,7 +1975,9 @@ test('supports attendance log filtering and surfaces manual entry errors', async
     .getByLabel('Device mapping')
     .selectOption({ label: '1001 | EMP-001 Mina Khan | DEV-001' });
   await attendanceLogPanel.getByLabel('Logged at').fill('2026-03-17T08:45');
-  await attendanceLogPanel.getByLabel('Direction').selectOption('IN');
+  await attendanceLogPanel
+    .getByLabel('Direction', { exact: true })
+    .selectOption('IN');
   await attendanceLogPanel.getByLabel('External log ID').fill('LOG-2');
   await attendanceLogPanel
     .getByRole('button', { name: 'Create attendance log' })
@@ -1980,7 +1991,9 @@ test('supports attendance log filtering and surfaces manual entry errors', async
     .getByLabel('Device mapping')
     .selectOption({ label: '1001 | EMP-001 Mina Khan | DEV-001' });
   await duplicateAttendanceLogPanel.getByLabel('Logged at').fill('2026-03-19T09:00');
-  await duplicateAttendanceLogPanel.getByLabel('Direction').selectOption('IN');
+  await duplicateAttendanceLogPanel
+    .getByLabel('Direction', { exact: true })
+    .selectOption('IN');
   await duplicateAttendanceLogPanel.getByLabel('External log ID').fill('LOG-1');
   await duplicateAttendanceLogPanel
     .getByRole('button', { name: 'Create attendance log' })

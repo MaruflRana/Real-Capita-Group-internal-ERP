@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 
 import { buttonVariants, cn } from '@real-capita/ui';
 import { useAuth } from '../../components/providers/auth-provider';
+import { formatDateInputValue } from '../../lib/format';
 import { APP_ROUTES, getVoucherDetailRoute } from '../../lib/routes';
 import { useCreateVoucherDraft } from './hooks';
 import {
@@ -20,7 +21,7 @@ import {
 
 const createDefaultValues = (): VoucherHeaderFormValues => ({
   voucherType: 'JOURNAL',
-  voucherDate: new Date().toISOString().slice(0, 10),
+  voucherDate: formatDateInputValue(new Date()),
   reference: '',
   description: '',
 });

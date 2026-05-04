@@ -81,6 +81,7 @@ const config: Config = {
           balance: 'hsl(var(--chart-balance))',
           warning: 'hsl(var(--chart-warning))',
           sales: 'hsl(var(--chart-sales))',
+          collection: 'hsl(var(--chart-collection))',
           property: 'hsl(var(--chart-property))',
           hr: 'hsl(var(--chart-hr))',
           payroll: 'hsl(var(--chart-payroll))',

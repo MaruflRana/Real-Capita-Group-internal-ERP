@@ -6,6 +6,7 @@
 - Confirm migrations have run with `corepack pnpm docker:migrate`.
 - Confirm a company admin exists through `corepack pnpm docker:bootstrap -- --company-name ...` when needed.
 - Confirm `corepack pnpm docker:smoke` passes.
+- For a populated supervisor demo, run `corepack pnpm seed:demo` and `corepack pnpm seed:demo:verify` against the intended local/UAT database.
 - Use the browser URL `http://localhost:3000`.
 - Confirm the demo account, password, company, and role labels are known.
 - Confirm `S3_PUBLIC_ENDPOINT` is browser-resolvable before demonstrating attachments.
@@ -23,18 +24,17 @@
 
 1. Login and land on `/dashboard`.
 2. Show the session menu and role-filtered sidebar.
-3. Show dashboard summary, recent activity, pending work, quick actions, and period control.
-4. As admin, show Org & Security users and role assignments.
-5. Show Accounting chart of accounts, voucher list, voucher detail, and posting behavior when data exists.
-6. Show Financial Reports: trial balance, general ledger, profit & loss, and balance sheet.
-7. Export one financial report CSV and click Print on one supported report.
-8. Show Project & Property Master routes.
-9. Show CRM & Property Desk routes for customers, bookings, sale contracts, installments, and collections.
-10. Show HR routes for employees, attendance, leave types, and leave requests.
-11. Show Payroll routes for salary structures, payroll runs, run detail, and posting.
-12. Show Attachments and Audit Events if storage and role context are ready.
-13. Demonstrate a denied route with a restricted role if time permits.
-14. Close with UAT issue log, sign-off checklist, and known limitations.
+3. Show dashboard summary, executive analytics, recent activity, pending work, quick actions, and period control.
+4. Show Financial Reports: business overview, periodic reports including yearly, trial balance, general ledger, profit & loss, and balance sheet.
+5. Export one financial report CSV and click Print on one supported report. For General Ledger, select a posting account first.
+6. Show Project & Property Master routes for projects, hierarchy masters, and units.
+7. Show CRM & Property Desk routes for customers, leads, bookings, sale contracts, installments, and collections.
+8. Show HR routes for employees, attendance devices/logs, leave types, and leave requests.
+9. Show Payroll routes for salary structures, payroll runs, run detail, and posting.
+10. Show Attachments and Audit Events if storage and role context are ready.
+11. As admin, show Org & Security users and role assignments under `/org-security/...`.
+12. Demonstrate a denied route with a restricted role if time permits.
+13. Close with known limitations, UAT issue log, and sign-off checklist.
 
 ## Modules To Show
 

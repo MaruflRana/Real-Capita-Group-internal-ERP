@@ -121,8 +121,16 @@ export const DashboardAnalyticsPanel = ({
               emptyTitle="No sales or collection movement"
               format="currency"
               series={[
-                { key: 'contractedSales', label: 'Contracted sales' },
-                { key: 'collectedSales', label: 'Collected sales' },
+                {
+                  key: 'contractedSales',
+                  label: 'Contracted sales',
+                  tone: 'sales',
+                },
+                {
+                  key: 'collectedSales',
+                  label: 'Collected sales',
+                  tone: 'collection',
+                },
               ]}
             />
             <DistributionBarList
@@ -221,9 +229,9 @@ export const DashboardAnalyticsPanel = ({
               emptyDescription="Attendance daily activity needs attendance log records."
               emptyTitle="No attendance activity"
               series={[
-                { key: 'in', label: 'In' },
-                { key: 'out', label: 'Out' },
-                { key: 'unknown', label: 'Unknown' },
+                { key: 'in', label: 'Clock-in logs', tone: 'success' },
+                { key: 'out', label: 'Clock-out logs', tone: 'info' },
+                { key: 'unknown', label: 'Unknown direction', tone: 'neutral' },
               ]}
             />
           </AnalyticsCard>
@@ -535,7 +543,9 @@ export const CrmAnalyticsPanel = ({
           insight="Contract value and collection movement stay side by side without adding new calculations on the backend."
           metricFormat="currency"
           metrics={query.data.commercialValueCards}
-          series={[{ key: 'collections', label: 'Collections', tone: 'sales' }]}
+          series={[
+            { key: 'collections', label: 'Collections', tone: 'collection' },
+          ]}
           title="Sales value and collections"
         />
         <DistributionChartCard
@@ -636,9 +646,9 @@ export const HrAnalyticsPanel = ({
             emptyDescription="Attendance trend needs attendance log rows in the selected period."
             emptyTitle="No attendance trend"
             series={[
-              { key: 'in', label: 'In', tone: 'hr' },
-              { key: 'out', label: 'Out', tone: 'payroll' },
-              { key: 'unknown', label: 'Unknown', tone: 'warning' },
+              { key: 'in', label: 'Clock-in logs', tone: 'success' },
+              { key: 'out', label: 'Clock-out logs', tone: 'info' },
+              { key: 'unknown', label: 'Unknown direction', tone: 'neutral' },
             ]}
           />
         </AnalyticsCard>

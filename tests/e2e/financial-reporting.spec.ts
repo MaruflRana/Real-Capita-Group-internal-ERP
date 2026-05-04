@@ -822,6 +822,7 @@ test('renders business overview and periodic reports from the reporting endpoint
     page.getByRole('columnheader', { name: 'Net profit/loss' }),
   ).toBeVisible();
   await expect(page.getByText('Detailed period table')).toBeVisible();
+  await expect(page.getByText(/Share of total:/).first()).toBeVisible();
   await expect(
     page.getByText('posted voucher lines in REVENUE').first(),
   ).toBeVisible();
@@ -875,6 +876,8 @@ test('supports general ledger account selection and surfaces validation and back
   await expect(
     page.getByText('Choose an active posting account and apply the date range'),
   ).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Export CSV' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Print' })).toBeDisabled();
 
   await page
     .getByLabel('Posting account', { exact: true })

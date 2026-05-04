@@ -25,6 +25,14 @@ export const formatDate = (
   }).format(new Date(value));
 };
 
+export const formatDateInputValue = (value: Date): string => {
+  const year = value.getFullYear();
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+
 export const formatAccountingAmount = (
   value: number | string | null | undefined,
   emptyLabel = '0.00',

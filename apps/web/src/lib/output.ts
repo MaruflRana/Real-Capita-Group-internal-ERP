@@ -1,5 +1,6 @@
 import { apiRequestText } from './api/client';
 import type { ListQueryParams, PaginatedResponse } from './api/types';
+import { formatDateInputValue } from './format';
 
 export type CsvValue =
   | string
@@ -85,7 +86,7 @@ export const buildExportFileName = (
 };
 
 export const getExportDateStamp = () =>
-  new Date().toISOString().slice(0, 10);
+  formatDateInputValue(new Date());
 
 export const downloadApiCsv = async (
   resource: string,

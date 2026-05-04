@@ -2,7 +2,7 @@
 
 Use this checklist after UAT execution, issue triage, and demo review. It records whether the current release candidate is acceptable for Phase 1 handoff.
 
-Checkpoint reference: `3bf83f5e`
+Supervisor-demo baseline checkpoint: `8ff52398`
 
 ## Sign-Off Metadata
 
@@ -15,6 +15,7 @@ Checkpoint reference: `3bf83f5e`
 | Test lead |  |
 | Business stakeholder |  |
 | Technical owner |  |
+| Supervisor demo visual QA result |  |
 | Backup file verified |  |
 | Restore dry-run command/result |  |
 | Issue log location |  |
@@ -27,7 +28,7 @@ Checkpoint reference: `3bf83f5e`
 | Dashboard | Dashboard loads; role-aware widgets and quick actions behave as expected. |  |  |  |
 | Org & Security | Admin can review companies, locations, departments, users, and role assignments. |  |  |  |
 | Accounting | Chart of accounts loads; voucher draft/detail/posting scenarios pass; unbalanced posting is rejected. |  |  |  |
-| Financial Reports | Trial balance, general ledger, profit & loss, and balance sheet render from posted voucher data or clear empty states. |  |  |  |
+| Financial Reports | Business overview, daily, weekly, monthly, yearly, trial balance, general ledger, profit & loss, and balance sheet render from existing report data or clear empty states. |  |  |  |
 | Project & Property Master | Admin can access expected master-data pages. |  |  |  |
 | CRM & Property Desk | Admin/sales can access customers, leads, bookings, sale contracts, installment schedules, and collections. |  |  |  |
 | HR | Admin/HR can access employees, attendance pages, leave types, and leave requests. |  |  |  |
@@ -54,6 +55,7 @@ Checkpoint reference: `3bf83f5e`
 | Unbalanced posting rejection accepted. |  |  |  |
 | Trial balance behavior accepted. |  |  |  |
 | General ledger behavior accepted. |  |  |  |
+| Business overview and periodic daily/weekly/monthly/yearly report behavior accepted. |  |  |  |
 | Profit & loss behavior accepted. |  |  |  |
 | Balance sheet behavior, including any unclosed earnings adjustment, accepted. |  |  |  |
 
@@ -132,7 +134,7 @@ Checkpoint reference: `3bf83f5e`
 | --- | --- | --- | --- |
 | Accept for Phase 1 handoff. |  |  |  |
 | Accept with explicitly approved deferred issues. |  |  |  |
-| Not accepted; Prompt 28 must be UAT bug-fix sprint. |  |  |  |
+| Not accepted; follow-up fixes must be scoped before final release checkpoint. |  |  |  |
 
 Final decision summary:
 

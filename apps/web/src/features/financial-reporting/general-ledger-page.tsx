@@ -204,13 +204,13 @@ export const GeneralLedgerPage = () => {
     <AppPage>
       <FinancialReportingPageHeader
         actions={
-          reportQuery.data ? (
-            <OutputActionGroup
-              isExporting={isExporting}
-              onExport={() => void handleExport()}
-              onPrint={printCurrentPage}
-            />
-          ) : null
+          <OutputActionGroup
+            exportDisabled={!reportQuery.data}
+            isExporting={isExporting}
+            onExport={() => void handleExport()}
+            onPrint={printCurrentPage}
+            printDisabled={!reportQuery.data}
+          />
         }
         description="Trace a posting-level account back to posted vouchers with opening balance, period activity, and running balance context."
         scopeName={user.currentCompany.name}

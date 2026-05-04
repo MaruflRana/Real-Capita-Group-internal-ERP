@@ -36,22 +36,23 @@
     --status-danger-soft: 355 85% 94%;
     --status-info: 204 83% 31%;
     --status-info-soft: 201 82% 92%;
-    --chart-blue: 204 83% 38%;
-    --chart-teal: 176 66% 32%;
-    --chart-amber: 36 91% 45%;
-    --chart-rose: 350 72% 47%;
-    --chart-indigo: 232 55% 52%;
-    --chart-slate: 215 24% 42%;
-    --chart-revenue: 158 76% 29%;
-    --chart-expense: 352 73% 42%;
-    --chart-balance: 204 83% 36%;
-    --chart-warning: 35 92% 39%;
-    --chart-sales: 176 66% 30%;
-    --chart-property: 232 50% 48%;
-    --chart-hr: 262 47% 48%;
-    --chart-payroll: 191 64% 32%;
-    --chart-audit: 215 24% 36%;
-    --chart-documents: 201 82% 34%;
+    --chart-blue: 211 86% 42%;
+    --chart-teal: 184 82% 28%;
+    --chart-amber: 36 94% 40%;
+    --chart-rose: 350 72% 43%;
+    --chart-indigo: 255 60% 48%;
+    --chart-slate: 215 24% 36%;
+    --chart-revenue: 145 65% 30%;
+    --chart-expense: 350 72% 43%;
+    --chart-balance: 211 86% 42%;
+    --chart-warning: 36 94% 40%;
+    --chart-sales: 226 65% 44%;
+    --chart-collection: 184 82% 28%;
+    --chart-property: 255 60% 48%;
+    --chart-hr: 326 55% 42%;
+    --chart-payroll: 24 82% 39%;
+    --chart-audit: 215 24% 32%;
+    --chart-documents: 196 82% 34%;
   }
 
   * {
