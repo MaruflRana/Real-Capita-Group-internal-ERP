@@ -102,6 +102,30 @@ const BALANCE_SHEET_RESPONSE = {
   equityAdjustments: [],
 };
 
+const BUSINESS_OVERVIEW_RESPONSE = {
+  companyId: ACTIVE_COMPANY.id,
+  dateFrom: '2026-01-01',
+  dateTo: '2026-12-31',
+  bucket: 'year',
+  totals: {
+    contractedSalesAmount: '0.00',
+    collectedSalesAmount: '0.00',
+    revenueAmount: '0.00',
+    expenseAmount: '0.00',
+    netProfitLossAmount: '0.00',
+    profitAmount: '0.00',
+    lossAmount: '0.00',
+    voucherCount: 0,
+    draftVoucherCount: 0,
+    postedVoucherCount: 0,
+    bookingCount: 0,
+    saleContractCount: 0,
+    collectionCount: 0,
+  },
+  buckets: [],
+  assumptions: [],
+};
+
 const addBrowserSession = async (page: Page) => {
   await page.context().addCookies([
     {
@@ -179,6 +203,15 @@ const setupAuthorizedApiMocks = async (page: Page, user: CurrentUser) => {
       return;
     }
 
+    if (pathname.includes('/reports/business-overview')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(BUSINESS_OVERVIEW_RESPONSE),
+      });
+      return;
+    }
+
     if (request.method() === 'GET') {
       await route.fulfill({
         status: 200,
@@ -201,6 +234,9 @@ const navLink = (page: Page, name: string) =>
     exact: true,
   });
 
+const navigationSearch = (page: Page) =>
+  page.getByLabel('Find navigation page');
+
 test('admin navigation exposes every Phase 1 module entry point', async ({
   page,
 }) => {
@@ -220,6 +256,97 @@ test('admin navigation exposes every Phase 1 module entry point', async ({
   await expect(navLink(page, 'Customers')).toBeVisible();
   await expect(navLink(page, 'Employees')).toBeVisible();
   await expect(navLink(page, 'Companies')).toBeVisible();
+});
+
+test('sidebar search renders and shows an empty result state', async ({
+  page,
+}) => {
+  await addBrowserSession(page);
+  await setupAuthorizedApiMocks(page, createUser(['company_admin']));
+
+  await page.goto('/dashboard');
+
+  const search = navigationSearch(page);
+  await expect(search).toBeVisible();
+  await expect(search).toHaveAttribute(
+    'placeholder',
+    'Search modules, reports, pages…',
+  );
+
+  await search.fill('not a page');
+
+  await expect(
+    page.getByRole('listbox', { name: 'Navigation search results' }),
+  ).toBeVisible();
+  await expect(page.getByText('No matching page found')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Clear navigation search' }).click();
+
+  await expect(search).toHaveValue('');
+  await expect(
+    page.getByRole('listbox', { name: 'Navigation search results' }),
+  ).toHaveCount(0);
+});
+
+test('sidebar search can jump to the yearly report with Enter', async ({
+  page,
+}) => {
+  await addBrowserSession(page);
+  await setupAuthorizedApiMocks(page, createUser(['company_admin']));
+
+  await page.goto('/dashboard');
+
+  const search = navigationSearch(page);
+  await search.fill('yearly');
+
+  await expect(
+    page
+      .getByRole('option', { name: /Yearly Report/ })
+      .filter({ hasText: '/accounting/reports/yearly' }),
+  ).toBeVisible();
+
+  await search.press('Enter');
+
+  await expect(page).toHaveURL(/\/accounting\/reports\/yearly$/);
+  await expect(navLink(page, 'Yearly Report')).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+});
+
+test('sidebar search can jump to units and preserves active route state', async ({
+  page,
+}) => {
+  await addBrowserSession(page);
+  await setupAuthorizedApiMocks(page, createUser(['company_admin']));
+
+  await page.goto('/dashboard');
+
+  await navigationSearch(page).fill('units');
+
+  await page
+    .getByRole('option', { name: /Units/ })
+    .filter({ hasText: '/project-property/units' })
+    .click();
+
+  await expect(page).toHaveURL(/\/project-property\/units$/);
+  await expect(navLink(page, 'Units')).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+});
+
+test('sidebar search does not expose routes hidden from the active role', async ({
+  page,
+}) => {
+  await addBrowserSession(page);
+  await setupAuthorizedApiMocks(page, createUser(['company_accountant']));
+
+  await page.goto('/dashboard');
+
+  await navigationSearch(page).fill('units');
+
+  await expect(page.getByText('No matching page found')).toBeVisible();
 });
 
 test('accountant navigation only exposes accounting, reports, documents, and dashboard', async ({

@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   BarChart3,
   Blocks,
@@ -27,6 +27,7 @@ import {
   MapPinned,
   Paperclip,
   ReceiptText,
+  Search,
   ShieldCheck,
   Users,
   X,
@@ -314,15 +315,103 @@ const hasModuleAccess = (
   moduleKey: Phase1ModuleKey,
 ) => access[moduleKey];
 
+const normalizeNavigationSearch = (value: string) =>
+  value.trim().toLowerCase().replace(/\s+/g, ' ');
+
+const getNavigationKeywords = ({
+  href,
+  label,
+  sectionTitle,
+}: {
+  href: string;
+  label: string;
+  sectionTitle: string;
+}) => {
+  const terms = [label, sectionTitle, href];
+
+  if (sectionTitle === 'Financial Reports') {
+    terms.push('report reports financial statement print export csv');
+  }
+
+  if (label.toLowerCase().includes('collection')) {
+    terms.push('collection collections receipt payment');
+  }
+
+  if (label.toLowerCase().includes('attendance')) {
+    terms.push('attendance device log biometric');
+  }
+
+  if (label.toLowerCase().includes('voucher')) {
+    terms.push('voucher vouchers posting accounting');
+  }
+
+  return terms.join(' ');
+};
+
+const getNavigationSearchScore = (
+  {
+    href,
+    keywords,
+    label,
+    sectionTitle,
+  }: {
+    href: string;
+    keywords: string;
+    label: string;
+    sectionTitle: string;
+  },
+  query: string,
+) => {
+  const normalizedLabel = normalizeNavigationSearch(label);
+  const normalizedSection = normalizeNavigationSearch(sectionTitle);
+  const normalizedHref = normalizeNavigationSearch(href);
+  const normalizedKeywords = normalizeNavigationSearch(keywords);
+
+  if (normalizedLabel === query) {
+    return 0;
+  }
+
+  if (normalizedLabel.startsWith(query)) {
+    return 1;
+  }
+
+  if (normalizedSection === query) {
+    return 2;
+  }
+
+  if (normalizedLabel.includes(query)) {
+    return 3;
+  }
+
+  if (normalizedSection.includes(query)) {
+    return 4;
+  }
+
+  if (normalizedKeywords.includes(query)) {
+    return 5;
+  }
+
+  if (normalizedHref.includes(query)) {
+    return 6;
+  }
+
+  return null;
+};
+
 export const AppShell = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
+  const router = useRouter();
   const { access, signOut, user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [navigationOpen, setNavigationOpen] = useState(false);
+  const [navigationSearchQuery, setNavigationSearchQuery] = useState('');
+  const [navigationSearchHighlight, setNavigationSearchHighlight] = useState(0);
 
   useEffect(() => {
     setMenuOpen(false);
     setNavigationOpen(false);
+    setNavigationSearchQuery('');
+    setNavigationSearchHighlight(0);
   }, [pathname]);
 
   if (!user) {
@@ -345,6 +434,70 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
       (section) =>
         hasModuleAccess(access, section.moduleKey) && section.items.length > 0,
     );
+  const navigationSearchResults = useMemo(() => {
+    const query = normalizeNavigationSearch(navigationSearchQuery);
+
+    if (!query) {
+      return [];
+    }
+
+    return visibleNavigation
+      .flatMap((section) =>
+        section.items.map((item, itemIndex) => {
+          const keywords = getNavigationKeywords({
+            href: item.href,
+            label: item.label,
+            sectionTitle: section.title,
+          });
+          const score = getNavigationSearchScore(
+            {
+              href: item.href,
+              keywords,
+              label: item.label,
+              sectionTitle: section.title,
+            },
+            query,
+          );
+
+          return {
+            href: item.href,
+            label: item.label,
+            order: itemIndex,
+            score,
+            sectionTitle: section.title,
+          };
+        }),
+      )
+      .filter((item): item is typeof item & { score: number } => item.score !== null)
+      .sort((first, second) => {
+        if (first.score !== second.score) {
+          return first.score - second.score;
+        }
+
+        return first.order - second.order;
+      })
+      .slice(0, 8);
+  }, [navigationSearchQuery, visibleNavigation]);
+  const hasNavigationSearchQuery = navigationSearchQuery.trim().length > 0;
+  const navigationSearchListId = 'sidebar-navigation-search-results';
+
+  useEffect(() => {
+    setNavigationSearchHighlight(0);
+  }, [navigationSearchQuery]);
+
+  const navigateToHighlightedSearchResult = () => {
+    const selectedResult =
+      navigationSearchResults[navigationSearchHighlight] ??
+      navigationSearchResults[0];
+
+    if (!selectedResult) {
+      return;
+    }
+
+    router.push(selectedResult.href);
+    setNavigationSearchQuery('');
+    setNavigationSearchHighlight(0);
+  };
 
   return (
     <div className="app-shell min-h-screen bg-admin-canvas text-foreground">
@@ -413,6 +566,165 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                   ))}
                 </div>
               </div>
+            </div>
+
+            <div className="border-b border-primary-foreground/15 px-3 py-3">
+              <div className="relative">
+                <label className="sr-only" htmlFor="sidebar-navigation-search">
+                  Find navigation page
+                </label>
+                <Search
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary-foreground/52"
+                />
+                <input
+                  aria-activedescendant={
+                    hasNavigationSearchQuery &&
+                    navigationSearchResults[navigationSearchHighlight]
+                      ? `sidebar-navigation-search-result-${navigationSearchHighlight}`
+                      : undefined
+                  }
+                  aria-controls={navigationSearchListId}
+                  aria-expanded={hasNavigationSearchQuery}
+                  aria-label="Find navigation page"
+                  className="h-10 w-full rounded-lg border border-primary-foreground/15 bg-primary-foreground/[0.07] px-9 text-sm font-medium text-primary-foreground outline-none placeholder:text-primary-foreground/45 focus:border-primary-foreground/45 focus:bg-primary-foreground/[0.1] focus:ring-2 focus:ring-primary-foreground/25"
+                  id="sidebar-navigation-search"
+                  onChange={(event) =>
+                    setNavigationSearchQuery(event.target.value)
+                  }
+                  onKeyDown={(event) => {
+                    if (event.key === 'Escape') {
+                      if (hasNavigationSearchQuery) {
+                        event.preventDefault();
+                        setNavigationSearchQuery('');
+                        setNavigationSearchHighlight(0);
+                      }
+
+                      return;
+                    }
+
+                    if (!hasNavigationSearchQuery) {
+                      return;
+                    }
+
+                    if (event.key === 'ArrowDown') {
+                      event.preventDefault();
+                      setNavigationSearchHighlight((current) =>
+                        navigationSearchResults.length === 0
+                          ? 0
+                          : (current + 1) % navigationSearchResults.length,
+                      );
+                      return;
+                    }
+
+                    if (event.key === 'ArrowUp') {
+                      event.preventDefault();
+                      setNavigationSearchHighlight((current) =>
+                        navigationSearchResults.length === 0
+                          ? 0
+                          : (current - 1 + navigationSearchResults.length) %
+                            navigationSearchResults.length,
+                      );
+                      return;
+                    }
+
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      navigateToHighlightedSearchResult();
+                    }
+                  }}
+                  placeholder="Search modules, reports, pages…"
+                  type="search"
+                  value={navigationSearchQuery}
+                />
+                {hasNavigationSearchQuery ? (
+                  <button
+                    aria-label="Clear navigation search"
+                    className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-primary-foreground/64 outline-none transition hover:bg-primary-foreground/12 hover:text-primary-foreground focus-visible:ring-2 focus-visible:ring-primary-foreground/70"
+                    onClick={() => {
+                      setNavigationSearchQuery('');
+                      setNavigationSearchHighlight(0);
+                    }}
+                    type="button"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                ) : null}
+              </div>
+
+              {hasNavigationSearchQuery ? (
+                <div
+                  aria-label="Navigation search results"
+                  className="mt-2 max-h-56 overflow-y-auto rounded-lg border border-primary-foreground/15 bg-slate-950/22 p-1 shadow-sm [scrollbar-gutter:stable]"
+                  id={navigationSearchListId}
+                  role="listbox"
+                >
+                  {navigationSearchResults.length > 0 ? (
+                    navigationSearchResults.map((item, index) => {
+                      const isHighlighted =
+                        index === navigationSearchHighlight;
+
+                      return (
+                        <Link
+                          aria-selected={isHighlighted}
+                          className={cn(
+                            'block rounded-md border px-2.5 py-2 text-left outline-none transition focus-visible:ring-2 focus-visible:ring-primary-foreground/70 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-sidebar',
+                            isHighlighted
+                              ? 'border-primary-foreground/45 bg-primary-foreground text-slate-950 shadow-sm'
+                              : 'border-transparent text-primary-foreground/82 hover:border-primary-foreground/20 hover:bg-primary-foreground/10 hover:text-primary-foreground',
+                          )}
+                          href={item.href}
+                          id={`sidebar-navigation-search-result-${index}`}
+                          key={item.href}
+                          onClick={() => {
+                            setNavigationSearchQuery('');
+                            setNavigationSearchHighlight(0);
+                          }}
+                          onMouseEnter={() =>
+                            setNavigationSearchHighlight(index)
+                          }
+                          role="option"
+                        >
+                          <span className="flex min-w-0 items-center justify-between gap-2">
+                            <span className="truncate text-sm font-semibold">
+                              {item.label}
+                            </span>
+                            {isHighlighted ? (
+                              <span className="shrink-0 rounded border border-slate-950/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]">
+                                Selected
+                              </span>
+                            ) : null}
+                          </span>
+                          <span
+                            className={cn(
+                              'mt-1 block truncate text-[11px] font-semibold uppercase tracking-[0.08em]',
+                              isHighlighted
+                                ? 'text-slate-700'
+                                : 'text-primary-foreground/52',
+                            )}
+                          >
+                            {item.sectionTitle}
+                          </span>
+                          <span
+                            className={cn(
+                              'mt-0.5 block truncate font-mono text-[11px]',
+                              isHighlighted
+                                ? 'text-slate-700'
+                                : 'text-primary-foreground/45',
+                            )}
+                          >
+                            {item.href}
+                          </span>
+                        </Link>
+                      );
+                    })
+                  ) : (
+                    <p className="px-2.5 py-3 text-sm font-medium text-primary-foreground/70">
+                      No matching page found
+                    </p>
+                  )}
+                </div>
+              ) : null}
             </div>
 
             <nav
