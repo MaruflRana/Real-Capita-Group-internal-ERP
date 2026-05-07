@@ -26,7 +26,7 @@
 2. Show the session menu and role-filtered sidebar.
 3. Show dashboard summary, executive analytics, recent activity, pending work, quick actions, and period control.
 4. Show Financial Reports: business overview, periodic reports including yearly, trial balance, general ledger, profit & loss, and balance sheet.
-5. Export one financial report CSV and click Print on one supported report. For General Ledger, select a posting account first.
+5. Export one financial report CSV and click Print Report on one supported report. Business Overview, Daily, Weekly, Monthly, Yearly, Trial Balance, General Ledger, Profit & Loss, and Balance Sheet now use the shared A4 printable report template. For General Ledger, select a posting account first.
 6. Show Project & Property Master routes for projects, hierarchy masters, and units.
 7. Show CRM & Property Desk routes for customers, leads, bookings, sale contracts, installments, and collections.
 8. Show HR routes for employees, attendance devices/logs, leave types, and leave requests.
@@ -53,6 +53,8 @@
 
 - CSV export on one financial report.
 - Browser print on one financial report or voucher detail.
+- Business Overview, Daily, Weekly, Monthly, Yearly, Trial Balance, General Ledger, Profit & Loss, and Balance Sheet now use the shared A4 printable report template.
+- Prompt 40D final QA verified those 9 report routes for screen controls, CSV downloads, print media, and 1440px/1366px/1024px screen widths.
 - Mention that supported operational list exports are CSV-only.
 
 ## What Not To Claim

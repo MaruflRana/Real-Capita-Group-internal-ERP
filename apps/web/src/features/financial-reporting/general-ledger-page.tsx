@@ -12,7 +12,11 @@ import type {
   AccountingVoucherType,
   GeneralLedgerQueryParams,
 } from '../../lib/api/types';
-import { formatAccountingAmount, formatDate } from '../../lib/format';
+import {
+  formatAccountingAmount,
+  formatDate,
+  formatDateTime,
+} from '../../lib/format';
 import { downloadApiCsv, printCurrentPage } from '../../lib/output';
 import {
   DateRangeFields,
@@ -40,6 +44,7 @@ import {
   ReportValueList,
 } from './shared';
 import { GeneralLedgerLinesTable } from './tables';
+import { GeneralLedgerPrintableReport } from './statement-printable';
 import {
   buildFinancialReportCsvFileName,
   REPORTING_OPTION_PAGE_SIZE,
@@ -200,260 +205,283 @@ export const GeneralLedgerPage = () => {
     }
   };
 
+  const report = reportQuery.data;
+  const generatedAt = formatDateTime(
+    new Date(reportQuery.dataUpdatedAt || Date.now()).toISOString(),
+  );
+  const printableStatusMessage =
+    reportQuery.isError && isApiError(reportQuery.error)
+      ? reportQuery.error.apiError.message
+      : !appliedFilters
+        ? 'Select a posting account to generate this ledger report.'
+        : reportQuery.isPending
+          ? 'The general ledger report is loading. Print after the report data has loaded.'
+          : 'Apply valid ledger filters to generate the printable statement.';
+
   return (
     <AppPage>
-      <FinancialReportingPageHeader
-        actions={
-          <OutputActionGroup
-            exportDisabled={!reportQuery.data}
-            isExporting={isExporting}
-            onExport={() => void handleExport()}
-            onPrint={printCurrentPage}
-            printDisabled={!reportQuery.data}
-          />
-        }
-        description="Trace a posting-level account back to posted vouchers with opening balance, period activity, and running balance context."
-        scopeName={user.currentCompany.name}
-        scopeSlug={user.currentCompany.slug}
-        title="General Ledger"
-      />
-
-      <FinancialReportingReadOnlyNotice
-        description="This ledger view is read-only. It follows the backend reporting contract directly and does not expose voucher edits, postings, or closing actions from this page."
-        title="Read-only reporting"
-      />
-
-      <div className="screen-only space-y-6">
-        <FinancialReportingFilterCard>
-          <ReportFilterGrid>
-            <PostingAccountSelector
-              accounts={postingAccountsQuery.data}
-              isLoading={postingAccountsQuery.isFetching}
-              onSearchChange={setAccountSearch}
-              onValueChange={setParticularAccountId}
-              search={accountSearch}
-              value={particularAccountId}
+      <div
+        className="printable-report-screen-content space-y-5 xl:space-y-6"
+        data-testid="printable-report-screen-content"
+      >
+        <FinancialReportingPageHeader
+          actions={
+            <OutputActionGroup
+              exportDisabled={!report}
+              isExporting={isExporting}
+              onExport={() => void handleExport()}
+              onPrint={printCurrentPage}
+              printDisabled={!report}
+              printLabel="Print Report"
             />
-            <DateRangeFields
-              dateFrom={dateFrom}
-              dateTo={dateTo}
-              onDateFromChange={setDateFrom}
-              onDateToChange={setDateTo}
-            />
-            <VoucherTypeField onChange={setVoucherType} value={voucherType} />
-          </ReportFilterGrid>
-          <ReportFilterActions
-            disableApply={postingAccountsQuery.isPending}
-            isApplying={reportQuery.isFetching}
-            onApply={handleApply}
-            onReset={handleReset}
-          />
-        </FinancialReportingFilterCard>
-
-        {validationError ? (
-          <FinancialReportingQueryErrorBanner message={validationError} />
-        ) : null}
-        {exportError ? (
-          <FinancialReportingQueryErrorBanner message={exportError} />
-        ) : null}
-        {postingAccountsQuery.isError &&
-        isApiError(postingAccountsQuery.error) ? (
-          <FinancialReportingQueryErrorBanner
-            message={postingAccountsQuery.error.apiError.message}
-          />
-        ) : null}
-        {reportQuery.isError && isApiError(reportQuery.error) ? (
-          <FinancialReportingQueryErrorBanner
-            message={reportQuery.error.apiError.message}
-          />
-        ) : null}
-        <ReportRefreshHint
-          isFetching={reportQuery.isFetching && !!reportQuery.data}
+          }
+          description="Trace a posting-level account back to posted vouchers with opening balance, period activity, and running balance context."
+          scopeName={user.currentCompany.name}
+          scopeSlug={user.currentCompany.slug}
+          title="General Ledger"
         />
 
-        {reportQuery.isPending && !reportQuery.data ? (
-          <ReportLoadingState label="Loading the posting-account general ledger." />
-        ) : null}
+        <FinancialReportingReadOnlyNotice
+          description="This ledger view is read-only. It follows the backend reporting contract directly and does not expose voucher edits, postings, or closing actions from this page."
+          title="Read-only reporting"
+        />
 
-        {!appliedFilters && !reportQuery.data ? (
-          <EmptyState
-            description="Choose an active posting account and apply the date range to load the general ledger."
-            title="General ledger filter required"
+        <div className="screen-only space-y-6">
+          <FinancialReportingFilterCard>
+            <ReportFilterGrid>
+              <PostingAccountSelector
+                accounts={postingAccountsQuery.data}
+                isLoading={postingAccountsQuery.isFetching}
+                onSearchChange={setAccountSearch}
+                onValueChange={setParticularAccountId}
+                search={accountSearch}
+                value={particularAccountId}
+              />
+              <DateRangeFields
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+                onDateFromChange={setDateFrom}
+                onDateToChange={setDateTo}
+              />
+              <VoucherTypeField onChange={setVoucherType} value={voucherType} />
+            </ReportFilterGrid>
+            <ReportFilterActions
+              disableApply={postingAccountsQuery.isPending}
+              isApplying={reportQuery.isFetching}
+              onApply={handleApply}
+              onReset={handleReset}
+            />
+          </FinancialReportingFilterCard>
+
+          {validationError ? (
+            <FinancialReportingQueryErrorBanner message={validationError} />
+          ) : null}
+          {exportError ? (
+            <FinancialReportingQueryErrorBanner message={exportError} />
+          ) : null}
+          {postingAccountsQuery.isError &&
+          isApiError(postingAccountsQuery.error) ? (
+            <FinancialReportingQueryErrorBanner
+              message={postingAccountsQuery.error.apiError.message}
+            />
+          ) : null}
+          {reportQuery.isError && isApiError(reportQuery.error) ? (
+            <FinancialReportingQueryErrorBanner
+              message={reportQuery.error.apiError.message}
+            />
+          ) : null}
+          <ReportRefreshHint
+            isFetching={reportQuery.isFetching && !!reportQuery.data}
           />
-        ) : null}
-      </div>
 
-      {reportQuery.data ? (
-        <>
-          <FinancialReportingPrintContext
-            items={[
-              {
-                label: 'Company',
-                value: user.currentCompany.name,
-              },
-              {
-                label: 'Period',
-                value: formatReportDateRangeLabel(
-                  reportQuery.data.dateFrom,
-                  reportQuery.data.dateTo,
-                ),
-              },
-              {
-                label: 'Posting account',
-                value: `${reportQuery.data.account.particularAccountCode} - ${reportQuery.data.account.particularAccountName}`,
-              },
-              {
-                label: 'Voucher scope',
-                value:
-                  reportQuery.data.voucherType ?? 'All posted voucher types',
-              },
-            ]}
-            title="General ledger print context"
-          />
+          {reportQuery.isPending && !reportQuery.data ? (
+            <ReportLoadingState label="Loading the posting-account general ledger." />
+          ) : null}
 
-          <FinancialReportingSection
-            description="Posting-account identity, period movement, and closing balance for the selected ledger scope."
-            title="Executive summary"
-          >
-            <FinancialReportContextStrip
+          {!appliedFilters && !reportQuery.data ? (
+            <EmptyState
+              description="Choose an active posting account and apply the date range to load the general ledger."
+              title="General ledger filter required"
+            />
+          ) : null}
+        </div>
+
+        {report ? (
+          <>
+            <FinancialReportingPrintContext
               items={[
                 {
-                  label: 'Report period',
+                  label: 'Company',
+                  value: user.currentCompany.name,
+                },
+                {
+                  label: 'Period',
                   value: formatReportDateRangeLabel(
-                    reportQuery.data.dateFrom,
-                    reportQuery.data.dateTo,
+                    report.dateFrom,
+                    report.dateTo,
                   ),
                 },
                 {
                   label: 'Posting account',
-                  value: reportQuery.data.account.particularAccountCode,
+                  value: `${report.account.particularAccountCode} - ${report.account.particularAccountName}`,
                 },
                 {
                   label: 'Voucher scope',
-                  value:
-                    reportQuery.data.voucherType ?? 'All posted voucher types',
-                },
-                {
-                  label: 'Closing balance',
-                  value: formatRunningBalance(
-                    reportQuery.data.totals.closingDebit,
-                    reportQuery.data.totals.closingCredit,
-                  ),
+                  value: report.voucherType ?? 'All posted voucher types',
                 },
               ]}
+              title="General ledger print context"
             />
 
-            <ReportValueList
-              items={[
-                {
-                  label: 'Account class',
-                  value: `${reportQuery.data.account.accountClassCode} - ${reportQuery.data.account.accountClassName}`,
-                },
-                {
-                  label: 'Account group',
-                  value: `${reportQuery.data.account.accountGroupCode} - ${reportQuery.data.account.accountGroupName}`,
-                },
-                {
-                  label: 'Ledger account',
-                  value: `${reportQuery.data.account.ledgerAccountCode} - ${reportQuery.data.account.ledgerAccountName}`,
-                },
-                {
-                  label: 'Posting account',
-                  value: `${reportQuery.data.account.particularAccountCode} - ${reportQuery.data.account.particularAccountName}`,
-                },
-              ]}
-            />
-
-            <ReportMetricGrid>
-              <ReportMetricCard
-                label="Opening balance"
-                value={
-                  <ReportAmountPair
-                    credit={reportQuery.data.openingBalance.credit}
-                    debit={reportQuery.data.openingBalance.debit}
-                  />
-                }
+            <FinancialReportingSection
+              description="Posting-account identity, period movement, and closing balance for the selected ledger scope."
+              title="Executive summary"
+            >
+              <FinancialReportContextStrip
+                items={[
+                  {
+                    label: 'Report period',
+                    value: formatReportDateRangeLabel(
+                      report.dateFrom,
+                      report.dateTo,
+                    ),
+                  },
+                  {
+                    label: 'Posting account',
+                    value: report.account.particularAccountCode,
+                  },
+                  {
+                    label: 'Voucher scope',
+                    value: report.voucherType ?? 'All posted voucher types',
+                  },
+                  {
+                    label: 'Closing balance',
+                    value: formatRunningBalance(
+                      report.totals.closingDebit,
+                      report.totals.closingCredit,
+                    ),
+                  },
+                ]}
               />
-              <ReportMetricCard
-                label="Period movement"
-                value={
-                  <ReportAmountPair
-                    credit={reportQuery.data.totals.credit}
-                    debit={reportQuery.data.totals.debit}
-                  />
-                }
+
+              <ReportValueList
+                items={[
+                  {
+                    label: 'Account class',
+                    value: `${report.account.accountClassCode} - ${report.account.accountClassName}`,
+                  },
+                  {
+                    label: 'Account group',
+                    value: `${report.account.accountGroupCode} - ${report.account.accountGroupName}`,
+                  },
+                  {
+                    label: 'Ledger account',
+                    value: `${report.account.ledgerAccountCode} - ${report.account.ledgerAccountName}`,
+                  },
+                  {
+                    label: 'Posting account',
+                    value: `${report.account.particularAccountCode} - ${report.account.particularAccountName}`,
+                  },
+                ]}
               />
-              <ReportMetricCard
-                label="Closing balance"
-                value={
-                  <ReportAmountPair
-                    credit={reportQuery.data.totals.closingCredit}
-                    debit={reportQuery.data.totals.closingDebit}
-                  />
-                }
+
+              <ReportMetricGrid>
+                <ReportMetricCard
+                  label="Opening balance"
+                  value={
+                    <ReportAmountPair
+                      credit={report.openingBalance.credit}
+                      debit={report.openingBalance.debit}
+                    />
+                  }
+                />
+                <ReportMetricCard
+                  label="Period movement"
+                  value={
+                    <ReportAmountPair
+                      credit={report.totals.credit}
+                      debit={report.totals.debit}
+                    />
+                  }
+                />
+                <ReportMetricCard
+                  label="Closing balance"
+                  value={
+                    <ReportAmountPair
+                      credit={report.totals.closingCredit}
+                      debit={report.totals.closingDebit}
+                    />
+                  }
+                />
+                <ReportMetricCard
+                  description={`Period ${formatDate(report.dateFrom)} to ${formatDate(report.dateTo)}.`}
+                  label="Posted lines"
+                  value={`${report.lines.length} line${
+                    report.lines.length === 1 ? '' : 's'
+                  }`}
+                />
+              </ReportMetricGrid>
+            </FinancialReportingSection>
+
+            <FinancialReportingSection
+              description="Debit and credit movement is shown across opening, period, closing, and voucher-date activity."
+              title="Visual analysis"
+            >
+              <GeneralLedgerVisualSummary report={report} />
+            </FinancialReportingSection>
+
+            <FinancialReportingSection
+              description="Voucher references, voucher IDs, descriptions, and running balances come directly from the backend ledger response."
+              title="Detailed transaction table"
+            >
+              <GeneralLedgerLinesTable
+                dateFrom={report.dateFrom}
+                lines={report.lines}
+                openingBalance={report.openingBalance}
+                totals={report.totals}
               />
-              <ReportMetricCard
-                description={`Period ${formatDate(reportQuery.data.dateFrom)} to ${formatDate(reportQuery.data.dateTo)}.`}
-                label="Posted lines"
-                value={`${reportQuery.data.lines.length} line${
-                  reportQuery.data.lines.length === 1 ? '' : 's'
-                }`}
-              />
-            </ReportMetricGrid>
-          </FinancialReportingSection>
 
-          <FinancialReportingSection
-            description="Debit and credit movement is shown across opening, period, closing, and voucher-date activity."
-            title="Visual analysis"
-          >
-            <GeneralLedgerVisualSummary report={reportQuery.data} />
-          </FinancialReportingSection>
+              <div className="rounded-2xl border border-border/70 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+                Current closing balance{' '}
+                <span className="font-mono font-semibold text-foreground tabular-nums">
+                  {formatAccountingAmount(report.totals.closingDebit)} Dr /{' '}
+                  {formatAccountingAmount(report.totals.closingCredit)} Cr
+                </span>
+              </div>
+            </FinancialReportingSection>
 
-          <FinancialReportingSection
-            description="Voucher references, voucher IDs, descriptions, and running balances come directly from the backend ledger response."
-            title="Detailed transaction table"
-          >
-            <GeneralLedgerLinesTable
-              dateFrom={reportQuery.data.dateFrom}
-              lines={reportQuery.data.lines}
-              openingBalance={reportQuery.data.openingBalance}
-              totals={reportQuery.data.totals}
-            />
+            <FinancialReportingSection
+              description="Concise ledger notes for finance review and print output."
+              title="Assumptions and calculation notes"
+            >
+              <div className="grid gap-3">
+                <ReportAssumptionNote>
+                  Opening balance is calculated from posted voucher lines before
+                  the selected start date for this posting account.
+                </ReportAssumptionNote>
+                <ReportAssumptionNote>
+                  Period movement and running balances include only posted
+                  voucher lines that match the selected posting account, date
+                  range, and optional voucher type.
+                </ReportAssumptionNote>
+                <ReportAssumptionNote>
+                  This page is read-only and keeps voucher context visible for
+                  traceability; voucher editing and posting remain outside this
+                  report.
+                </ReportAssumptionNote>
+              </div>
+            </FinancialReportingSection>
+          </>
+        ) : null}
+      </div>
 
-            <div className="rounded-2xl border border-border/70 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-              Current closing balance{' '}
-              <span className="font-mono font-semibold text-foreground tabular-nums">
-                {formatAccountingAmount(reportQuery.data.totals.closingDebit)}{' '}
-                Dr /{' '}
-                {formatAccountingAmount(reportQuery.data.totals.closingCredit)}{' '}
-                Cr
-              </span>
-            </div>
-          </FinancialReportingSection>
-
-          <FinancialReportingSection
-            description="Concise ledger notes for finance review and print output."
-            title="Assumptions and calculation notes"
-          >
-            <div className="grid gap-3">
-              <ReportAssumptionNote>
-                Opening balance is calculated from posted voucher lines before
-                the selected start date for this posting account.
-              </ReportAssumptionNote>
-              <ReportAssumptionNote>
-                Period movement and running balances include only posted voucher
-                lines that match the selected posting account, date range, and
-                optional voucher type.
-              </ReportAssumptionNote>
-              <ReportAssumptionNote>
-                This page is read-only and keeps voucher context visible for
-                traceability; voucher editing and posting remain outside this
-                report.
-              </ReportAssumptionNote>
-            </div>
-          </FinancialReportingSection>
-        </>
-      ) : null}
+      <GeneralLedgerPrintableReport
+        generatedAt={generatedAt}
+        generatedBy={user.email}
+        report={report ?? null}
+        statusMessage={printableStatusMessage}
+        userCompanyName={user.currentCompany.name}
+      />
     </AppPage>
   );
 };

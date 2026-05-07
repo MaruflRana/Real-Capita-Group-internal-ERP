@@ -12,7 +12,11 @@ import type {
   AccountingVoucherType,
   TrialBalanceQueryParams,
 } from '../../lib/api/types';
-import { formatAccountingAmount, formatDate } from '../../lib/format';
+import {
+  formatAccountingAmount,
+  formatDate,
+  formatDateTime,
+} from '../../lib/format';
 import { downloadApiCsv, printCurrentPage } from '../../lib/output';
 import {
   DateRangeFields,
@@ -38,6 +42,7 @@ import {
   ReportRefreshHint,
 } from './shared';
 import { TrialBalanceReportTable } from './tables';
+import { TrialBalancePrintableReport } from './statement-printable';
 import {
   buildFinancialReportCsvFileName,
   formatReportDateRangeLabel,
@@ -172,209 +177,235 @@ export const TrialBalancePage = () => {
   const closingCredit = Number(report?.totals.closingCredit ?? 0);
   const closingDifference = Math.abs(closingDebit - closingCredit);
   const isClosingBalanced = closingDifference < 0.005;
+  const generatedAt = formatDateTime(
+    new Date(reportQuery.dataUpdatedAt || Date.now()).toISOString(),
+  );
+  const printableStatusMessage =
+    reportQuery.isError && isApiError(reportQuery.error)
+      ? reportQuery.error.apiError.message
+      : reportQuery.isPending
+        ? 'The trial balance report is loading. Print after the report data has loaded.'
+        : 'Apply valid report filters to generate the trial balance printable statement.';
 
   return (
     <AppPage>
-      <FinancialReportingPageHeader
-        actions={
-          reportQuery.data ? (
-            <OutputActionGroup
-              isExporting={isExporting}
-              onExport={() => void handleExport()}
-              onPrint={printCurrentPage}
-            />
-          ) : null
-        }
-        description="Review posted accounting activity across the chart hierarchy with opening, movement, and closing debit and credit balances for the active company."
-        scopeName={user.currentCompany.name}
-        scopeSlug={user.currentCompany.slug}
-        title="Trial Balance"
-      />
-
-      <FinancialReportingReadOnlyNotice
-        description="This report is read-only and reflects posted vouchers only. It does not create write-back accounting actions or alternate statement logic in the browser."
-        title="Read-only reporting"
-      />
-
-      <div className="screen-only space-y-6">
-        <FinancialReportingFilterCard>
-          <ReportFilterGrid>
-            <DateRangeFields
-              dateFrom={dateFrom}
-              dateTo={dateTo}
-              onDateFromChange={setDateFrom}
-              onDateToChange={setDateTo}
-            />
-            <VoucherTypeField onChange={setVoucherType} value={voucherType} />
-          </ReportFilterGrid>
-          <ReportFilterActions
-            isApplying={reportQuery.isFetching}
-            onApply={handleApply}
-            onReset={handleReset}
-          />
-        </FinancialReportingFilterCard>
-
-        {validationError ? (
-          <FinancialReportingQueryErrorBanner message={validationError} />
-        ) : null}
-        {exportError ? (
-          <FinancialReportingQueryErrorBanner message={exportError} />
-        ) : null}
-        {reportQuery.isError && isApiError(reportQuery.error) ? (
-          <FinancialReportingQueryErrorBanner
-            message={reportQuery.error.apiError.message}
-          />
-        ) : null}
-        <ReportRefreshHint
-          isFetching={reportQuery.isFetching && !!reportQuery.data}
+      <div
+        className="printable-report-screen-content space-y-5 xl:space-y-6"
+        data-testid="printable-report-screen-content"
+      >
+        <FinancialReportingPageHeader
+          actions={
+            reportQuery.data ? (
+              <OutputActionGroup
+                isExporting={isExporting}
+                onExport={() => void handleExport()}
+                onPrint={printCurrentPage}
+                printLabel="Print Report"
+              />
+            ) : null
+          }
+          description="Review posted accounting activity across the chart hierarchy with opening, movement, and closing debit and credit balances for the active company."
+          scopeName={user.currentCompany.name}
+          scopeSlug={user.currentCompany.slug}
+          title="Trial Balance"
         />
 
-        {reportQuery.isPending && !reportQuery.data ? (
-          <ReportLoadingState label="Loading the company trial balance." />
-        ) : null}
-      </div>
+        <FinancialReportingReadOnlyNotice
+          description="This report is read-only and reflects posted vouchers only. It does not create write-back accounting actions or alternate statement logic in the browser."
+          title="Read-only reporting"
+        />
 
-      {report ? (
-        <>
-          <FinancialReportingPrintContext
-            items={[
-              {
-                label: 'Company',
-                value: user.currentCompany.name,
-              },
-              {
-                label: 'Period',
-                value: formatReportDateRangeLabel(
-                  report.dateFrom,
-                  report.dateTo,
-                ),
-              },
-              {
-                label: 'Voucher scope',
-                value: report.voucherType
-                  ? report.voucherType
-                  : 'All posted voucher types',
-              },
-              {
-                label: 'Period end',
-                value: formatDate(report.dateTo),
-              },
-            ]}
-            title="Trial balance print context"
+        <div className="screen-only space-y-6">
+          <FinancialReportingFilterCard>
+            <ReportFilterGrid>
+              <DateRangeFields
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+                onDateFromChange={setDateFrom}
+                onDateToChange={setDateTo}
+              />
+              <VoucherTypeField onChange={setVoucherType} value={voucherType} />
+            </ReportFilterGrid>
+            <ReportFilterActions
+              isApplying={reportQuery.isFetching}
+              onApply={handleApply}
+              onReset={handleReset}
+            />
+          </FinancialReportingFilterCard>
+
+          {validationError ? (
+            <FinancialReportingQueryErrorBanner message={validationError} />
+          ) : null}
+          {exportError ? (
+            <FinancialReportingQueryErrorBanner message={exportError} />
+          ) : null}
+          {reportQuery.isError && isApiError(reportQuery.error) ? (
+            <FinancialReportingQueryErrorBanner
+              message={reportQuery.error.apiError.message}
+            />
+          ) : null}
+          <ReportRefreshHint
+            isFetching={reportQuery.isFetching && !!reportQuery.data}
           />
 
-          <FinancialReportingSection
-            description="Debit and credit control totals for the selected company, period, and voucher scope."
-            title="Executive summary"
-          >
-            <FinancialReportContextStrip
+          {reportQuery.isPending && !reportQuery.data ? (
+            <ReportLoadingState label="Loading the company trial balance." />
+          ) : null}
+        </div>
+
+        {report ? (
+          <>
+            <FinancialReportingPrintContext
               items={[
                 {
-                  label: 'Report period',
-                  value: formatReportDateRangeLabel(report.dateFrom, report.dateTo),
+                  label: 'Company',
+                  value: user.currentCompany.name,
+                },
+                {
+                  label: 'Period',
+                  value: formatReportDateRangeLabel(
+                    report.dateFrom,
+                    report.dateTo,
+                  ),
                 },
                 {
                   label: 'Voucher scope',
-                  value: report.voucherType ?? 'All posted voucher types',
+                  value: report.voucherType
+                    ? report.voucherType
+                    : 'All posted voucher types',
                 },
                 {
-                  label: 'Balance status',
-                  tone: isClosingBalanced ? 'success' : 'warning',
-                  value: isClosingBalanced ? 'Balanced' : 'Out of balance',
-                },
-                {
-                  label: 'Closing difference',
-                  value: formatAccountingAmount(closingDifference),
+                  label: 'Period end',
+                  value: formatDate(report.dateTo),
                 },
               ]}
+              title="Trial balance print context"
             />
-            <ReportMetricGrid>
-              <ReportMetricCard
-                label="Opening balance"
-                value={
-                  <ReportAmountPair
-                    credit={report.totals.openingCredit}
-                    debit={report.totals.openingDebit}
-                  />
-                }
-              />
-              <ReportMetricCard
-                label="Period movement"
-                value={
-                  <ReportAmountPair
-                    credit={report.totals.movementCredit}
-                    debit={report.totals.movementDebit}
-                  />
-                }
-              />
-              <ReportMetricCard
-                label="Closing balance"
-                value={
-                  <ReportAmountPair
-                    credit={report.totals.closingCredit}
-                    debit={report.totals.closingDebit}
-                  />
-                }
-              />
-              <ReportMetricCard
-                description={
-                  report.voucherType
-                    ? `Limited to ${report.voucherType.toLowerCase()} vouchers.`
-                    : 'All posted voucher types are included.'
-                }
-                label="Source of truth"
-                value="Posted vouchers only"
-              />
-            </ReportMetricGrid>
-          </FinancialReportingSection>
 
-          <FinancialReportingSection
-            description="Opening, period movement, and closing balances are compared without changing backend calculations."
-            title="Visual analysis"
-          >
-            <TrialBalanceVisualSummary report={report} />
-          </FinancialReportingSection>
-
-          <FinancialReportingSection
-            description="The hierarchy follows the backend report contract directly: account class, account group, ledger account, and posting account where available."
-            title="Detailed hierarchy table"
-          >
-            {report.sections.length === 0 ? (
-              <EmptyState
-                description="No posted voucher activity matched the selected period and filters."
-                title="No balances found"
+            <FinancialReportingSection
+              description="Debit and credit control totals for the selected company, period, and voucher scope."
+              title="Executive summary"
+            >
+              <FinancialReportContextStrip
+                items={[
+                  {
+                    label: 'Report period',
+                    value: formatReportDateRangeLabel(
+                      report.dateFrom,
+                      report.dateTo,
+                    ),
+                  },
+                  {
+                    label: 'Voucher scope',
+                    value: report.voucherType ?? 'All posted voucher types',
+                  },
+                  {
+                    label: 'Balance status',
+                    tone: isClosingBalanced ? 'success' : 'warning',
+                    value: isClosingBalanced ? 'Balanced' : 'Out of balance',
+                  },
+                  {
+                    label: 'Closing difference',
+                    value: formatAccountingAmount(closingDifference),
+                  },
+                ]}
               />
-            ) : (
-              <TrialBalanceReportTable
-                sections={report.sections}
-                totals={report.totals}
-              />
-            )}
-          </FinancialReportingSection>
+              <ReportMetricGrid>
+                <ReportMetricCard
+                  label="Opening balance"
+                  value={
+                    <ReportAmountPair
+                      credit={report.totals.openingCredit}
+                      debit={report.totals.openingDebit}
+                    />
+                  }
+                />
+                <ReportMetricCard
+                  label="Period movement"
+                  value={
+                    <ReportAmountPair
+                      credit={report.totals.movementCredit}
+                      debit={report.totals.movementDebit}
+                    />
+                  }
+                />
+                <ReportMetricCard
+                  label="Closing balance"
+                  value={
+                    <ReportAmountPair
+                      credit={report.totals.closingCredit}
+                      debit={report.totals.closingDebit}
+                    />
+                  }
+                />
+                <ReportMetricCard
+                  description={
+                    report.voucherType
+                      ? `Limited to ${report.voucherType.toLowerCase()} vouchers.`
+                      : 'All posted voucher types are included.'
+                  }
+                  label="Source of truth"
+                  value="Posted vouchers only"
+                />
+              </ReportMetricGrid>
+            </FinancialReportingSection>
 
-          <FinancialReportingSection
-            description="Concise calculation notes for finance review and print output."
-            title="Assumptions and calculation notes"
-          >
-            <div className="grid gap-3">
-              <ReportAssumptionNote>
-                Opening values include posted voucher lines before the selected
-                start date; movement values include posted voucher lines inside
-                the selected period.
-              </ReportAssumptionNote>
-              <ReportAssumptionNote>
-                Closing debit and credit totals are compared as a control
-                status. Any mismatch should be reviewed as a posting or data
-                issue.
-              </ReportAssumptionNote>
-              <ReportAssumptionNote>
-                This page is read-only and does not post adjustments, create
-                closing entries, or alter the accounting ledger.
-              </ReportAssumptionNote>
-            </div>
-          </FinancialReportingSection>
-        </>
-      ) : null}
+            <FinancialReportingSection
+              description="Opening, period movement, and closing balances are compared without changing backend calculations."
+              title="Visual analysis"
+            >
+              <TrialBalanceVisualSummary report={report} />
+            </FinancialReportingSection>
+
+            <FinancialReportingSection
+              description="The hierarchy follows the backend report contract directly: account class, account group, ledger account, and posting account where available."
+              title="Detailed hierarchy table"
+            >
+              {report.sections.length === 0 ? (
+                <EmptyState
+                  description="No posted voucher activity matched the selected period and filters."
+                  title="No balances found"
+                />
+              ) : (
+                <TrialBalanceReportTable
+                  sections={report.sections}
+                  totals={report.totals}
+                />
+              )}
+            </FinancialReportingSection>
+
+            <FinancialReportingSection
+              description="Concise calculation notes for finance review and print output."
+              title="Assumptions and calculation notes"
+            >
+              <div className="grid gap-3">
+                <ReportAssumptionNote>
+                  Opening values include posted voucher lines before the
+                  selected start date; movement values include posted voucher
+                  lines inside the selected period.
+                </ReportAssumptionNote>
+                <ReportAssumptionNote>
+                  Closing debit and credit totals are compared as a control
+                  status. Any mismatch should be reviewed as a posting or data
+                  issue.
+                </ReportAssumptionNote>
+                <ReportAssumptionNote>
+                  This page is read-only and does not post adjustments, create
+                  closing entries, or alter the accounting ledger.
+                </ReportAssumptionNote>
+              </div>
+            </FinancialReportingSection>
+          </>
+        ) : null}
+      </div>
+
+      <TrialBalancePrintableReport
+        generatedAt={generatedAt}
+        generatedBy={user.email}
+        report={report ?? null}
+        statusMessage={printableStatusMessage}
+        userCompanyName={user.currentCompany.name}
+      />
     </AppPage>
   );
 };

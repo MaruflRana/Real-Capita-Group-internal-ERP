@@ -219,7 +219,26 @@
   - dashboard, financial report, project/property, CRM, HR, payroll, and audit/document analytics now use clearer adjacent series labels and semantic tones
   - validation passed: lint, typecheck, build, test, Docker rebuild, demo seed/verify, Docker smoke, and live chart-focused checks at 1440px, 1366px, and 1024px
   - no new ERP modules, backend endpoints, database schema changes, migrations, seed-system changes, fake metrics, workflows, or production deployment/tagging changes were added
-- The repo is now ready for supervisor demo review after the Prompt 39B color-contrast polish; Prompt 40 is reserved for supervisor feedback fixes, final release-candidate checkpoint/tagging if requested, or production deployment assistance if requested.
+- Prompt 40A completed Financial Report Generation Architecture foundation:
+  - shared frontend-only printable report components now exist for A4 report layout, header, footer, metadata, sections, summary tables, data tables, notes, and print action reuse
+  - global print CSS now supports A4 portrait/landscape named report pages, compact report typography, shell/chrome hiding, readable tables, and report-only print visibility
+  - `/accounting/reports/business-overview` is the only representative financial report wired to the new printable report template in Prompt 40A
+  - the existing interactive screen reports remain intact; Daily/Weekly/Monthly/Yearly rollout is reserved for Prompt 40B
+  - no backend endpoints, accounting calculations, database schema changes, migrations, transactional workflows, fake values, `.xlsx`, server-side PDF, deployment, or tagging changes were added
+- Prompt 40B completed Printable Business And Periodic Reports Rollout:
+  - `/accounting/reports/daily`, `/weekly`, `/monthly`, and `/yearly` now use the Prompt 40A A4 printable report template from the existing business overview report response
+  - Business Overview remains wired to the shared printable template as a regression path
+  - periodic report screen charts, cards, filters, and tables remain interactive screen-only UI; print media renders only the printable report layout
+  - printable periodic reports include report header, active company, date range, grouping type, generated timestamp, generated-by session email, data-source note, summary values, period breakdown, assumptions, compact no-activity notes, and Demo/UAT notes only for the guarded demo company
+  - Daily and Weekly use A4 portrait; Monthly, Yearly, and Business Overview use A4 landscape
+  - no backend endpoints, accounting calculations, database schema changes, migrations, transactional workflows, fake values, seed data, `.xlsx`, server-side PDF, deployment, or tagging changes were added
+- Prompt 40C completed Printable Financial Statements Rollout:
+  - `/accounting/reports/trial-balance`, `/general-ledger`, `/profit-loss`, and `/balance-sheet` now use the Prompt 40A A4 printable report template over the existing read-only financial reporting API responses
+  - Trial Balance and General Ledger use A4 landscape for wider finance tables; Profit & Loss and Balance Sheet use A4 portrait
+  - General Ledger keeps the existing posting-account-required screen behavior and prints a professional not-ready message when no posting account/report is selected
+  - existing screen filters, cards, charts, hierarchy tables, CSV exports, and role-aware access remain intact and screen-only; print media renders only the printable statement layout
+  - no backend endpoints, reporting contracts, accounting calculations, database schema changes, migrations, transactional workflows, fake values, seed data, `.xlsx`, server-side PDF, deployment, or tagging changes were added
+- The repo is now ready for Prompt 40D final print/export QA and Git checkpoint.
 
 ## Frontend Routes
 
@@ -275,14 +294,15 @@
 ## Phase 1 Output Surfaces Now In Effect
 
 - Financial Reports:
-  - `/accounting/reports/business-overview`: CSV export + print-friendly output
-  - `/accounting/reports/daily`: CSV export + print-friendly output
-  - `/accounting/reports/weekly`: CSV export + print-friendly output
-  - `/accounting/reports/monthly`: CSV export + print-friendly output
-  - `/accounting/reports/trial-balance`: CSV export + print-friendly output
-  - `/accounting/reports/general-ledger`: CSV export + print-friendly output
-  - `/accounting/reports/profit-loss`: CSV export + print-friendly output
-  - `/accounting/reports/balance-sheet`: CSV export + print-friendly output
+  - `/accounting/reports/business-overview`: CSV export + Prompt 40A/40B shared A4 printable report template
+  - `/accounting/reports/daily`: CSV export + Prompt 40B A4 printable report template
+  - `/accounting/reports/weekly`: CSV export + Prompt 40B A4 printable report template
+  - `/accounting/reports/monthly`: CSV export + Prompt 40B A4 printable report template
+  - `/accounting/reports/yearly`: CSV export + Prompt 40B A4 printable report template
+  - `/accounting/reports/trial-balance`: CSV export + Prompt 40C A4 printable report template
+  - `/accounting/reports/general-ledger`: CSV export + Prompt 40C A4 printable report template
+  - `/accounting/reports/profit-loss`: CSV export + Prompt 40C A4 printable report template
+  - `/accounting/reports/balance-sheet`: CSV export + Prompt 40C A4 printable report template
 - Accounting detail:
   - `/accounting/vouchers/[voucherId]`: CSV export + print-friendly output
 - Selected operational CSV exports:
@@ -1123,6 +1143,95 @@ Observed result:
 - The Prompt 39B sweep found no global horizontal overflow, no clipped numeric values, no single-letter uppercase chart markers, and visible Business Overview export/print controls.
 - In-app browser spot checks were captured for `/dashboard` at 1440px and `/accounting/reports/business-overview` at 1024px against the rebuilt Docker stack.
 
+Prompt 40B Printable Business And Periodic Reports Rollout verification was run on May 6, 2026 with:
+
+```powershell
+corepack pnpm lint
+corepack pnpm typecheck
+corepack pnpm build
+corepack pnpm test
+docker compose up -d --build
+corepack pnpm seed:demo
+corepack pnpm seed:demo:verify
+corepack pnpm docker:smoke
+```
+
+Observed result:
+
+- `corepack pnpm lint` passed with pre-existing warnings only.
+- `corepack pnpm typecheck` passed.
+- `corepack pnpm build` passed.
+- `corepack pnpm test` passed after tightening two Playwright locator assertions: 161 API tests and 53 Playwright e2e tests passed.
+- `docker compose up -d --build` rebuilt the `api` and `web` containers successfully, and the services started healthy.
+- `corepack pnpm seed:demo` and `corepack pnpm seed:demo:verify` passed for `Real Capita Demo / UAT` with report readiness totals intact.
+- `corepack pnpm docker:smoke` passed for web, API readiness, and Swagger.
+- Authenticated live print-media verification passed for `/accounting/reports/daily`, `/weekly`, `/monthly`, `/yearly`, and `/business-overview`.
+- The live print-media sweep found no sidebar/header/chrome, no visible export/print buttons, no visible screen chart sections, visible printable header/meta/footer, visible summary and period breakdown tables, and correct orientation metadata.
+- Print-media screenshots were written under `test-results/prompt-40b-print-media`.
+
+Prompt 40C Printable Financial Statements Rollout verification was run on May 6, 2026 with:
+
+```powershell
+corepack pnpm lint
+corepack pnpm typecheck
+corepack pnpm build
+corepack pnpm test
+docker compose up -d --build
+corepack pnpm seed:demo
+corepack pnpm seed:demo:verify
+corepack pnpm docker:smoke
+```
+
+Observed result:
+
+- `corepack pnpm lint` passed with pre-existing warnings only.
+- `corepack pnpm typecheck` passed.
+- `corepack pnpm build` passed.
+- `corepack pnpm test` passed: 161 API tests and 55 Playwright e2e tests passed.
+- `docker compose up -d --build` rebuilt and started the stack successfully.
+- `corepack pnpm seed:demo` and `corepack pnpm seed:demo:verify` passed for `Real Capita Demo / UAT` with financial report readiness totals intact.
+- `corepack pnpm docker:smoke` passed for web, API readiness, and Swagger.
+- Authenticated live print-media verification passed for `/accounting/reports/trial-balance`, `/general-ledger`, `/profit-loss`, `/balance-sheet`, plus regression routes `/business-overview`, `/daily`, `/weekly`, `/monthly`, and `/yearly`.
+- The live print-media sweep found no sidebar/header/chrome, no visible export/print buttons, hidden screen report content, visible printable header/meta/footer, visible summary and statement/period tables, and correct orientation metadata.
+- Print-media screenshots were written under `test-results/prompt-40c-print-media`.
+
+Prompt 40D Final Print/Export QA And Git Checkpoint verification was run on May 7, 2026 with:
+
+```powershell
+docker compose up -d --build
+corepack pnpm seed:demo
+corepack pnpm seed:demo:verify
+corepack pnpm docker:smoke
+corepack pnpm exec playwright test tests/e2e/financial-reporting.spec.ts --config tests/e2e/playwright.config.ts
+corepack pnpm lint
+corepack pnpm typecheck
+corepack pnpm build
+corepack pnpm test
+docker compose up -d --build
+corepack pnpm seed:demo
+corepack pnpm seed:demo:verify
+corepack pnpm docker:smoke
+```
+
+Observed result:
+
+- Pre-check confirmed branch `chatgpt-prompt39-polish`, remote `origin git@github.com:MaruflRana/Real-Capita-Group-internal-ERP.git`, and starting checkpoint `ae325151 chore: finalize supervisor demo polish`.
+- Unsafe local/generated paths were present but ignored and not staged: `.env`, `backups/`, `node_modules/`, `dist/`, `test-results/`, `.playwright-mcp/`, `apps/web/.next`, `playwright-report`, and backup `*.dump` files.
+- Docker Compose rebuilt successfully and the stack started healthy before and after validation.
+- `corepack pnpm seed:demo` and `corepack pnpm seed:demo:verify` passed for `Real Capita Demo / UAT` with financial report readiness totals intact.
+- `corepack pnpm docker:smoke` passed for web, API readiness, and Swagger.
+- Authenticated live print/export QA passed for `/accounting/reports/business-overview`, `/daily`, `/weekly`, `/monthly`, `/yearly`, `/trial-balance`, `/general-ledger`, `/profit-loss`, and `/balance-sheet`.
+- All 9 routes loaded on screen, exposed supported CSV/print controls, triggered CSV downloads, and hid export/print controls under print media.
+- Print media showed printable headers, company/report/date metadata, generated timestamp, generated-by context, summaries, statement/period tables, notes, and footers while hiding app shell chrome and screen-only charts/cards.
+- General Ledger no-account print state showed a professional account-selection message, and selected-account print output included opening/closing context plus transaction rows.
+- Responsive screen QA passed at 1440px, 1366px, and 1024px with no global horizontal overflow and visible report controls.
+- A focused Playwright regression now checks CSV downloads for all 9 printable financial report routes.
+- `corepack pnpm lint` passed with pre-existing warnings only.
+- `corepack pnpm typecheck` passed.
+- `corepack pnpm build` passed.
+- `corepack pnpm test` passed: 161 API tests and 56 Playwright e2e tests.
+- Browser print remains the Phase 1 print/PDF-from-browser path, and CSV remains the only Phase 1 structured export format.
+
 ## Current Local URLs
 
 - Web: `http://localhost:3000`
@@ -1140,4 +1249,4 @@ Observed result:
 
 ## Final Status
 
-Backend foundations through Prompt 11 remain intact. Prompt 12 established the authenticated frontend shell and Org & Security baseline, Prompt 13 added the Accounting Core UI, Prompt 14 added the Project & Real-Estate Master UI, Prompt 15 added the frontend CRM & Property Desk operational UI, Prompt 16 added the frontend HR Core operational UI, Prompt 17 added the frontend Payroll Core operational UI, Prompt 18 added the frontend Audit & Documents operational UI, Prompt 19 added the backend financial reporting API, Prompt 20 added the frontend financial reporting UI, Prompt 21 added the frontend operational dashboard/home experience, Prompt 22 hardened runtime, origin, Docker Compose, CI, and deployment reliability, Prompt 23 hardened backend authorization consistency plus role-aware frontend navigation, route gating, forbidden UX, and dashboard visibility, Prompt 24 added Phase 1 export + print readiness, Prompt 25 added Phase 1 PostgreSQL backup/restore plus operations-readiness runbooks, Prompt 26 completed the Phase 1 release-candidate audit plus UAT/release documentation, Prompt 27 added the Phase 1 UAT, stakeholder demo, issue-log, known-limitations, sign-off, and handoff documentation package, Prompt 28 added the final Phase 1 release packaging and handoff bundle, Prompt 29 completed final deployment/tag/release handoff verification and documentation, Prompt 30 added the explicit synthetic demo/UAT seed, reset, and verify foundation, Prompt 31 added frontend-only analytics, graphs, and status summaries over existing REST data without breaking the locked architecture or adding new business workflows, Prompt 32 added professional analytics plus daily/weekly/monthly business reporting over existing posted accounting and CRM/property data without adding transactional workflows, Prompt 33 upgraded the existing seed into RCG context-aligned synthetic demo/UAT data while preserving the locked architecture and synthetic-only safeguards, Prompt 34 added the frontend-only ERP design-system foundation for stronger visual contrast, typography, cards, tables, analytics shells, and report primitives without redesigning every page, Prompt 35 completed the frontend-only app shell, navigation, page-frame, and responsive layout redesign while preserving existing REST boundaries, role-aware access, CSV export, and print behavior, Prompt 36 completed the frontend-only professional chart component system plus representative chart replacements over existing REST data and calculations, Prompt 37 completed the finance-grade Financial Reports Redesign plus the missing yearly report over the existing read-only reporting boundary, Prompt 38 completed the frontend-only Operational Module Analytics Redesign for non-financial operational modules over existing REST data, Prompt 39 completed final supervisor-demo visual QA and polish across the full demo flow without adding feature scope, and Prompt 39B completed final chart color-contrast and non-color-cue polish across dashboard, financial, and operational analytics without adding feature scope. The repo is ready for supervisor demo review; Prompt 40 is reserved for supervisor feedback fixes, final release-candidate checkpoint/tagging if requested, or production deployment assistance if requested.
+Backend foundations through Prompt 11 remain intact. Prompt 12 established the authenticated frontend shell and Org & Security baseline, Prompt 13 added the Accounting Core UI, Prompt 14 added the Project & Real-Estate Master UI, Prompt 15 added the frontend CRM & Property Desk operational UI, Prompt 16 added the frontend HR Core operational UI, Prompt 17 added the frontend Payroll Core operational UI, Prompt 18 added the frontend Audit & Documents operational UI, Prompt 19 added the backend financial reporting API, Prompt 20 added the frontend financial reporting UI, Prompt 21 added the frontend operational dashboard/home experience, Prompt 22 hardened runtime, origin, Docker Compose, CI, and deployment reliability, Prompt 23 hardened backend authorization consistency plus role-aware frontend navigation, route gating, forbidden UX, and dashboard visibility, Prompt 24 added Phase 1 export + print readiness, Prompt 25 added Phase 1 PostgreSQL backup/restore plus operations-readiness runbooks, Prompt 26 completed the Phase 1 release-candidate audit plus UAT/release documentation, Prompt 27 added the Phase 1 UAT, stakeholder demo, issue-log, known-limitations, sign-off, and handoff documentation package, Prompt 28 added the final Phase 1 release packaging and handoff bundle, Prompt 29 completed final deployment/tag/release handoff verification and documentation, Prompt 30 added the explicit synthetic demo/UAT seed, reset, and verify foundation, Prompt 31 added frontend-only analytics, graphs, and status summaries over existing REST data without breaking the locked architecture or adding new business workflows, Prompt 32 added professional analytics plus daily/weekly/monthly business reporting over existing posted accounting and CRM/property data without adding transactional workflows, Prompt 33 upgraded the existing seed into RCG context-aligned synthetic demo/UAT data while preserving the locked architecture and synthetic-only safeguards, Prompt 34 added the frontend-only ERP design-system foundation for stronger visual contrast, typography, cards, tables, analytics shells, and report primitives without redesigning every page, Prompt 35 completed the frontend-only app shell, navigation, page-frame, and responsive layout redesign while preserving existing REST boundaries, role-aware access, CSV export, and print behavior, Prompt 36 completed the frontend-only professional chart component system plus representative chart replacements over existing REST data and calculations, Prompt 37 completed the finance-grade Financial Reports Redesign plus the missing yearly report over the existing read-only reporting boundary, Prompt 38 completed the frontend-only Operational Module Analytics Redesign for non-financial operational modules over existing REST data, Prompt 39 completed final supervisor-demo visual QA and polish across the full demo flow without adding feature scope, Prompt 39B completed final chart color-contrast and non-color-cue polish across dashboard, financial, and operational analytics without adding feature scope, Prompt 40A completed the frontend-only printable financial report-generation foundation with Business Overview as the representative wired report, Prompt 40B applied that printable foundation to Daily, Weekly, Monthly, and Yearly reports, Prompt 40C applied it to Trial Balance, General Ledger, Profit & Loss, and Balance Sheet, and Prompt 40D completed final print/export QA plus safe checkpoint preparation for all 9 printable financial reports. The repo is ready for Prompt 41 after the Prompt 40D Git checkpoint.
