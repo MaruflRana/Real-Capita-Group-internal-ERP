@@ -13,6 +13,8 @@
     "dev:web": "node ./node_modules/nx/bin/nx.js dev web",
     "dev:api": "node ./node_modules/nx/bin/nx.js dev api",
     "verify": "corepack pnpm lint && corepack pnpm typecheck && corepack pnpm build && corepack pnpm test",
+    "stack:up": "node scripts/stack-sync.mjs --skip-pull",
+    "stack:sync": "node scripts/stack-sync.mjs",
     "docker:up": "docker compose up --build",
     "docker:up:detached": "docker compose up --build -d",
     "docker:down": "docker compose down",

@@ -5,11 +5,17 @@ packages:
 
 autoInstallPeers: true
 onlyBuiltDependencies:
+  - '@prisma/engines'
   - '@parcel/watcher'
   - '@prisma/client'
   - '@swc/core'
   - 'argon2'
   - 'esbuild'
   - 'nx'
+  - 'prisma'
   - 'sharp'
   - 'unrs-resolver'
+
+ignoredBuiltDependencies:
+  - '@nestjs/core'
+  - '@scarf/scarf'
