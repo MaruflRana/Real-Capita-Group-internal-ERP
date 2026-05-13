@@ -1,0 +1,28 @@
+{
+	email {$ACME_EMAIL}
+}
+
+{$PUBLIC_APP_HOST} {
+	encode zstd gzip
+
+	header {
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Content-Type-Options "nosniff"
+	}
+
+	handle /api/* {
+		reverse_proxy api:3333
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+}
+
+{$PUBLIC_STORAGE_HOST} {
+	encode zstd gzip
+
+	reverse_proxy minio:9000 {
+		header_up Host {host}
+	}
+}

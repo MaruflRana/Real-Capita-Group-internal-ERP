@@ -13,6 +13,7 @@ Related release-candidate references:
 - Route and module inventory: [phase-1-route-inventory.md](phase-1-route-inventory.md)
 - Human UAT checklist: [phase-1-uat-checklist.md](phase-1-uat-checklist.md)
 - Release checklist and caveats register: [phase-1-release-checklist.md](phase-1-release-checklist.md)
+- Live VPS demo runbook: [live-demo-deployment.md](live-demo-deployment.md)
 
 ## Origin And Cookie Rules
 
@@ -152,7 +153,12 @@ Notes:
 
 ## Single-VM Production Flow
 
-1. Copy `.env.example` to `.env` and replace every placeholder secret before the first deployment.
+For a public HTTPS demo on a remote VPS, use the production package in
+`compose.production.yaml`, `.env.production.example`, and
+`deploy/Caddyfile`. The detailed runbook is
+[live-demo-deployment.md](live-demo-deployment.md).
+
+1. Copy `.env.example` or `.env.production.example` to `.env` and replace every placeholder secret before the first deployment.
 2. Run `corepack pnpm ops:env-check -- --strict` and fix every warning before real production use.
 3. Set `NODE_ENV=production`.
 4. Set `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_BASE_URL`, `WEB_APP_URL`, and `API_BASE_URL` to the real HTTPS origins you intend users to open.
