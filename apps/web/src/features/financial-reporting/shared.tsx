@@ -264,7 +264,7 @@ export const BalanceStatusBanner = ({
     <p className="mt-1">
       {isBalanced
         ? 'Assets equal liabilities plus equity for the selected as-of date.'
-        : 'The backend reported an imbalance for the selected as-of date. Treat the statement as diagnostic until that issue is resolved.'}
+        : 'The statement is out of balance for the selected as-of date. Treat it as diagnostic until the issue is resolved.'}
     </p>
   </div>
 );

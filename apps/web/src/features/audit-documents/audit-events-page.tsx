@@ -260,7 +260,7 @@ export const AuditEventsPage = () => {
 
       <AuditDocumentsSection
         title="Audit event list"
-        description="Filter by actor, category, target entity, and date range to review system activity without turning this phase into a full SIEM-style explorer."
+        description="Filter by actor, category, target entity, and date range to review system activity in a focused audit view."
       >
         <AuditDocumentsFilterCard>
           <div className="space-y-2">
@@ -437,13 +437,13 @@ export const AuditEventsPage = () => {
         ) : (
           <EmptyState
             title="No audit events found"
-            description="Adjust the current filters to review company activity or wait for new events to be recorded by backend operations."
+            description="Adjust the current filters to review company activity or wait for new events to be recorded."
           />
         )}
       </AuditDocumentsSection>
 
       <SidePanel
-        description="Review the selected audit event without exposing more payload detail than the backend returns safely for this operational phase."
+        description="Review the selected audit event with the detail available for this operational view."
         onClose={() => setSelectedAuditEventId(null)}
         open={selectedAuditEventId !== null}
         title="Audit event detail"

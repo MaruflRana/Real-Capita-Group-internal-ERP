@@ -122,7 +122,7 @@ export const AttachmentUploadPanel = ({
       {submitError ? <AuditDocumentsQueryErrorBanner message={submitError} /> : null}
       <AuditDocumentsReadOnlyNotice
         title="Direct upload flow"
-        description="This browser uploads file bytes directly to the storage URL returned by the NestJS API, then finalizes the attachment metadata through the REST contract."
+        description="Upload file bytes directly to secure storage, then finalize the attachment metadata for company records."
       />
       <div className="space-y-2">
         <Label htmlFor="attachment-upload-file">File</Label>

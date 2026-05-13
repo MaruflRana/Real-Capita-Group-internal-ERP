@@ -826,7 +826,7 @@ export const PayrollPostingFormPanel = ({
     return (
       <PayrollCoreReadOnlyNotice
         title="Posting unavailable"
-        description="Only finalized payroll runs can be posted to accounting in this phase."
+        description="Only finalized payroll runs can be posted to accounting."
       />
     );
   }

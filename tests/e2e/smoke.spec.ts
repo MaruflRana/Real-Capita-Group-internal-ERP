@@ -455,7 +455,9 @@ test('redirects protected routes to login when no browser session exists', async
   await page.goto('/dashboard');
 
   await expect(page).toHaveURL(/\/login\?next=%2Fdashboard/);
-  await expect(page.getByRole('heading', { name: 'Open the admin shell' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Sign in to Real Capita ERP' }),
+  ).toBeVisible();
 });
 
 test('redirects 127.0.0.1 requests onto the canonical localhost origin', async ({

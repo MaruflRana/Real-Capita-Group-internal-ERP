@@ -271,7 +271,7 @@ export const LeaveRequestsPage = () => {
     <div className="space-y-6">
       <HrCorePageHeader
         title="Leave Requests"
-        description="Operate the company-scoped leave management baseline with draft, submit, approve, reject, and cancel actions against real backend lifecycle rules."
+        description="Operate company-scoped leave management with draft, submit, approve, reject, and cancel actions under controlled lifecycle rules."
         scopeName={user.currentCompany.name}
         scopeSlug={user.currentCompany.slug}
         actions={
@@ -510,7 +510,7 @@ export const LeaveRequestsPage = () => {
         description={
           panelMode === 'create'
             ? 'Create a draft leave request linked to an existing active employee and leave type.'
-            : 'Review or operate the selected leave request using the backend lifecycle rules for drafts and submitted requests.'
+            : 'Review or operate the selected leave request using the lifecycle rules for drafts and submitted requests.'
         }
         onClose={() => {
           setPanelMode(null);
@@ -598,7 +598,7 @@ export const LeaveRequestsPage = () => {
                 {leaveRequestForDetail.status !== 'SUBMITTED' ? (
                   <HrCoreReadOnlyNotice
                     title="Protected request"
-                    description="Approved, rejected, and cancelled requests stay read-only in this phase."
+                    description="Approved, rejected, and cancelled requests stay read-only."
                   />
                 ) : null}
                 <LeaveRequestDetailPanel leaveRequest={leaveRequestForDetail} />

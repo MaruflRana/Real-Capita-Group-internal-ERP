@@ -396,7 +396,7 @@ export const SaleContractsPage = () => {
       <SidePanel
         description={
           editor
-            ? 'Review linked booking detail and edit only the safe contract metadata exposed in this phase.'
+            ? 'Review linked booking detail and edit the available contract metadata.'
             : 'Create a contract from an existing booking with clear customer, project, unit, and amount context.'
         }
         onClose={() => {

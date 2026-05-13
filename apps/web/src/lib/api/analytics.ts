@@ -616,7 +616,7 @@ export const getAccountingAnalytics = async (
         label: 'Unbalanced sampled vouchers',
         value: unbalancedVoucherSampleCount,
         detail:
-          'Detected by comparing debit and credit totals returned by the voucher list.',
+          'Detected by comparing debit and credit totals in the reviewed voucher records.',
       },
     ],
     recentPostingRows: voucherSampleResponse.items
@@ -990,13 +990,13 @@ export const getCrmAnalytics = async (
         key: 'active-bookings',
         label: 'Active bookings before contract',
         value: getDistributionValue(bookingStatusDistribution, 'ACTIVE'),
-        detail: 'Bookings still in ACTIVE state using the booking list API.',
+        detail: 'Bookings still in ACTIVE state before contract conversion.',
       },
       {
         key: 'overdue-installments',
         label: 'Overdue installments',
         value: getDistributionValue(installmentStateDistribution, 'overdue'),
-        detail: 'Due-state count returned by the installment schedule endpoint.',
+        detail: 'Installment schedules currently marked overdue.',
       },
       {
         key: 'collection-count',
@@ -1004,7 +1004,7 @@ export const getCrmAnalytics = async (
         value: totalCollections,
         detail: period?.dateFrom
           ? `Collections between ${period.dateFrom} and ${period.dateTo}.`
-          : 'Latest collections returned by the list endpoint.',
+          : 'Latest collections available in the active workspace.',
       },
     ],
     saleContractSample: buildSampleMeta(saleContractSampleResponse),
@@ -1134,7 +1134,7 @@ export const getHrAnalytics = async (
         key: 'submitted-leave',
         label: 'Leave requests awaiting review',
         value: submittedLeaveCount,
-        detail: 'Current SUBMITTED leave requests returned by HR list filters.',
+        detail: 'Current submitted leave requests awaiting HR review.',
       },
       {
         key: 'unmapped-employees',
@@ -1149,7 +1149,7 @@ export const getHrAnalytics = async (
         value: attendanceSampleResponse.meta.total,
         detail: period?.dateFrom
           ? `Logs between ${period.dateFrom} and ${period.dateTo}.`
-          : 'Latest attendance logs returned by the list endpoint.',
+          : 'Latest attendance logs available for review.',
       },
     ],
     employeeSample: buildSampleMeta(employeeSampleResponse),
@@ -1451,8 +1451,7 @@ export const getAuditDocumentAnalytics = async (
           attachmentStatusDistribution,
           'PENDING_UPLOAD',
         ),
-        detail:
-          'Files still in upload-intent state from the attachment metadata endpoint.',
+        detail: 'Files still waiting for upload completion.',
       },
       {
         key: 'unlinked-attachments',
@@ -1465,7 +1464,7 @@ export const getAuditDocumentAnalytics = async (
         key: 'auth-events',
         label: 'Auth audit events',
         value: getDistributionValue(auditCategoryDistribution, 'AUTH'),
-        detail: 'Authentication activity visible through the audit event API.',
+        detail: 'Authentication activity visible in the audit event register.',
       },
     ],
     attachmentSample: buildSampleMeta(attachmentSampleResponse),

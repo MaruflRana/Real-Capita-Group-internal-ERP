@@ -348,7 +348,7 @@ export const InstallmentSchedulesPage = () => {
       <SidePanel
         description={
           editor
-            ? 'Review the contract-linked schedule row and update only the safe fields while the backend still allows changes.'
+            ? 'Review the contract-linked schedule row and update the available editable fields.'
             : 'Create one or more schedule rows for an existing sale contract.'
         }
         onClose={() => {

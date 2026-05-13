@@ -97,7 +97,7 @@ const MODE_CONFIG: Record<
   overview: {
     title: 'Business Overview Report',
     description:
-      'Company-scoped sales, collections, revenue, expenses, and profit/loss trends from existing CRM/property and posted accounting data.',
+      'Company-scoped sales, collections, revenue, expenses, and profit/loss trends for management review.',
     reportSlug: 'business-overview',
     defaultBucket: 'month',
     printOrientation: 'landscape',
@@ -113,7 +113,7 @@ const MODE_CONFIG: Record<
   weekly: {
     title: 'Weekly Report',
     description:
-      'Weekly business movement grouped from existing company records without changing accounting or CRM calculations.',
+      'Weekly business movement across sales, collections, posted revenue, expenses, and voucher activity.',
     reportSlug: 'weekly-report',
     defaultBucket: 'week',
     printOrientation: 'portrait',
@@ -394,7 +394,7 @@ const BusinessPrintableReport = ({
           },
         ]}
         companyName={userCompanyName}
-        dataSourceNote="Existing CRM/property records and posted accounting vouchers. No browser-side accounting calculations are introduced by this printable view."
+        dataSourceNote="CRM/property records and posted accounting vouchers for the selected reporting period."
         generatedAt={generatedAt}
         generatedBy={generatedBy}
         outputLabel={`Browser print / A4 ${config.printOrientation}`}
@@ -404,7 +404,7 @@ const BusinessPrintableReport = ({
       />
 
       <PrintableReportSection
-        subtitle="Headline values returned by the read-only business overview endpoint."
+        subtitle="Headline values for the selected company and reporting period."
         title="Executive Summary"
       >
         <PrintableReportSummaryTable
@@ -449,7 +449,7 @@ const BusinessPrintableReport = ({
             {
               label: 'Sale contracts',
               value: formatCount(report.totals.saleContractCount),
-              note: 'Sale contract count returned for the selected period',
+              note: 'Sale contract count for the selected period',
             },
             {
               label: 'Collections',
@@ -465,7 +465,7 @@ const BusinessPrintableReport = ({
         title="Period Breakdown"
       >
         <PrintableReportDataTable
-          caption="Amounts are printed from the existing report response and use the same filters as the screen report."
+          caption="Amounts use the same filters as the screen report."
           columns={[
             {
               key: 'period',
@@ -554,13 +554,13 @@ const BusinessPrintableReport = ({
       </PrintableReportSection>
 
       <PrintableReportSection
-        subtitle="Backend-provided assumptions are included for review traceability."
+        subtitle="Calculation notes are included for review traceability."
         title="Notes"
       >
         {!hasData ? (
           <PrintableReportNote>
             No reportable activity matched this company/date range. Zero values
-            are shown as returned by the existing report endpoint.
+            are shown for the selected filters.
           </PrintableReportNote>
         ) : null}
         {report.assumptions.map((assumption) => (
@@ -570,15 +570,14 @@ const BusinessPrintableReport = ({
         ))}
         {isDemoUatCompany ? (
           <PrintableReportNote>
-            The active company is the controlled Demo/UAT company. Treat seeded
+            The active company is a controlled Demo/UAT workspace. Treat these
             values as synthetic walkthrough data, not production evidence.
           </PrintableReportNote>
         ) : null}
         <PrintableReportNote>
           This printable template intentionally omits screen charts, dashboard
-          cards, filters, and navigation chrome. Page-number counters depend on
-          browser print support; enable browser print headers/footers if page
-          numbering is required and CSS counters are unavailable.
+          cards, filters, and navigation chrome. Use browser print settings if
+          page numbering is required.
         </PrintableReportNote>
       </PrintableReportSection>
 
@@ -820,7 +819,7 @@ export const BusinessReportPage = ({ mode }: { mode: BusinessReportMode }) => {
             />
 
             <FinancialReportingSection
-              description="Finance-grade headline values for the selected company, period, and grouping. Values are returned by the read-only reporting endpoint."
+              description="Finance-grade headline values for the selected company, period, and grouping."
               title="Executive summary"
             >
               <FinancialReportContextStrip
@@ -904,7 +903,7 @@ export const BusinessReportPage = ({ mode }: { mode: BusinessReportMode }) => {
 
               {!hasData ? (
                 <EmptyState
-                  description="No reportable activity matched this company and date range. For a populated supervisor demo, run corepack pnpm seed:demo and then corepack pnpm seed:demo:verify."
+                  description="No reportable activity matched this company and date range."
                   title="No business report activity"
                 />
               ) : null}
@@ -917,7 +916,7 @@ export const BusinessReportPage = ({ mode }: { mode: BusinessReportMode }) => {
               <div className="grid gap-5 xl:grid-cols-2">
                 <TrendChartCard
                   data={getPerformanceTrend(report)}
-                  description="Revenue, expenses, and net profit/loss by returned report bucket."
+                  description="Revenue, expenses, and net profit/loss by selected period."
                   emptyDescription="Posted revenue and expense voucher lines are required before this trend can render."
                   emptyTitle="No posted accounting movement"
                   format="currency"
@@ -935,7 +934,7 @@ export const BusinessReportPage = ({ mode }: { mode: BusinessReportMode }) => {
                 />
                 <TrendChartCard
                   data={getSalesCollectionsTrend(report)}
-                  description="Contracted sales and collected sales by returned report bucket."
+                  description="Contracted sales and collected sales by selected period."
                   emptyDescription="Sale contracts or collection rows are required before this trend can render."
                   emptyTitle="No sales or collection movement"
                   format="currency"
@@ -958,7 +957,7 @@ export const BusinessReportPage = ({ mode }: { mode: BusinessReportMode }) => {
               <div className="max-w-3xl">
                 <DistributionChartCard
                   data={getActivityDistribution(report)}
-                  description="Counts returned by the business overview endpoint for the selected period."
+                  description="Summary counts reflect the selected reporting period."
                   emptyDescription="Bookings, sale contracts, collections, or vouchers are required before the operating mix can render."
                   emptyTitle="No operating counts"
                   insight="Voucher, booking, contract, and collection counts remain visible as text."
@@ -968,12 +967,12 @@ export const BusinessReportPage = ({ mode }: { mode: BusinessReportMode }) => {
             </FinancialReportingSection>
 
             <FinancialReportingSection
-              description="Bucket rows are returned by the backend report endpoint and preserve the same company/date grouping used by the charts."
+              description="Period rows preserve the same company and date grouping used by the charts."
               title="Detailed period table"
             >
               {report.buckets.length === 0 ? (
                 <EmptyState
-                  description="The backend did not return any period buckets for the selected filters."
+                  description="No period buckets matched the selected filters."
                   title="No report buckets"
                 />
               ) : (
@@ -982,7 +981,7 @@ export const BusinessReportPage = ({ mode }: { mode: BusinessReportMode }) => {
             </FinancialReportingSection>
 
             <FinancialReportingSection
-              description="Calculation rules are included by the backend response so reviewers can trace what each metric means."
+              description="Calculation rules help reviewers trace what each metric means."
               title="Assumptions and calculation notes"
             >
               <div className="grid gap-3">

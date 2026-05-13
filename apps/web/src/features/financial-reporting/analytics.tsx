@@ -63,7 +63,7 @@ export const TrialBalanceVisualSummary = ({
     <AnalyticsGrid>
       <ComparisonBarChartCard
         data={closingComparison}
-        description="Debit and credit totals come directly from the trial balance response."
+        description="Debit and credit totals for the selected trial balance period."
         emptyDescription="Closing debit and credit totals are zero for the selected filters."
         emptyTitle="No closing balance movement"
         format="currency"
@@ -91,11 +91,11 @@ export const TrialBalanceVisualSummary = ({
             report.totals.closingCredit,
           ),
         ]}
-        description="Opening, period movement, and closing totals visualized without changing backend calculations."
+        description="Opening, period movement, and closing totals for the selected reporting period."
         emptyDescription="Movement bars need non-zero report totals."
         emptyTitle="No debit/credit movement"
         format="currency"
-        insight="Debit and credit movement uses the same backend totals as the statement table."
+        insight="Debit and credit movement uses the same totals as the statement table."
         series={[
           { key: 'debit', label: 'Debit', tone: 'balance' },
           { key: 'credit', label: 'Credit', tone: 'neutral' },
@@ -154,7 +154,7 @@ export const GeneralLedgerVisualSummary = ({
             report.totals.closingCredit,
           ),
         ]}
-        description="Opening, period, and closing balances from the backend general-ledger response."
+        description="Opening, period, and closing balances for the selected ledger account."
         emptyDescription="Ledger movement bars need non-zero debit or credit totals."
         emptyTitle="No ledger movement"
         format="currency"
@@ -204,15 +204,15 @@ export const ProfitAndLossVisualSummary = ({
             value: toNumber(report.totals.totalExpense),
           },
         ]}
-        description="Revenue and expense totals are rendered from the existing profit and loss API."
+        description="Revenue and expense totals for the selected profit and loss period."
         emptyDescription="Revenue and expense bars need posted activity in the selected period."
         emptyTitle="No P&L movement"
         format="currency"
-        insight="Revenue and expense are compared without changing the backend statement totals."
+        insight="Revenue and expense are compared using the statement totals."
         title="Revenue vs expense"
       />
       <MiniReportTableCard
-        description="Net result and top-level statement section totals from the backend response."
+        description="Net result and top-level statement section totals for the selected period."
         format="currency"
         insight="Section totals stay available as text for reviewers who cannot rely on color."
         rows={[
@@ -253,15 +253,15 @@ export const BalanceSheetVisualSummary = ({
           value: toNumber(report.totals.totalLiabilitiesAndEquity),
         },
       ]}
-      description="Assets and liabilities plus equity are compared from the backend balance sheet totals."
+      description="Assets and liabilities plus equity are compared from the balance sheet totals."
       emptyDescription="Balance bars need non-zero balance sheet totals."
       emptyTitle="No balance totals"
       format="currency"
-      insight="Assets and liabilities plus equity use the same backend balance comparison."
+      insight="Assets and liabilities plus equity use the same balance comparison."
       title="Balance sheet comparison"
     />
     <MiniReportTableCard
-      description="Equity status keeps the backend's derived unclosed earnings adjustment visible without changing the statement calculation."
+      description="Equity status keeps the derived unclosed earnings adjustment visible without changing the statement calculation."
       format="currency"
       insight="The derived unclosed earnings adjustment remains readable as a named statement row."
       rows={[

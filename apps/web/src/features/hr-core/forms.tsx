@@ -1315,7 +1315,7 @@ export const LeaveRequestActionPanel = ({
     return (
       <HrCoreReadOnlyNotice
         title="Lifecycle locked"
-        description="Approved, rejected, and cancelled leave requests are protected in this phase."
+        description="Approved, rejected, and cancelled leave requests are protected from further edits."
       />
     );
   }

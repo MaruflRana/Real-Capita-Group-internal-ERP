@@ -255,7 +255,7 @@ export const PayrollRunDetailPage = ({
     <div className="space-y-6">
       <PayrollCorePageHeader
         title="Payroll Run Detail"
-        description="Review payroll run scope, keep draft lines safe, finalize only when the run is ready, and post to accounting explicitly against the backend voucher contract."
+        description="Review payroll run scope, keep draft lines safe, finalize only when the run is ready, and post to accounting explicitly."
         scopeName={user.currentCompany.name}
         scopeSlug={user.currentCompany.slug}
         actions={
@@ -384,7 +384,7 @@ export const PayrollRunDetailPage = ({
             ) : payrollRun.status === 'CANCELLED' ? (
               <PayrollCoreReadOnlyNotice
                 title="Cancelled payroll run"
-                description="Cancelled payroll runs are preserved for visibility only in this phase."
+                description="Cancelled payroll runs are preserved for visibility only."
               />
             ) : payrollRun.status === 'FINALIZED' ? (
               <PayrollCoreReadOnlyNotice
@@ -649,7 +649,7 @@ export const PayrollRunDetailPage = ({
       </SidePanel>
 
       <SidePanel
-        description="Select the posting accounts required by the current backend payroll posting contract."
+        description="Select the posting accounts required for payroll posting."
         onClose={() => setPostingPanelOpen(false)}
         open={postingPanelOpen}
         title="Post payroll to accounting"

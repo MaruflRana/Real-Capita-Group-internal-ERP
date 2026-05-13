@@ -18,7 +18,7 @@ const mono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: `${APP_NAME} | Workspace`,
-  description: 'Production foundation for the Real Capita Group internal ERP.',
+  description: 'Real Capita Group business operations workspace.',
 };
 
 export default function RootLayout({

@@ -242,7 +242,7 @@ export const GeneralLedgerPage = () => {
         />
 
         <FinancialReportingReadOnlyNotice
-          description="This ledger view is read-only. It follows the backend reporting contract directly and does not expose voucher edits, postings, or closing actions from this page."
+          description="This ledger view is read-only and does not expose voucher edits, postings, or closing actions from this page."
           title="Read-only reporting"
         />
 
@@ -431,7 +431,7 @@ export const GeneralLedgerPage = () => {
             </FinancialReportingSection>
 
             <FinancialReportingSection
-              description="Voucher references, voucher IDs, descriptions, and running balances come directly from the backend ledger response."
+              description="Voucher references, voucher IDs, descriptions, and running balances for the selected ledger account."
               title="Detailed transaction table"
             >
               <GeneralLedgerLinesTable

@@ -442,7 +442,7 @@ export const UnitsPage = () => {
 
       <ProjectPropertySection
         title="Unit management"
-        description="Use the hierarchy filters to narrow the working set, then open the side panel for create or edit. Editing a unit loads its detail from the backend and keeps the project anchor visible."
+        description="Use the hierarchy filters to narrow the working set, then open the side panel for create or edit. Editing a unit keeps the original project anchor visible."
       >
         <div className="grid gap-4 rounded-3xl border border-border/70 bg-card/80 p-6 xl:grid-cols-4">
           <div className="space-y-2 xl:col-span-2">
@@ -747,7 +747,7 @@ export const UnitsPage = () => {
       <SidePanel
         description={
           editor
-            ? 'Edit unit detail loaded directly from the backend while keeping the original project anchor visible.'
+            ? 'Edit unit detail while keeping the original project anchor visible.'
             : 'Create a unit with guided hierarchy selection across project, phase, block, zone, unit type, and unit status.'
         }
         onClose={() => {

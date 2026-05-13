@@ -240,7 +240,7 @@ export const PayrollRunsPage = () => {
     <AppPage>
       <PayrollCorePageHeader
         title="Payroll Runs"
-        description="Create payroll periods, keep draft scope clean, and move payroll runs toward finalized and posted states without bypassing backend lifecycle rules."
+        description="Create payroll periods, keep draft scope clean, and move payroll runs toward finalized and posted states under controlled lifecycle rules."
         scopeName={user.currentCompany.name}
         scopeSlug={user.currentCompany.slug}
         actions={
@@ -460,7 +460,7 @@ export const PayrollRunsPage = () => {
       <SidePanel
         description={
           editor
-            ? 'Update payroll period scope while the run is still safe to edit. Draft-only restrictions still come from the backend.'
+            ? 'Update payroll period scope while the run is still safe to edit. Draft-only restrictions remain enforced.'
             : 'Create a new company payroll run for a selected year, month, project, and cost center scope.'
         }
         onClose={() => {

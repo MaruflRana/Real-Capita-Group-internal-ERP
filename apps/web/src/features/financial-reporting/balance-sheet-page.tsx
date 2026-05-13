@@ -167,14 +167,14 @@ export const BalanceSheetPage = () => {
               />
             ) : null
           }
-          description="Review assets, liabilities, equity, and any derived equity adjustment the backend includes to keep the statement honest and mathematically complete."
+          description="Review assets, liabilities, equity, and any derived equity adjustment used to keep the statement clear and mathematically complete."
           scopeName={user.currentCompany.name}
           scopeSlug={user.currentCompany.slug}
           title="Balance Sheet"
         />
 
         <FinancialReportingReadOnlyNotice
-          description="This statement is read-only. If the backend includes a derived unclosed earnings adjustment because formal closing entries do not exist yet, that adjustment is shown explicitly below."
+          description="This statement is read-only. If a derived unclosed earnings adjustment is required because formal closing entries do not exist yet, that adjustment is shown explicitly below."
           title="Read-only reporting"
         />
 
@@ -321,7 +321,7 @@ export const BalanceSheetPage = () => {
             </FinancialReportingSection>
 
             <FinancialReportingSection
-              description="Assets, liabilities, and equity sections are rendered directly from the backend hierarchy."
+              description="Assets, liabilities, and equity sections follow the company reporting hierarchy."
               title="Detailed statement table"
             >
               {reportQuery.data.sections.length === 0 ? (
@@ -335,12 +335,12 @@ export const BalanceSheetPage = () => {
             </FinancialReportingSection>
 
             <FinancialReportingSection
-              description="Prompt 19 derives this adjustment on the backend because formal closing entries are not yet part of the accounting workflow. The frontend presents that fact directly instead of hiding it inside equity totals."
+              description="This adjustment is shown separately because formal closing entries are not yet part of the accounting workflow."
               title="Equity adjustments"
             >
               <ReportMetricGrid>
                 <ReportMetricCard
-                  description="Backend code: UNCLOSED_EARNINGS. This total is included in the backend equity calculation."
+                  description="This total is included in the equity calculation."
                   label="Unclosed earnings adjustment"
                   value={
                     <span className="font-mono tabular-nums">
@@ -354,7 +354,7 @@ export const BalanceSheetPage = () => {
 
               {reportQuery.data.equityAdjustments.length === 0 ? (
                 <EmptyState
-                  description="The backend did not return any additional equity adjustment lines for this as-of date."
+                  description="No additional equity adjustment lines were found for this as-of date."
                   title="No derived adjustments"
                 />
               ) : (
@@ -374,7 +374,7 @@ export const BalanceSheetPage = () => {
                               {getBalanceSheetAdjustmentName(adjustment)}
                             </p>
                             <p className="mt-1 font-mono text-xs text-muted-foreground">
-                              Backend code: {adjustment.code}
+                              Adjustment code: {adjustment.code}
                             </p>
                           </div>
                         </TableCell>
@@ -399,14 +399,13 @@ export const BalanceSheetPage = () => {
                   date.
                 </ReportAssumptionNote>
                 <ReportAssumptionNote>
-                  Because formal closing entries are not part of Phase 1, the
-                  backend exposes unclosed earnings as a named equity adjustment
+                  Because formal closing entries are not yet available, the
+                  statement shows unclosed earnings as a named equity adjustment
                   instead of hiding it inside equity.
                 </ReportAssumptionNote>
                 <ReportAssumptionNote>
                   The balance equation is presented as Assets = Liabilities +
-                  Equity, using the backend totals returned for this company
-                  scope.
+                  Equity for the active company scope.
                 </ReportAssumptionNote>
               </div>
             </FinancialReportingSection>

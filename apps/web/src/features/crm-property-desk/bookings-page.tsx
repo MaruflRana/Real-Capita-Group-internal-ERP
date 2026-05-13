@@ -339,7 +339,7 @@ export const BookingsPage = () => {
 
       <CrmPropertyDeskSection
         title="Booking operations"
-        description="Use the filters to narrow the working set, then create bookings from active customers and allocatable units. Existing bookings allow only safe notes updates in this phase."
+        description="Use the filters to narrow the working set, then create bookings from active customers and allocatable units. Existing bookings allow controlled notes updates."
       >
         <CrmPropertyDeskFilterCard>
           <div className="space-y-2 xl:col-span-2">
@@ -533,7 +533,7 @@ export const BookingsPage = () => {
       <SidePanel
         description={
           editor
-            ? 'Review booking detail and update only the safe notes field exposed by the backend in this phase.'
+            ? 'Review booking detail and update the available notes field.'
             : 'Create a booking by selecting an active customer, project, and allocatable unit.'
         }
         onClose={() => {

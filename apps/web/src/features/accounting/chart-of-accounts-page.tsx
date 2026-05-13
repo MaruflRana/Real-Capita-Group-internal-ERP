@@ -493,7 +493,7 @@ export const ChartOfAccountsPage = () => {
         ) : (
           <EmptyState
             title="No account classes available"
-            description="The backend did not return any canonical account classes for the active company."
+            description="No canonical account classes were found for the active company."
           />
         )}
       </AccountingSection>

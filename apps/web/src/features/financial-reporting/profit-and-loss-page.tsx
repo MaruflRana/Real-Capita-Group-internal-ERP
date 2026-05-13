@@ -167,14 +167,14 @@ export const ProfitAndLossPage = () => {
               />
             ) : null
           }
-          description="Review posted revenue and expense activity through the live chart hierarchy without introducing browser-side statement templates or write-back actions."
+          description="Review posted revenue and expense activity through the live chart hierarchy in a read-only statement view."
           scopeName={user.currentCompany.name}
           scopeSlug={user.currentCompany.slug}
           title="Profit & Loss"
         />
 
         <FinancialReportingReadOnlyNotice
-          description="This statement is read-only and mirrors the backend grouping exactly. Revenue, expense, and net profit/loss values come from posted vouchers only."
+          description="This statement is read-only. Revenue, expense, and net profit/loss values come from posted vouchers only."
           title="Read-only reporting"
         />
 
@@ -310,7 +310,7 @@ export const ProfitAndLossPage = () => {
                   }
                 />
                 <ReportMetricCard
-                  description="Each top-level section total comes directly from the backend statement."
+                  description="Each top-level section total reflects the selected statement period."
                   label="Hierarchy scope"
                   value={getStatementSectionCountLabel(
                     reportQuery.data.sections,
@@ -327,7 +327,7 @@ export const ProfitAndLossPage = () => {
             </FinancialReportingSection>
 
             <FinancialReportingSection
-              description="Sections, groups, ledgers, and posting accounts are rendered directly from the backend statement response."
+              description="Sections, groups, ledgers, and posting accounts follow the statement hierarchy."
               title="Detailed statement table"
             >
               {reportQuery.data.sections.length === 0 ? (

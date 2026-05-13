@@ -366,7 +366,7 @@ export const GeneralLedgerLinesTable = ({
         <TableRow>
           <TableCell className="text-muted-foreground" colSpan={6}>
             No posted voucher lines matched the selected period. Opening and
-            closing balances still reflect the backend response.
+            closing balances still reflect the selected ledger period.
           </TableCell>
         </TableRow>
       ) : null}

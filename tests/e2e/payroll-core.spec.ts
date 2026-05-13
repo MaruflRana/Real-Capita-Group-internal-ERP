@@ -1235,7 +1235,7 @@ test('redirects payroll routes to login when no browser session exists', async (
 
   await expect(page).toHaveURL(/\/login\?next=%2Fpayroll%2Fruns/);
   await expect(
-    page.getByRole('heading', { name: 'Open the admin shell' }),
+    page.getByRole('heading', { name: 'Sign in to Real Capita ERP' }),
   ).toBeVisible();
 });
 

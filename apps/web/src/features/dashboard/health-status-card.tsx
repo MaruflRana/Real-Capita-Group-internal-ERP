@@ -23,19 +23,18 @@ export const HealthStatusCard = () => {
     <Card>
       <CardHeader>
         <p className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
-          API status
+          System status
         </p>
-        <CardTitle>Live runtime boundary</CardTitle>
+        <CardTitle>Application health</CardTitle>
         <CardDescription>
-          The frontend shell consumes the real health endpoint through the same
-          REST client used for the authenticated admin pages.
+          Live service status for the current Real Capita ERP workspace.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 text-sm leading-6 text-muted-foreground">
         {healthQuery.data ? (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
             <p className="font-semibold">
-              API {healthQuery.data.status} on version {healthQuery.data.version}
+              Service {healthQuery.data.status} on version {healthQuery.data.version}
             </p>
             <p className="mt-2">
               Reported at {formatDateTime(healthQuery.data.timestamp)}
@@ -44,12 +43,12 @@ export const HealthStatusCard = () => {
         ) : null}
         {healthQuery.isPending ? (
           <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
-            Loading API health.
+            Checking application health.
           </div>
         ) : null}
         {healthQuery.isError ? (
           <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-800">
-            Unable to reach the health endpoint.
+            Unable to confirm application health.
           </div>
         ) : null}
       </CardContent>

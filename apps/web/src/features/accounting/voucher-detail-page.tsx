@@ -333,7 +333,7 @@ export const VoucherDetailPage = ({
             ) : voucher.lines.length === 0 || !totals.isBalanced ? (
               <AccountingReadOnlyNotice
                 title="Posting checks still pending"
-                description="Posting remains explicit. The backend will reject posting until the voucher has at least one line and debit equals credit."
+                description="Posting remains explicit. A voucher must have at least one line and matching debit and credit totals before it can be posted."
               />
             ) : null}
 

@@ -351,14 +351,14 @@ export const TrialBalancePage = () => {
             </FinancialReportingSection>
 
             <FinancialReportingSection
-              description="Opening, period movement, and closing balances are compared without changing backend calculations."
+              description="Opening, period movement, and closing balances are compared for the selected filters."
               title="Visual analysis"
             >
               <TrialBalanceVisualSummary report={report} />
             </FinancialReportingSection>
 
             <FinancialReportingSection
-              description="The hierarchy follows the backend report contract directly: account class, account group, ledger account, and posting account where available."
+              description="The hierarchy follows account class, account group, ledger account, and posting account where available."
               title="Detailed hierarchy table"
             >
               {report.sections.length === 0 ? (

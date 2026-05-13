@@ -160,7 +160,7 @@ export const LeadsPage = () => {
 
       <CrmPropertyDeskSection
         title="Lead pipeline"
-        description="Keep lead tracking operational and lightweight. This phase is list and form based, not a stage board."
+        description="Keep lead tracking operational and lightweight through a focused list and form workflow."
       >
         <CrmPropertyDeskFilterCard>
           <div className="space-y-2 xl:col-span-2">

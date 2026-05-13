@@ -96,7 +96,7 @@ export const LoginPage = ({ nextRoute }: { nextRoute: string }) => {
 
       if (companyOptions.length > 0) {
         setAvailableCompanies(companyOptions);
-        setSubmitError('Select the company to open for this session.');
+        setSubmitError('Select the company workspace to continue.');
 
         const [firstCompany] = companyOptions;
 
@@ -124,7 +124,7 @@ export const LoginPage = ({ nextRoute }: { nextRoute: string }) => {
     return (
       <StateScreen
         title="Checking session"
-        description="A browser session already exists. Verifying its company context."
+        description="Verifying your company workspace before continuing."
       />
     );
   }
@@ -147,59 +147,61 @@ export const LoginPage = ({ nextRoute }: { nextRoute: string }) => {
         <Card className="hidden overflow-hidden lg:block">
           <CardHeader className="border-b border-border/70 bg-gradient-to-br from-sky-50 via-cyan-50 to-background">
             <p className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
-              Real Capita ERP
+              REAL CAPITA ERP
             </p>
             <CardTitle className="text-3xl">
-              Org &amp; Security workspace
+              Unified Business Operations Workspace
             </CardTitle>
             <CardDescription className="max-w-xl text-base leading-7">
-              Prompt 12 introduces the first production-grade internal admin
-              interface on top of the existing REST API foundations.
+              A centralized ERP environment for financial oversight, project
+              and property operations, customer lifecycle tracking, HR,
+              payroll, document control, and audit visibility across Real
+              Capita Group.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 pt-6 md:grid-cols-2">
             <div className="rounded-3xl border border-border/70 bg-background/80 p-5">
               <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
-                Scope
+                Financial Control
               </p>
               <p className="mt-3 text-sm leading-6 text-foreground">
-                Authentication UX, company-aware session handling, and Org &amp;
-                Security administration for companies, locations, departments,
-                users, and role assignments.
+                Monitor vouchers, reports, collections, profitability, and
+                financial position from one controlled workspace.
               </p>
             </div>
             <div className="rounded-3xl border border-border/70 bg-background/80 p-5">
               <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
-                Boundary
+                Property &amp; Sales Visibility
               </p>
               <p className="mt-3 text-sm leading-6 text-foreground">
-                The frontend remains a REST-only consumer. All business
-                mutations continue to cross the NestJS API boundary.
+                Track projects, units, bookings, contracts, installment
+                schedules, and collections through a connected operational
+                flow.
               </p>
             </div>
             <div className="rounded-3xl border border-border/70 bg-background/80 p-5 md:col-span-2">
               <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">
-                Session model
+                Operational Accountability
               </p>
               <p className="mt-3 text-sm leading-6 text-foreground">
-                Browser sessions use the existing auth endpoints with automatic
-                refresh handling. If the authenticated identity belongs to
-                multiple companies, the sign-in flow now prompts for the target
-                company context.
+                Support HR, payroll, documents, audit trails, and role-based
+                administration with clearer organizational oversight.
               </p>
             </div>
+            <p className="md:col-span-2 rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-muted-foreground">
+              Secure company-aware access for authorized Real Capita ERP users.
+            </p>
           </CardContent>
         </Card>
 
         <Card className="overflow-hidden">
           <CardHeader>
             <p className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
-              Sign in
+              SECURE ACCESS
             </p>
-            <CardTitle>Open the admin shell</CardTitle>
+            <CardTitle>Sign in to Real Capita ERP</CardTitle>
             <CardDescription>
-              Use an existing backend identity. The frontend does not keep a
-              separate auth system.
+              Use your authorized account to continue to the company workspace.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
@@ -264,8 +266,8 @@ export const LoginPage = ({ nextRoute }: { nextRoute: string }) => {
                     ))}
                   </Select>
                   <p className="text-sm text-muted-foreground">
-                    The backend requires an explicit company selection for this
-                    identity because multiple active assignments are available.
+                    Select the company workspace for this session. Multiple
+                    active assignments are available for this account.
                   </p>
                 </div>
               ) : null}

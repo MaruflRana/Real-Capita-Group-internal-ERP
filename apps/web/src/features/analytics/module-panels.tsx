@@ -35,7 +35,10 @@ const DemoScopeNote = ({
   companySlug?: string | undefined;
 }) =>
   isDemoCompany(companySlug) ? (
-    <span>Analytics are rendering the seeded Demo/UAT company data.</span>
+    <span>
+      Demo workspace indicators are shown for presentation and validation
+      purposes.
+    </span>
   ) : null;
 
 const DashboardEmptyAnalytics = () => (
@@ -95,7 +98,7 @@ export const DashboardAnalyticsPanel = ({
           <TrendChartCard
             data={analytics.financial.businessPerformanceTrend}
             description={`Revenue, expenses, and profit/loss movement from posted vouchers for ${period.label.toLowerCase()}.`}
-            emptyDescription="Posted revenue and expense activity is required before this trend can render. For a populated supervisor demo, run corepack pnpm seed:demo and then corepack pnpm seed:demo:verify."
+            emptyDescription="Posted revenue and expense activity is required before this trend can render."
             emptyTitle="No posted accounting movement"
             footer={<DemoScopeNote companySlug={companySlug} />}
             format="currency"
@@ -144,7 +147,7 @@ export const DashboardAnalyticsPanel = ({
 
         {analytics.accounting ? (
           <AnalyticsCard
-            description="Draft, posted, and control workload from the existing accounting voucher endpoint."
+            description="Draft, posted, and control workload across accounting vouchers."
             footer={
               <SampleScopeNote
                 noun="vouchers"
@@ -164,7 +167,7 @@ export const DashboardAnalyticsPanel = ({
 
         {analytics.property ? (
           <AnalyticsCard
-            description="Current unit inventory status using the existing unit status catalog and unit list APIs."
+            description="Current unit inventory status across the active property portfolio."
             footer={<DemoScopeNote companySlug={companySlug} />}
             title="Unit status"
           >
@@ -179,7 +182,7 @@ export const DashboardAnalyticsPanel = ({
 
         {analytics.crm ? (
           <AnalyticsCard
-            description="Pipeline volume, contract value, and collections activity from CRM/property desk list APIs."
+            description="Pipeline volume, contract value, and collections activity across CRM and property operations."
             footer={
               <SampleScopeNote
                 noun="collections"
@@ -209,7 +212,7 @@ export const DashboardAnalyticsPanel = ({
 
         {analytics.hr ? (
           <AnalyticsCard
-            description="Headcount coverage, leave queue, and attendance activity from HR list endpoints."
+            description="Headcount coverage, leave queue, and attendance activity for the HR workspace."
             footer={
               <SampleScopeNote
                 noun="attendance logs"
@@ -270,7 +273,7 @@ export const DashboardAnalyticsPanel = ({
 
         {analytics.documents ? (
           <AnalyticsCard
-            description="File readiness, active links, and audit category mix from attachment and audit endpoints."
+            description="File readiness, active links, and audit category mix for document control."
             footer={
               <SampleScopeNote
                 noun="audit events"
@@ -317,7 +320,7 @@ export const AccountingAnalyticsPanel = ({
   if (query.isError) {
     return (
       <AnalyticsEmptyState
-        description="Accounting analytics could not be loaded from the existing endpoints."
+        description="Accounting analytics could not be loaded for the active company."
         showDemoHint={false}
         title="Accounting analytics unavailable"
       />
@@ -490,7 +493,7 @@ export const CrmAnalyticsPanel = ({
     <div data-testid="crm-operational-analytics">
       <AnalyticsGrid>
         <AnalyticsCard
-          description="Customer, lead, booking, contract, and collection volume from CRM/property desk APIs."
+          description="Customer, lead, booking, contract, and collection volume across CRM and property operations."
           footer={<DemoScopeNote companySlug={companySlug} />}
           title="CRM pipeline"
         >
@@ -540,7 +543,7 @@ export const CrmAnalyticsPanel = ({
             </>
           }
           format="currency"
-          insight="Contract value and collection movement stay side by side without adding new calculations on the backend."
+          insight="Contract value and collection movement stay side by side for commercial review."
           metricFormat="currency"
           metrics={query.data.commercialValueCards}
           series={[
@@ -609,7 +612,7 @@ export const HrAnalyticsPanel = ({
           />
         </AnalyticsCard>
         <AnalyticsCard
-          description="Employee location spread and leave-review state from existing HR list endpoints."
+          description="Employee location spread and leave-review status for the active company."
           footer={
             <SampleScopeNote noun="employees" sample={query.data.employeeSample} />
           }
@@ -693,7 +696,7 @@ export const PayrollAnalyticsPanel = ({
     <div data-testid="payroll-operational-analytics">
       <AnalyticsGrid>
         <AnalyticsCard
-          description="Salary structure, employee, and payroll run workload from existing payroll APIs."
+          description="Salary structure, employee, and payroll run workload for the active company."
           footer={
             <>
               <SampleScopeNote
@@ -790,7 +793,7 @@ export const AuditDocumentAnalyticsPanel = ({
     <div data-testid="audit-documents-operational-analytics">
       <AnalyticsGrid>
         <AnalyticsCard
-          description="Attachment readiness, active links, and audit event volume from existing document APIs."
+          description="Attachment readiness, active links, and audit event volume for the active company."
           footer={
             <>
               <SampleScopeNote
@@ -835,7 +838,7 @@ export const AuditDocumentAnalyticsPanel = ({
           />
         </AnalyticsCard>
         <AnalyticsCard
-          description="Audit event category, event-type mix, and daily activity from the audit endpoint."
+          description="Audit event category, event-type mix, and daily activity for the selected period."
           footer={
             <SampleScopeNote noun="audit events" sample={query.data.auditEventSample} />
           }

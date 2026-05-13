@@ -818,7 +818,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                     Authenticated workspace
                   </p>
                   <p className="mt-1 truncate text-sm text-muted-foreground">
-                    Company-aware shell backed by the NestJS REST API.
+                    Company-aware workspace for Real Capita ERP operations.
                   </p>
                 </div>
               </div>

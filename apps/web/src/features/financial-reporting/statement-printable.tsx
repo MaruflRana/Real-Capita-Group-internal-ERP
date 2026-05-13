@@ -27,10 +27,10 @@ import {
 } from './utils';
 
 const SOURCE_OF_TRUTH_NOTE =
-  'Existing read-only financial reporting REST response generated from posted vouchers. This print view does not add accounting calculations, backend logic, or browser-side statement adjustments.';
+  'Financial report values are generated from posted vouchers for the selected company and period.';
 
 const STATEMENT_PRINT_NOTE =
-  'This printable template intentionally omits screen charts, dashboard cards, filters, and navigation chrome. CSV remains the only structured export format; browser print remains the Phase 1 print/PDF-from-browser path.';
+  'This printable template intentionally omits screen charts, dashboard cards, filters, and navigation chrome. CSV export and browser print are the supported output options for this statement.';
 
 const formatAmount = (value: number | string | null | undefined) =>
   formatAccountingAmount(value);
@@ -215,7 +215,7 @@ export const TrialBalancePrintableReport = ({
       {report ? (
         <>
           <PrintableReportSection
-            subtitle="Debit and credit control totals returned by the reporting API."
+            subtitle="Debit and credit control totals for the selected period."
             title="Debit/Credit Summary"
           >
             <PrintableReportSummaryTable
@@ -254,7 +254,7 @@ export const TrialBalancePrintableReport = ({
           </PrintableReportSection>
 
           <PrintableReportSection
-            subtitle="Rows are flattened from the backend account hierarchy for print readability."
+            subtitle="Rows are flattened from the account hierarchy for print readability."
             title="Trial Balance Statement"
           >
             <PrintableReportDataTable
@@ -335,7 +335,7 @@ export const TrialBalancePrintableReport = ({
       >
         <PrintableReportNote>
           Trial balance output reflects posted vouchers only and preserves the
-          backend report totals exactly.
+          report totals exactly.
         </PrintableReportNote>
         <PrintableReportNote>
           Closing debit and credit totals are compared as a control status. Any
@@ -394,7 +394,7 @@ const buildGeneralLedgerRows = (
     credit: report.totals.credit,
     date: formatDate(report.dateTo),
     debit: report.totals.debit,
-    description: 'Period movement and closing balance returned by the report.',
+    description: 'Period movement and closing balance for the selected account.',
     key: 'period-total',
     runningBalance: formatRunningBalance(
       report.totals.closingDebit,
@@ -517,7 +517,7 @@ export const GeneralLedgerPrintableReport = ({
         </PrintableReportSection>
 
         <PrintableReportSection
-          subtitle="Voucher references, descriptions, and running balances come directly from the backend ledger response."
+          subtitle="Voucher references, descriptions, and running balances for the selected ledger account."
           title="Ledger Transactions"
         >
           <PrintableReportDataTable
@@ -560,7 +560,7 @@ export const GeneralLedgerPrintableReport = ({
                 render: (row) => row.runningBalance,
               },
             ]}
-            emptyLabel="No posted voucher lines matched the selected period. Opening and closing balances still reflect the backend response."
+            emptyLabel="No posted voucher lines matched the selected period. Opening and closing balances still reflect the selected account."
             getRowKey={(row) => row.key}
             rows={buildGeneralLedgerRows(report)}
           />
@@ -751,7 +751,7 @@ export const ProfitAndLossPrintableReport = ({
       {report ? (
         <>
           <PrintableReportSection
-            subtitle="Totals returned by the read-only profit and loss endpoint."
+            subtitle="Totals for the selected profit and loss period."
             title="Revenue And Expense Summary"
           >
             <PrintableReportSummaryTable
@@ -777,11 +777,11 @@ export const ProfitAndLossPrintableReport = ({
           </PrintableReportSection>
 
           <PrintableReportSection
-            subtitle="Revenue and expense sections are grouped from the backend statement response."
+            subtitle="Revenue and expense sections are grouped from the statement hierarchy."
             title="Profit And Loss Statement"
           >
             <PrintableReportDataTable
-              caption="Amounts preserve the backend statement signs and section totals."
+              caption="Amounts preserve the statement signs and section totals."
               columns={statementColumns}
               emptyLabel="No posted revenue or expense activity matched the selected date range."
               getRowKey={(row) => row.key}
@@ -884,7 +884,7 @@ export const BalanceSheetPrintableReport = ({
       {report ? (
         <>
           <PrintableReportSection
-            subtitle="Assets = Liabilities + Equity, using the backend totals."
+            subtitle="Assets = Liabilities + Equity for the selected as-of date."
             title="Equation Summary"
           >
             <PrintableReportSummaryTable
@@ -915,7 +915,7 @@ export const BalanceSheetPrintableReport = ({
                       {
                         label: 'Unclosed earnings adjustment',
                         value: formatAmount(report.totals.unclosedEarnings),
-                        note: 'Derived equity adjustment returned by the backend.',
+                        note: 'Derived equity adjustment included in the statement.',
                       },
                     ]
                   : []),
@@ -924,11 +924,11 @@ export const BalanceSheetPrintableReport = ({
           </PrintableReportSection>
 
           <PrintableReportSection
-            subtitle="Assets, liabilities, and equity rows are grouped from the backend statement response."
+            subtitle="Assets, liabilities, and equity rows are grouped from the statement hierarchy."
             title="Balance Sheet Statement"
           >
             <PrintableReportDataTable
-              caption="Amounts preserve the backend statement totals and section groupings."
+              caption="Amounts preserve the statement totals and section groupings."
               columns={statementColumns}
               emptyLabel="No balance sheet sections were returned for the selected as-of date."
               getRowKey={(row) => row.key}
@@ -975,9 +975,9 @@ export const BalanceSheetPrintableReport = ({
           balances up to and including the selected as-of date.
         </PrintableReportNote>
         <PrintableReportNote>
-          If formal closing entries are absent, the backend may expose unclosed
-          earnings as a named equity adjustment instead of hiding it inside
-          equity totals.
+          If formal closing entries are absent, unclosed earnings may appear as
+          a named equity adjustment instead of being hidden inside equity
+          totals.
         </PrintableReportNote>
         <PrintableReportNote>{STATEMENT_PRINT_NOTE}</PrintableReportNote>
       </PrintableReportSection>

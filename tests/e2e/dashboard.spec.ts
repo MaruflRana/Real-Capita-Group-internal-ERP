@@ -1385,7 +1385,7 @@ test('shows analytics empty-state guidance when company data is sparse', async (
   await expect(page.getByText('Operational analytics')).toBeVisible();
   await expect(page.getByText('No posted accounting movement')).toBeVisible();
   await expect(
-    page.getByText(/For a populated supervisor demo, run corepack pnpm seed:demo/).first(),
+    page.getByText(/Posted revenue and expense activity is required/).first(),
   ).toBeVisible();
 });
 

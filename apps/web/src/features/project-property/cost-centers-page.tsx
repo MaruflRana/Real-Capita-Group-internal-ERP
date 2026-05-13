@@ -126,7 +126,7 @@ export const CostCentersPage = () => {
     <div className="space-y-6">
       <ProjectPropertyPageHeader
         title="Cost Centers"
-        description="Maintain company-level or project-linked cost centers without drifting into accounting posting or reporting. Keep cost-center usage limited to master-data administration in this phase."
+        description="Maintain company-level or project-linked cost centers without drifting into accounting posting or reporting. Keep cost-center usage focused on master-data administration."
         scopeName={user.currentCompany.name}
         scopeSlug={user.currentCompany.slug}
         actions={

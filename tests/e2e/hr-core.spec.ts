@@ -1812,7 +1812,7 @@ test('redirects HR routes to login when no browser session exists', async ({
 
   await expect(page).toHaveURL(/\/login\?next=%2Fhr%2Femployees/);
   await expect(
-    page.getByRole('heading', { name: 'Open the admin shell' }),
+    page.getByRole('heading', { name: 'Sign in to Real Capita ERP' }),
   ).toBeVisible();
 });
 

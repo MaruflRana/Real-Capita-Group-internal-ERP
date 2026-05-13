@@ -649,7 +649,7 @@ export const AnalyticsEmptyState = ({
   showDemoHint?: boolean;
 }) => {
   const resolvedDescription = showDemoHint
-    ? `${description} For a populated supervisor demo, run corepack pnpm seed:demo and then corepack pnpm seed:demo:verify.`
+    ? `${description} Demo workspace indicators appear when presentation data is available.`
     : description;
 
   return <ChartEmptyState description={resolvedDescription} title={title} />;
@@ -1456,7 +1456,7 @@ export const SampleScopeNote = ({
 }) => (
   <span>
     {sample.isTruncated
-      ? `Trend uses latest ${sample.sampleSize} of ${sample.total} ${noun} returned by existing list APIs.`
-      : `Trend uses ${sample.sampleSize} ${noun} returned by existing list APIs.`}
+      ? `Trend reflects the latest ${sample.sampleSize} of ${sample.total} available ${noun}.`
+      : `Trend reflects ${sample.sampleSize} available ${noun}.`}
   </span>
 );

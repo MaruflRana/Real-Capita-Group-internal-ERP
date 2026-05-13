@@ -14,7 +14,7 @@ export interface CsvColumn<TRecord> {
   value: (record: TRecord) => CsvValue;
 }
 
-// Keep paginated CSV exports within the backend list-query contract.
+// Keep paginated CSV exports within the list-query contract.
 const EXPORT_PAGE_SIZE = 100;
 
 const escapeCsvValue = (value: CsvValue): string => {

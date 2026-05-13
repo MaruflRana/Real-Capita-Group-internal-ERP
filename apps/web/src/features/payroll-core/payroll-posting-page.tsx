@@ -314,7 +314,7 @@ export const PayrollPostingPage = () => {
       </PayrollCoreSection>
 
       <SidePanel
-        description="Choose the posting accounts required by the backend and confirm the voucher date before posting."
+        description="Choose the required posting accounts and confirm the voucher date before posting."
         onClose={() => setPostingRunId('')}
         open={postingRunId.length > 0}
         title="Post payroll run"

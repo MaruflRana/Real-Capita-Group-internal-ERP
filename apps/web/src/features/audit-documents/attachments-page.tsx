@@ -278,7 +278,7 @@ export const AttachmentsPage = () => {
     <div className="space-y-6">
       <AuditDocumentsPageHeader
         title="Attachments"
-        description="Manage attachment metadata, upload files directly to secure storage, finalize upload state through the API, and review linked-entity context without leaving the frontend-only shell."
+        description="Manage attachment metadata, upload files directly to secure storage, finalize upload state, and review linked record context."
         scopeName={user.currentCompany.name}
         scopeSlug={user.currentCompany.slug}
         actions={
@@ -308,7 +308,7 @@ export const AttachmentsPage = () => {
       {!isAdmin ? (
         <AuditDocumentsReadOnlyNotice
           title="Entity-scoped document browsing"
-          description="This session has document access, but non-admin attachment listing still requires a linked entity filter. Upload and detail operations continue to use the same backend authorization model."
+          description="This session has document access, but non-admin attachment listing still requires a linked entity filter. Upload and detail operations continue to follow the same authorization model."
         />
       ) : null}
 
@@ -328,7 +328,7 @@ export const AttachmentsPage = () => {
 
       <AttachmentActionSurface
         title="Secure upload workflow"
-        description="Start with attachment metadata, upload file bytes directly to the storage URL returned by the API, then finalize and link the attachment to a supported company-scoped record."
+        description="Start with attachment metadata, upload file bytes directly to secure storage, then finalize and link the attachment to a supported company-scoped record."
         action={
           <Button
             onClick={() => {
@@ -583,7 +583,7 @@ export const AttachmentsPage = () => {
       </AuditDocumentsSection>
 
       <SidePanel
-        description="Create attachment metadata, upload directly to secure storage, and finalize through the backend upload contract without proxying file bytes through Next.js."
+        description="Create attachment metadata, upload directly to secure storage, and finalize the file record."
         onClose={() => setUploadPanelOpen(false)}
         open={uploadPanelOpen}
         title="New attachment"

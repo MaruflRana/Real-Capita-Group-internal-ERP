@@ -131,7 +131,7 @@ export const AttachmentDetailPage = ({
         <>
           <AuditDocumentsSection
             title={attachment.originalFileName}
-            description="Attachment metadata stays company-scoped. Finalization, download access, and linking actions all continue to use the existing NestJS REST contracts."
+            description="Attachment metadata stays company-scoped. Finalization, download access, and linking actions remain controlled by role and company access."
             actions={
               <div className="flex flex-wrap gap-2">
                 {attachment.status === 'PENDING_UPLOAD' ? (
@@ -192,7 +192,7 @@ export const AttachmentDetailPage = ({
             {attachment.status === 'ARCHIVED' ? (
               <AuditDocumentsReadOnlyNotice
                 title="Attachment archived"
-                description="Archived attachments stay visible for auditability, but new secure-download or active-link management actions are blocked in this phase."
+                description="Archived attachments stay visible for auditability, but new secure-download or active-link management actions are blocked."
               />
             ) : null}
 
@@ -252,7 +252,7 @@ export const AttachmentDetailPage = ({
 
           <AttachmentActionSurface
             title="Secure download access"
-            description="Generate a short-lived authorized download URL through the backend. Storage details remain hidden behind the API contract."
+            description="Generate a short-lived authorized download link. Storage details remain protected from the workspace view."
             action={
               <Button
                 disabled={

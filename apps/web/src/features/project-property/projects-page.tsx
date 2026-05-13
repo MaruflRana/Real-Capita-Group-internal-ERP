@@ -153,7 +153,7 @@ export const ProjectsPage = () => {
 
       <ProjectPropertySection
         title="Project master list"
-        description="Projects are the top-level anchor for cost centers, phases, blocks, zones, and units. Keep codes stable and use the optional location link only when the backend company setup supports it."
+        description="Projects are the top-level anchor for cost centers, phases, blocks, zones, and units. Keep codes stable and use the optional location link when it is available for the company setup."
       >
         <MasterFilterCard
           onSearchChange={setSearch}

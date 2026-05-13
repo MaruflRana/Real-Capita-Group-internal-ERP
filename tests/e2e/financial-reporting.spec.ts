@@ -1420,7 +1420,7 @@ test('renders the balance sheet and discloses derived equity adjustments', async
     page.getByText('Unclosed earnings adjustment', { exact: true }).first(),
   ).toBeVisible();
   await expect(
-    page.getByText('Backend code: UNCLOSED_EARNINGS').first(),
+    page.getByText('Adjustment code: UNCLOSED_EARNINGS').first(),
   ).toBeVisible();
   await expect(page.getByText('25,000.00').first()).toBeVisible();
   await expect(page.getByRole('button', { name: 'Export CSV' })).toBeVisible();

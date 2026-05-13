@@ -71,7 +71,7 @@ export const UnitStatusesPage = () => {
     <div className="space-y-6">
       <ProjectPropertyPageHeader
         title="Unit Statuses"
-        description="Review the fixed backend unit-status master data used by units. This page is intentionally read-only because the backend controls the canonical status set."
+        description="Review the fixed unit-status master data used by units. This page is intentionally read-only because the canonical status set is centrally controlled."
         scopeName={user.currentCompany.name}
         scopeSlug={user.currentCompany.slug}
       />
@@ -84,11 +84,11 @@ export const UnitStatusesPage = () => {
 
       <ProjectPropertySection
         title="Fixed status catalog"
-        description="Statuses are surfaced here for visibility and filter context only. Unit create/edit flows can reference them, but this phase does not permit editing the canonical status list."
+        description="Statuses are surfaced here for visibility and filter context only. Unit create/edit flows can reference them, but the canonical status list is not editable."
       >
         <ProjectPropertyReadOnlyNotice
           title="Controlled master data"
-          description="Unit statuses are fixed and backend-controlled in this phase. The frontend lists them for operational clarity and does not expose create, edit, activate, or deactivate actions."
+          description="Unit statuses are fixed for operational consistency. This page lists them for clarity and does not expose create, edit, activate, or deactivate actions."
         />
 
         <MasterFilterCard
@@ -149,7 +149,7 @@ export const UnitStatusesPage = () => {
         ) : (
           <EmptyState
             title="No unit statuses found"
-            description="The backend did not return any fixed unit statuses for the active company scope."
+            description="No fixed unit statuses were found for the active company scope."
           />
         )}
       </ProjectPropertySection>

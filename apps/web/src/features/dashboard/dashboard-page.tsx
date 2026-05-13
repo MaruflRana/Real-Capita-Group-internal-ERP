@@ -141,7 +141,7 @@ export const DashboardPage = () => {
         key: 'financial',
         title: 'Financial summary',
         description:
-          'Posted-statement metrics from the existing reporting endpoints for the active company.',
+          'Key financial indicators for the active company and selected reporting window.',
         href: APP_ROUTES.accountingReportsBusinessOverview,
         items: [
           {
@@ -188,7 +188,7 @@ export const DashboardPage = () => {
           {
             label: 'Posted vouchers',
             value: String(summary.accounting.postedVoucherCount),
-            hint: 'Posted vouchers currently visible in company scope.',
+            hint: 'Posted vouchers currently available for review.',
           },
         ],
       });
@@ -238,7 +238,7 @@ export const DashboardPage = () => {
                 {
                   label: 'Sale contracts',
                   value: String(summary.crm.saleContractCount),
-                  hint: 'Contracts recorded in the existing CRM contract module.',
+                  hint: 'Contracts recorded in the CRM workspace.',
                 },
                 {
                   label: 'Recent collections',
@@ -295,7 +295,7 @@ export const DashboardPage = () => {
         key: 'documents',
         title: 'Documents and audit',
         description:
-          'Recent file activity and audit traffic using the existing attachment and audit modules.',
+          'Recent file activity and audit visibility for the active company.',
         href: access.documents
           ? APP_ROUTES.auditDocumentsAttachments
           : APP_ROUTES.auditDocumentsAuditEvents,
@@ -646,7 +646,7 @@ export const DashboardPage = () => {
             </CardTitle>
             <CardDescription className="max-w-4xl leading-6">
               Real-time operational snapshot for the active company session,
-              using the existing REST modules already available in this ERP.
+              aligned with the modules available to this role.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 pt-6">
@@ -753,7 +753,7 @@ export const DashboardPage = () => {
             </Link>
           ) : undefined
         }
-        description="Production-minded summary panels built on top of the existing reporting, accounting, CRM, HR, payroll, attachment, and audit endpoints."
+        description="Executive summary panels across finance, accounting, property, sales, HR, payroll, documents, and audit."
         eyebrow="Summary"
         title="Company snapshot"
       >
@@ -782,7 +782,7 @@ export const DashboardPage = () => {
       </DashboardSection>
 
       <DashboardSection
-        description="Visual summaries built from existing Phase 1 REST data for the active company and role set."
+        description="Visual summaries for the active company and role set."
         eyebrow="Analytics"
         title="Operational analytics"
       >
@@ -854,7 +854,7 @@ export const DashboardPage = () => {
         </DashboardSection>
 
         <DashboardSection
-          description="Direct links into the existing module routes already available in this monorepo."
+          description="Direct links into the workspaces available to this role."
           eyebrow="Quick Actions"
           title="Jump to work"
         >
@@ -901,8 +901,8 @@ export const DashboardPage = () => {
             </div>
             <div className="rounded-3xl border border-border/70 bg-background/80 p-4 text-sm text-muted-foreground">
               Other company memberships remain available in the shell session
-              menu. Prompt 21 keeps the operational home anchored to the active
-              login company.
+              menu. The operational home stays anchored to the active company
+              selected for this login.
             </div>
           </CardContent>
         </Card>

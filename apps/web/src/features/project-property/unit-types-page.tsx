@@ -147,7 +147,7 @@ export const UnitTypesPage = () => {
 
       <ProjectPropertySection
         title="Unit type master list"
-        description="Unit types remain flat company-scoped master data in this phase. Manage active state carefully because unit create/edit forms consume only the current master set."
+        description="Unit types remain flat company-scoped master data. Manage active state carefully because unit create/edit forms consume only the current master set."
       >
         <MasterFilterCard
           onSearchChange={setSearch}
