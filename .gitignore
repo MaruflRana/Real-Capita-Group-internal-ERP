@@ -24,6 +24,11 @@ screenshots
 .playwright-mcp
 backups
 *.dump
+.live-demo/
+*.tunnel-backup
+*.tunnel-backup-*
+Caddyfile.tunnel
+cloudflared.*.log
 
 .idea
 .vscode/*
