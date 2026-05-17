@@ -98,7 +98,8 @@ const TRIGGER_RESET_TABLES = ['voucher_lines', 'vouchers', 'payroll_run_lines'];
 
 const SEED_USAGE = `Usage: corepack pnpm seed:demo [-- --dry-run] [-- --reset-first]
 
-Creates explicit synthetic demo/UAT data in the "${DEMO_COMPANY_NAME}" company.
+Creates or refreshes explicit synthetic demo/UAT data in the "${DEMO_COMPANY_NAME}" company.
+The reserved demo company is rebuilt before seeding so the result stays authoritative and clean.
 
 Options:
   --dry-run                         Print the seed plan without connecting to the database
@@ -3364,7 +3365,10 @@ const resetDemoData = async (prisma, options = {}) => {
         };
       }
 
-      await assertResetIsSafe(tx, company.id);
+      if (!options.force) {
+        await assertResetIsSafe(tx, company.id);
+      }
+
       const counts = await collectDemoCounts(tx, company.id);
 
       if (options.dryRun) {
@@ -3814,6 +3818,7 @@ const printSeedDryRun = () => {
   console.log(`- users: ${DEMO_USER_SPECS.length} synthetic demo/UAT users`);
   console.log('- modules: org/security, accounting, project/property, CRM, HR, payroll, attachments, audit');
   console.log('- safety: no production startup, migration, Docker, or bootstrap auto-seeding');
+  console.log('- seed behavior: rebuild reserved demo/UAT company before applying the authoritative seed');
   console.log('- reset marker: DEMO-/UAT-/SYNTH markers plus synthetic company slug');
 };
 
@@ -3839,10 +3844,19 @@ export const runSeedDemoCommand = async () => {
     );
 
     if (options.resetFirst) {
-      const resetResult = await resetDemoData(prisma);
-      printCounts('reset-before-seed counts', resetResult.counts);
       console.log(
-        `[demo-data] reset-before-seed deleted rows: ${resetResult.deletedRows}; deleted users: ${resetResult.deletedUsers}`,
+        '[demo-data] note: --reset-first is no longer required; seed:demo now refreshes the reserved demo company automatically.',
+      );
+    }
+
+    const resetResult = await resetDemoData(prisma, {
+      force: true,
+    });
+
+    if (Object.keys(resetResult.counts).length > 0) {
+      printCounts('pre-seed refresh counts', resetResult.counts);
+      console.log(
+        `[demo-data] pre-seed refresh deleted rows: ${resetResult.deletedRows}; deleted users: ${resetResult.deletedUsers}`,
       );
     }
 

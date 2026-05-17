@@ -40,7 +40,7 @@ corepack pnpm seed:demo:reset -- --dry-run
 corepack pnpm seed:demo:reset
 ```
 
-`seed:demo` creates or updates the synthetic company:
+`seed:demo` rebuilds the reserved synthetic company and reapplies the authoritative seed:
 
 ```text
 Real Capita Demo / UAT
@@ -70,6 +70,7 @@ Do not use that password outside a controlled local/UAT environment.
 
 - Demo data is never seeded automatically during app startup, Docker startup, migrations, or normal admin bootstrap.
 - The seed runs only through `corepack pnpm seed:demo`.
+- `seed:demo` refreshes the reserved `real-capita-demo-uat` company before reseeding so stale demo-company records do not survive into MD/UAT verification.
 - Reset runs only through `corepack pnpm seed:demo:reset`.
 - Production mode is refused unless `--confirm-production-demo-data` is provided.
 - Reset is scoped to the exact synthetic company slug and expected synthetic company name.
@@ -92,6 +93,42 @@ The seed covers existing Phase 1 modules only:
 - HR: synthetic employees, attendance devices, device mappings, attendance logs, leave types, and leave requests across lifecycle statuses.
 - Payroll: synthetic salary structures, draft/finalized/posted payroll runs, payroll lines, and payroll posting through the existing database posting function.
 - Audit & Documents: safe synthetic attachment metadata, attachment links, and synthetic audit events.
+
+## Receipt Demo Scenario
+
+The authoritative seed now includes a management-demo-ready printable receipt path for CRM & Property Desk.
+
+Recommended demo login:
+
+```text
+demo.sales@demo.realcapita.test
+```
+
+Recommended seeded collection:
+
+```text
+DEMO-COL-2026-001
+```
+
+That seeded scenario provides the full walkthrough chain:
+
+```text
+DEMO Customer Nadia Synthetic
+-> booking on DEMO-MAYA-A-B-2P5-001
+-> sale contract DEMO-SC-2026-RC-MAYA-001
+-> installment #1 due 2026-03-15
+-> posted voucher DEMO-COL-2026-001
+-> collection DEMO-COL-2026-001
+-> printable receipt route
+```
+
+Receipt demo path:
+
+1. Sign in as `demo.sales@demo.realcapita.test` or `demo.admin@demo.realcapita.test`.
+2. Open `/crm-property-desk/collections`.
+3. Search for `DEMO-COL-2026-001`.
+4. Open `Receipt` from the table or `Open Receipt` from the detail side panel.
+5. Use `Print Receipt` for the browser-print acknowledgement view.
 
 ## Dashboard And Report Readiness
 

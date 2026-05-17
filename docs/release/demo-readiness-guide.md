@@ -7,6 +7,7 @@
 - Confirm a company admin exists through `corepack pnpm docker:bootstrap -- --company-name ...` when needed.
 - Confirm `corepack pnpm docker:smoke` passes.
 - For a populated supervisor demo, run `corepack pnpm seed:demo` and `corepack pnpm seed:demo:verify` against the intended local/UAT database.
+- Use `corepack pnpm seed:demo` as the authoritative Demo/UAT refresh for `real-capita-demo-uat`; it now rebuilds the reserved demo company before reseeding.
 - Use the browser URL `http://localhost:3000`.
 - Confirm the demo account, password, company, and role labels are known.
 - Confirm `S3_PUBLIC_ENDPOINT` is browser-resolvable before demonstrating attachments.
@@ -28,7 +29,7 @@
 4. Show Financial Reports: business overview, periodic reports including yearly, trial balance, general ledger, profit & loss, and balance sheet.
 5. Export one financial report CSV and click Print Report on one supported report. Business Overview, Daily, Weekly, Monthly, Yearly, Trial Balance, General Ledger, Profit & Loss, and Balance Sheet now use the shared A4 printable report template. For General Ledger, select a posting account first.
 6. Show Project & Property Master routes for projects, hierarchy masters, and units.
-7. Show CRM & Property Desk routes for customers, leads, bookings, sale contracts, installments, and collections.
+7. Show CRM & Property Desk routes for customers, leads, bookings, sale contracts, installments, and collections. Use `demo.sales@demo.realcapita.test`, search Collections for `DEMO-COL-2026-001`, then open the Customer Collection Receipt to show the posted-voucher acknowledgement and browser-print path.
 8. Show HR routes for employees, attendance devices/logs, leave types, and leave requests.
 9. Show Payroll routes for salary structures, payroll runs, run detail, and posting.
 10. Show Attachments and Audit Events if storage and role context are ready.
@@ -53,6 +54,8 @@
 
 - CSV export on one financial report.
 - Browser print on one financial report or voucher detail.
+- Browser print on a CRM & Property Desk Customer Collection Receipt when demonstrating the customer payment acknowledgement story.
+- For the receipt demo, use seeded collection `DEMO-COL-2026-001` from the Collections register and open it through `Receipt` or `Open Receipt`.
 - Business Overview, Daily, Weekly, Monthly, Yearly, Trial Balance, General Ledger, Profit & Loss, and Balance Sheet now use the shared A4 printable report template.
 - Prompt 40D final QA verified those 9 report routes for screen controls, CSV downloads, print media, and 1440px/1366px/1024px screen widths.
 - Mention that supported operational list exports are CSV-only.

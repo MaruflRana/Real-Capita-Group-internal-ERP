@@ -1,11 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
-import { Button } from '@real-capita/ui';
+import { Button, buttonVariants, cn } from '@real-capita/ui';
 
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -59,22 +60,50 @@ const optionalIdSchema = z.string().optional().or(z.literal(''));
 const amountSchema = z
   .string()
   .trim()
-  .regex(amountRegex, 'Use a non-negative decimal amount with up to 2 decimals.');
+  .regex(
+    amountRegex,
+    'Use a non-negative decimal amount with up to 2 decimals.',
+  );
 const dateSchema = z.string().trim().regex(dateRegex, 'Use YYYY-MM-DD.');
 
 export const customerFormSchema = z.object({
   fullName: z.string().trim().min(1, 'Customer name is required.').max(120),
-  email: z.string().trim().email('Enter a valid email address.').optional().or(z.literal('')),
-  phone: z.string().trim().max(32, 'Phone must be 32 characters or fewer.').optional().or(z.literal('')),
-  address: z.string().trim().max(500, 'Address must be 500 characters or fewer.').optional().or(z.literal('')),
+  email: z
+    .string()
+    .trim()
+    .email('Enter a valid email address.')
+    .optional()
+    .or(z.literal('')),
+  phone: z
+    .string()
+    .trim()
+    .max(32, 'Phone must be 32 characters or fewer.')
+    .optional()
+    .or(z.literal('')),
+  address: z
+    .string()
+    .trim()
+    .max(500, 'Address must be 500 characters or fewer.')
+    .optional()
+    .or(z.literal('')),
   notes: optionalTextSchema,
 });
 
 export const leadFormSchema = z.object({
   projectId: optionalIdSchema,
   fullName: z.string().trim().min(1, 'Lead name is required.').max(120),
-  email: z.string().trim().email('Enter a valid email address.').optional().or(z.literal('')),
-  phone: z.string().trim().max(32, 'Phone must be 32 characters or fewer.').optional().or(z.literal('')),
+  email: z
+    .string()
+    .trim()
+    .email('Enter a valid email address.')
+    .optional()
+    .or(z.literal('')),
+  phone: z
+    .string()
+    .trim()
+    .max(32, 'Phone must be 32 characters or fewer.')
+    .optional()
+    .or(z.literal('')),
   source: optionalShortTextSchema,
   status: z.enum(PROPERTY_DESK_LEAD_STATUSES),
   notes: optionalTextSchema,
@@ -111,7 +140,10 @@ export const installmentSchedulesCreateFormSchema = z.object({
   rows: z
     .array(
       z.object({
-        sequenceNumber: z.number().int().min(1, 'Sequence must be 1 or greater.'),
+        sequenceNumber: z
+          .number()
+          .int()
+          .min(1, 'Sequence must be 1 or greater.'),
         dueDate: dateSchema,
         amount: amountSchema,
         description: z
@@ -153,23 +185,23 @@ export type CustomerFormValues = z.infer<typeof customerFormSchema>;
 export type LeadFormValues = z.infer<typeof leadFormSchema>;
 export type BookingCreateFormValues = z.infer<typeof bookingCreateFormSchema>;
 export type BookingEditFormValues = z.infer<typeof bookingEditFormSchema>;
-export type SaleContractCreateFormValues = z.infer<typeof saleContractCreateFormSchema>;
-export type SaleContractEditFormValues = z.infer<typeof saleContractEditFormSchema>;
+export type SaleContractCreateFormValues = z.infer<
+  typeof saleContractCreateFormSchema
+>;
+export type SaleContractEditFormValues = z.infer<
+  typeof saleContractEditFormSchema
+>;
 export type InstallmentSchedulesCreateFormValues = z.infer<
   typeof installmentSchedulesCreateFormSchema
 >;
 export type InstallmentScheduleEditFormValues = z.infer<
   typeof installmentScheduleEditFormSchema
 >;
-export type CollectionCreateFormValues = z.infer<typeof collectionCreateFormSchema>;
+export type CollectionCreateFormValues = z.infer<
+  typeof collectionCreateFormSchema
+>;
 
-const ReadOnlyField = ({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) => (
+const ReadOnlyField = ({ label, value }: { label: string; value: string }) => (
   <div className="space-y-2">
     <Label>{label}</Label>
     <div className="rounded-2xl border border-border/70 bg-muted/35 px-4 py-2 text-sm text-foreground">
@@ -260,7 +292,8 @@ export const CustomerFormPanel = ({
       notes: customer?.notes ?? '',
     },
   });
-  const { submitError, clearSubmitError, handleError } = useSubmitErrorHandler();
+  const { submitError, clearSubmitError, handleError } =
+    useSubmitErrorHandler();
 
   useEffect(() => {
     form.reset({
@@ -286,7 +319,9 @@ export const CustomerFormPanel = ({
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
-      {submitError ? <CrmPropertyDeskQueryErrorBanner message={submitError} /> : null}
+      {submitError ? (
+        <CrmPropertyDeskQueryErrorBanner message={submitError} />
+      ) : null}
       <div className="space-y-2">
         <Label htmlFor="customer-full-name">Customer name</Label>
         <Input id="customer-full-name" {...form.register('fullName')} />
@@ -346,7 +381,8 @@ export const LeadFormPanel = ({
       notes: lead?.notes ?? '',
     },
   });
-  const { submitError, clearSubmitError, handleError } = useSubmitErrorHandler();
+  const { submitError, clearSubmitError, handleError } =
+    useSubmitErrorHandler();
   const currentProjectId = form.watch('projectId');
 
   useEffect(() => {
@@ -375,7 +411,9 @@ export const LeadFormPanel = ({
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
-      {submitError ? <CrmPropertyDeskQueryErrorBanner message={submitError} /> : null}
+      {submitError ? (
+        <CrmPropertyDeskQueryErrorBanner message={submitError} />
+      ) : null}
       <div className="space-y-2">
         <Label htmlFor="lead-project">Project</Label>
         <Select id="lead-project" {...form.register('projectId')}>
@@ -463,7 +501,8 @@ export const BookingCreatePanel = ({
       notes: '',
     },
   });
-  const { submitError, clearSubmitError, handleError } = useSubmitErrorHandler();
+  const { submitError, clearSubmitError, handleError } =
+    useSubmitErrorHandler();
   const projectId = form.watch('projectId');
   const unitId = form.watch('unitId');
 
@@ -499,7 +538,9 @@ export const BookingCreatePanel = ({
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
-      {submitError ? <CrmPropertyDeskQueryErrorBanner message={submitError} /> : null}
+      {submitError ? (
+        <CrmPropertyDeskQueryErrorBanner message={submitError} />
+      ) : null}
       <div className="space-y-2">
         <Label htmlFor="booking-customer">Customer</Label>
         <Select id="booking-customer" {...form.register('customerId')}>
@@ -521,7 +562,11 @@ export const BookingCreatePanel = ({
         <Select id="booking-project" {...form.register('projectId')}>
           <option value="">Select project</option>
           {projects.map((project) => (
-            <option disabled={!project.isActive} key={project.id} value={project.id}>
+            <option
+              disabled={!project.isActive}
+              key={project.id}
+              value={project.id}
+            >
               {getProjectLabel(project)}
             </option>
           ))}
@@ -559,18 +604,29 @@ export const BookingCreatePanel = ({
                 .join(' / '),
             },
             { label: 'Unit type', value: selectedUnit.unitTypeName },
-            { label: 'Current unit status', value: selectedUnit.unitStatusName },
+            {
+              label: 'Current unit status',
+              value: selectedUnit.unitStatusName,
+            },
           ]}
         />
       ) : null}
       <div className="space-y-2">
         <Label htmlFor="booking-date">Booking date</Label>
-        <Input id="booking-date" type="date" {...form.register('bookingDate')} />
+        <Input
+          id="booking-date"
+          type="date"
+          {...form.register('bookingDate')}
+        />
         <FormErrorText message={form.formState.errors.bookingDate?.message} />
       </div>
       <div className="space-y-2">
         <Label htmlFor="booking-amount">Booking amount</Label>
-        <Input id="booking-amount" inputMode="decimal" {...form.register('bookingAmount')} />
+        <Input
+          id="booking-amount"
+          inputMode="decimal"
+          {...form.register('bookingAmount')}
+        />
         <FormErrorText message={form.formState.errors.bookingAmount?.message} />
       </div>
       <div className="space-y-2">
@@ -578,7 +634,11 @@ export const BookingCreatePanel = ({
         <Textarea id="booking-notes" {...form.register('notes')} />
         <FormErrorText message={form.formState.errors.notes?.message} />
       </div>
-      <FormActions isPending={isPending} onClose={onClose} submitLabel="Create booking" />
+      <FormActions
+        isPending={isPending}
+        onClose={onClose}
+        submitLabel="Create booking"
+      />
     </form>
   );
 };
@@ -600,7 +660,8 @@ export const BookingEditPanel = ({
       notes: booking.notes ?? '',
     },
   });
-  const { submitError, clearSubmitError, handleError } = useSubmitErrorHandler();
+  const { submitError, clearSubmitError, handleError } =
+    useSubmitErrorHandler();
 
   useEffect(() => {
     form.reset({
@@ -622,14 +683,22 @@ export const BookingEditPanel = ({
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
-      {submitError ? <CrmPropertyDeskQueryErrorBanner message={submitError} /> : null}
+      {submitError ? (
+        <CrmPropertyDeskQueryErrorBanner message={submitError} />
+      ) : null}
       <EntityContext
         items={[
           { label: 'Customer', value: booking.customerName },
-          { label: 'Project', value: `${booking.projectCode} - ${booking.projectName}` },
+          {
+            label: 'Project',
+            value: `${booking.projectCode} - ${booking.projectName}`,
+          },
           { label: 'Unit', value: `${booking.unitCode} - ${booking.unitName}` },
           { label: 'Booking date', value: booking.bookingDate },
-          { label: 'Booking amount', value: formatAccountingAmount(booking.bookingAmount) },
+          {
+            label: 'Booking amount',
+            value: formatAccountingAmount(booking.bookingAmount),
+          },
           { label: 'Booking status', value: booking.status },
         ]}
       />
@@ -638,7 +707,11 @@ export const BookingEditPanel = ({
         <Textarea id="booking-edit-notes" {...form.register('notes')} />
         <FormErrorText message={form.formState.errors.notes?.message} />
       </div>
-      <FormActions isPending={isPending} onClose={onClose} submitLabel="Save changes" />
+      <FormActions
+        isPending={isPending}
+        onClose={onClose}
+        submitLabel="Save changes"
+      />
     </form>
   );
 };
@@ -664,7 +737,8 @@ export const SaleContractCreatePanel = ({
       notes: '',
     },
   });
-  const { submitError, clearSubmitError, handleError } = useSubmitErrorHandler();
+  const { submitError, clearSubmitError, handleError } =
+    useSubmitErrorHandler();
   const bookingId = form.watch('bookingId');
   const selectedBooking = bookings.find((booking) => booking.id === bookingId);
 
@@ -681,7 +755,9 @@ export const SaleContractCreatePanel = ({
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
-      {submitError ? <CrmPropertyDeskQueryErrorBanner message={submitError} /> : null}
+      {submitError ? (
+        <CrmPropertyDeskQueryErrorBanner message={submitError} />
+      ) : null}
       <div className="space-y-2">
         <Label htmlFor="sale-contract-booking">Booking</Label>
         <Select id="sale-contract-booking" {...form.register('bookingId')}>
@@ -698,9 +774,18 @@ export const SaleContractCreatePanel = ({
         <EntityContext
           items={[
             { label: 'Customer', value: selectedBooking.customerName },
-            { label: 'Project', value: `${selectedBooking.projectCode} - ${selectedBooking.projectName}` },
-            { label: 'Unit', value: `${selectedBooking.unitCode} - ${selectedBooking.unitName}` },
-            { label: 'Booking amount', value: formatAccountingAmount(selectedBooking.bookingAmount) },
+            {
+              label: 'Project',
+              value: `${selectedBooking.projectCode} - ${selectedBooking.projectName}`,
+            },
+            {
+              label: 'Unit',
+              value: `${selectedBooking.unitCode} - ${selectedBooking.unitName}`,
+            },
+            {
+              label: 'Booking amount',
+              value: formatAccountingAmount(selectedBooking.bookingAmount),
+            },
             { label: 'Booking status', value: selectedBooking.status },
             { label: 'Unit status', value: selectedBooking.unitStatusName },
           ]}
@@ -708,13 +793,23 @@ export const SaleContractCreatePanel = ({
       ) : null}
       <div className="space-y-2">
         <Label htmlFor="sale-contract-date">Contract date</Label>
-        <Input id="sale-contract-date" type="date" {...form.register('contractDate')} />
+        <Input
+          id="sale-contract-date"
+          type="date"
+          {...form.register('contractDate')}
+        />
         <FormErrorText message={form.formState.errors.contractDate?.message} />
       </div>
       <div className="space-y-2">
         <Label htmlFor="sale-contract-amount">Contract amount</Label>
-        <Input id="sale-contract-amount" inputMode="decimal" {...form.register('contractAmount')} />
-        <FormErrorText message={form.formState.errors.contractAmount?.message} />
+        <Input
+          id="sale-contract-amount"
+          inputMode="decimal"
+          {...form.register('contractAmount')}
+        />
+        <FormErrorText
+          message={form.formState.errors.contractAmount?.message}
+        />
       </div>
       <div className="space-y-2">
         <Label htmlFor="sale-contract-reference">Reference</Label>
@@ -753,7 +848,8 @@ export const SaleContractEditPanel = ({
       notes: saleContract.notes ?? '',
     },
   });
-  const { submitError, clearSubmitError, handleError } = useSubmitErrorHandler();
+  const { submitError, clearSubmitError, handleError } =
+    useSubmitErrorHandler();
 
   useEffect(() => {
     form.reset({
@@ -776,20 +872,37 @@ export const SaleContractEditPanel = ({
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
-      {submitError ? <CrmPropertyDeskQueryErrorBanner message={submitError} /> : null}
+      {submitError ? (
+        <CrmPropertyDeskQueryErrorBanner message={submitError} />
+      ) : null}
       <EntityContext
         items={[
           { label: 'Customer', value: saleContract.customerName },
-          { label: 'Project', value: `${saleContract.projectCode} - ${saleContract.projectName}` },
-          { label: 'Unit', value: `${saleContract.unitCode} - ${saleContract.unitName}` },
-          { label: 'Booking amount', value: formatAccountingAmount(saleContract.bookingAmount) },
-          { label: 'Contract amount', value: formatAccountingAmount(saleContract.contractAmount) },
+          {
+            label: 'Project',
+            value: `${saleContract.projectCode} - ${saleContract.projectName}`,
+          },
+          {
+            label: 'Unit',
+            value: `${saleContract.unitCode} - ${saleContract.unitName}`,
+          },
+          {
+            label: 'Booking amount',
+            value: formatAccountingAmount(saleContract.bookingAmount),
+          },
+          {
+            label: 'Contract amount',
+            value: formatAccountingAmount(saleContract.contractAmount),
+          },
           { label: 'Contract date', value: saleContract.contractDate },
         ]}
       />
       <div className="space-y-2">
         <Label htmlFor="sale-contract-edit-reference">Reference</Label>
-        <Input id="sale-contract-edit-reference" {...form.register('reference')} />
+        <Input
+          id="sale-contract-edit-reference"
+          {...form.register('reference')}
+        />
         <FormErrorText message={form.formState.errors.reference?.message} />
       </div>
       <div className="space-y-2">
@@ -797,7 +910,11 @@ export const SaleContractEditPanel = ({
         <Textarea id="sale-contract-edit-notes" {...form.register('notes')} />
         <FormErrorText message={form.formState.errors.notes?.message} />
       </div>
-      <FormActions isPending={isPending} onClose={onClose} submitLabel="Save changes" />
+      <FormActions
+        isPending={isPending}
+        onClose={onClose}
+        submitLabel="Save changes"
+      />
     </form>
   );
 };
@@ -831,7 +948,8 @@ export const InstallmentSchedulesCreatePanel = ({
     control: form.control,
     name: 'rows',
   });
-  const { submitError, clearSubmitError, handleError } = useSubmitErrorHandler();
+  const { submitError, clearSubmitError, handleError } =
+    useSubmitErrorHandler();
   const saleContractId = form.watch('saleContractId');
   const selectedSaleContract = saleContracts.find(
     (saleContract) => saleContract.id === saleContractId,
@@ -854,10 +972,15 @@ export const InstallmentSchedulesCreatePanel = ({
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
-      {submitError ? <CrmPropertyDeskQueryErrorBanner message={submitError} /> : null}
+      {submitError ? (
+        <CrmPropertyDeskQueryErrorBanner message={submitError} />
+      ) : null}
       <div className="space-y-2">
         <Label htmlFor="installment-sale-contract">Sale contract</Label>
-        <Select id="installment-sale-contract" {...form.register('saleContractId')}>
+        <Select
+          id="installment-sale-contract"
+          {...form.register('saleContractId')}
+        >
           <option value="">Select sale contract</option>
           {saleContracts.map((saleContract) => (
             <option key={saleContract.id} value={saleContract.id}>
@@ -865,16 +988,32 @@ export const InstallmentSchedulesCreatePanel = ({
             </option>
           ))}
         </Select>
-        <FormErrorText message={form.formState.errors.saleContractId?.message} />
+        <FormErrorText
+          message={form.formState.errors.saleContractId?.message}
+        />
       </div>
       {selectedSaleContract ? (
         <EntityContext
           items={[
             { label: 'Customer', value: selectedSaleContract.customerName },
-            { label: 'Project', value: `${selectedSaleContract.projectCode} - ${selectedSaleContract.projectName}` },
-            { label: 'Unit', value: `${selectedSaleContract.unitCode} - ${selectedSaleContract.unitName}` },
-            { label: 'Contract amount', value: formatAccountingAmount(selectedSaleContract.contractAmount) },
-            { label: 'Reference', value: selectedSaleContract.reference || 'No reference' },
+            {
+              label: 'Project',
+              value: `${selectedSaleContract.projectCode} - ${selectedSaleContract.projectName}`,
+            },
+            {
+              label: 'Unit',
+              value: `${selectedSaleContract.unitCode} - ${selectedSaleContract.unitName}`,
+            },
+            {
+              label: 'Contract amount',
+              value: formatAccountingAmount(
+                selectedSaleContract.contractAmount,
+              ),
+            },
+            {
+              label: 'Reference',
+              value: selectedSaleContract.reference || 'No reference',
+            },
           ]}
         />
       ) : null}
@@ -910,7 +1049,9 @@ export const InstallmentSchedulesCreatePanel = ({
                   })}
                 />
                 <FormErrorText
-                  message={form.formState.errors.rows?.[index]?.sequenceNumber?.message}
+                  message={
+                    form.formState.errors.rows?.[index]?.sequenceNumber?.message
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -921,7 +1062,9 @@ export const InstallmentSchedulesCreatePanel = ({
                   {...form.register(`rows.${index}.dueDate`)}
                 />
                 <FormErrorText
-                  message={form.formState.errors.rows?.[index]?.dueDate?.message}
+                  message={
+                    form.formState.errors.rows?.[index]?.dueDate?.message
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -937,13 +1080,17 @@ export const InstallmentSchedulesCreatePanel = ({
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`schedule-description-${index}`}>Description</Label>
+              <Label htmlFor={`schedule-description-${index}`}>
+                Description
+              </Label>
               <Textarea
                 id={`schedule-description-${index}`}
                 {...form.register(`rows.${index}.description`)}
               />
               <FormErrorText
-                message={form.formState.errors.rows?.[index]?.description?.message}
+                message={
+                  form.formState.errors.rows?.[index]?.description?.message
+                }
               />
             </div>
           </div>
@@ -994,7 +1141,8 @@ export const InstallmentScheduleEditPanel = ({
       description: schedule.description ?? '',
     },
   });
-  const { submitError, clearSubmitError, handleError } = useSubmitErrorHandler();
+  const { submitError, clearSubmitError, handleError } =
+    useSubmitErrorHandler();
 
   useEffect(() => {
     form.reset({
@@ -1023,14 +1171,28 @@ export const InstallmentScheduleEditPanel = ({
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
-      {submitError ? <CrmPropertyDeskQueryErrorBanner message={submitError} /> : null}
+      {submitError ? (
+        <CrmPropertyDeskQueryErrorBanner message={submitError} />
+      ) : null}
       <EntityContext
         items={[
           { label: 'Customer', value: schedule.customerName },
-          { label: 'Project', value: `${schedule.projectCode} - ${schedule.projectName}` },
-          { label: 'Unit', value: `${schedule.unitCode} - ${schedule.unitName}` },
-          { label: 'Collected', value: formatAccountingAmount(schedule.collectedAmount) },
-          { label: 'Balance', value: formatAccountingAmount(schedule.balanceAmount) },
+          {
+            label: 'Project',
+            value: `${schedule.projectCode} - ${schedule.projectName}`,
+          },
+          {
+            label: 'Unit',
+            value: `${schedule.unitCode} - ${schedule.unitName}`,
+          },
+          {
+            label: 'Collected',
+            value: formatAccountingAmount(schedule.collectedAmount),
+          },
+          {
+            label: 'Balance',
+            value: formatAccountingAmount(schedule.balanceAmount),
+          },
         ]}
       />
       <div className="grid gap-4 md:grid-cols-3">
@@ -1041,11 +1203,17 @@ export const InstallmentScheduleEditPanel = ({
             type="number"
             {...form.register('sequenceNumber', { valueAsNumber: true })}
           />
-          <FormErrorText message={form.formState.errors.sequenceNumber?.message} />
+          <FormErrorText
+            message={form.formState.errors.sequenceNumber?.message}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="edit-schedule-date">Due date</Label>
-          <Input id="edit-schedule-date" type="date" {...form.register('dueDate')} />
+          <Input
+            id="edit-schedule-date"
+            type="date"
+            {...form.register('dueDate')}
+          />
           <FormErrorText message={form.formState.errors.dueDate?.message} />
         </div>
         <div className="space-y-2">
@@ -1060,10 +1228,17 @@ export const InstallmentScheduleEditPanel = ({
       </div>
       <div className="space-y-2">
         <Label htmlFor="edit-schedule-description">Description</Label>
-        <Textarea id="edit-schedule-description" {...form.register('description')} />
+        <Textarea
+          id="edit-schedule-description"
+          {...form.register('description')}
+        />
         <FormErrorText message={form.formState.errors.description?.message} />
       </div>
-      <FormActions isPending={isPending} onClose={onClose} submitLabel="Save changes" />
+      <FormActions
+        isPending={isPending}
+        onClose={onClose}
+        submitLabel="Save changes"
+      />
     </form>
   );
 };
@@ -1101,7 +1276,8 @@ export const CollectionCreatePanel = ({
       notes: '',
     },
   });
-  const { submitError, clearSubmitError, handleError } = useSubmitErrorHandler();
+  const { submitError, clearSubmitError, handleError } =
+    useSubmitErrorHandler();
   const customerId = form.watch('customerId');
   const bookingId = form.watch('bookingId');
   const saleContractId = form.watch('saleContractId');
@@ -1133,7 +1309,10 @@ export const CollectionCreatePanel = ({
   );
 
   useEffect(() => {
-    if (bookingId && !availableBookings.some((booking) => booking.id === bookingId)) {
+    if (
+      bookingId &&
+      !availableBookings.some((booking) => booking.id === bookingId)
+    ) {
       form.setValue('bookingId', '');
     }
   }, [availableBookings, bookingId, form]);
@@ -1141,7 +1320,9 @@ export const CollectionCreatePanel = ({
   useEffect(() => {
     if (
       saleContractId &&
-      !availableSaleContracts.some((saleContract) => saleContract.id === saleContractId)
+      !availableSaleContracts.some(
+        (saleContract) => saleContract.id === saleContractId,
+      )
     ) {
       form.setValue('saleContractId', '');
     }
@@ -1150,7 +1331,9 @@ export const CollectionCreatePanel = ({
   useEffect(() => {
     if (
       installmentScheduleId &&
-      !availableSchedules.some((schedule) => schedule.id === installmentScheduleId)
+      !availableSchedules.some(
+        (schedule) => schedule.id === installmentScheduleId,
+      )
     ) {
       form.setValue('installmentScheduleId', '');
     }
@@ -1190,10 +1373,18 @@ export const CollectionCreatePanel = ({
     if (linkedSchedule.bookingId !== bookingId) {
       form.setValue('bookingId', linkedSchedule.bookingId);
     }
-  }, [availableSchedules, bookingId, form, installmentScheduleId, saleContractId]);
+  }, [
+    availableSchedules,
+    bookingId,
+    form,
+    installmentScheduleId,
+    saleContractId,
+  ]);
 
   const selectedVoucher = vouchers.find((voucher) => voucher.id === voucherId);
-  const selectedBooking = availableBookings.find((booking) => booking.id === bookingId);
+  const selectedBooking = availableBookings.find(
+    (booking) => booking.id === bookingId,
+  );
   const selectedSaleContract = availableSaleContracts.find(
     (saleContract) => saleContract.id === saleContractId,
   );
@@ -1214,7 +1405,9 @@ export const CollectionCreatePanel = ({
 
   return (
     <form className="space-y-5" onSubmit={handleSubmit}>
-      {submitError ? <CrmPropertyDeskQueryErrorBanner message={submitError} /> : null}
+      {submitError ? (
+        <CrmPropertyDeskQueryErrorBanner message={submitError} />
+      ) : null}
       <div className="space-y-2">
         <Label htmlFor="collection-customer">Customer</Label>
         <Select id="collection-customer" {...form.register('customerId')}>
@@ -1242,9 +1435,18 @@ export const CollectionCreatePanel = ({
       {selectedVoucher ? (
         <EntityContext
           items={[
-            { label: 'Voucher date', value: formatDate(selectedVoucher.voucherDate) },
-            { label: 'Voucher reference', value: selectedVoucher.reference || 'No reference' },
-            { label: 'Voucher totals', value: formatAccountingAmount(selectedVoucher.totalDebit) },
+            {
+              label: 'Voucher date',
+              value: formatDate(selectedVoucher.voucherDate),
+            },
+            {
+              label: 'Voucher reference',
+              value: selectedVoucher.reference || 'No reference',
+            },
+            {
+              label: 'Voucher totals',
+              value: formatAccountingAmount(selectedVoucher.totalDebit),
+            },
           ]}
         />
       ) : null}
@@ -1278,10 +1480,14 @@ export const CollectionCreatePanel = ({
             </option>
           ))}
         </Select>
-        <FormErrorText message={form.formState.errors.saleContractId?.message} />
+        <FormErrorText
+          message={form.formState.errors.saleContractId?.message}
+        />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="collection-installment-schedule">Installment schedule</Label>
+        <Label htmlFor="collection-installment-schedule">
+          Installment schedule
+        </Label>
         <Select
           disabled={!customerId}
           id="collection-installment-schedule"
@@ -1301,15 +1507,25 @@ export const CollectionCreatePanel = ({
       <RelationBadgeRow
         items={[
           selectedBooking ? `${selectedBooking.unitCode} booking` : null,
-          selectedSaleContract ? `${selectedSaleContract.unitCode} contract` : null,
-          selectedSchedule ? `Installment #${selectedSchedule.sequenceNumber}` : null,
+          selectedSaleContract
+            ? `${selectedSaleContract.unitCode} contract`
+            : null,
+          selectedSchedule
+            ? `Installment #${selectedSchedule.sequenceNumber}`
+            : null,
         ]}
       />
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="collection-date">Collection date</Label>
-          <Input id="collection-date" type="date" {...form.register('collectionDate')} />
-          <FormErrorText message={form.formState.errors.collectionDate?.message} />
+          <Input
+            id="collection-date"
+            type="date"
+            {...form.register('collectionDate')}
+          />
+          <FormErrorText
+            message={form.formState.errors.collectionDate?.message}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="collection-amount">Collection amount</Label>
@@ -1346,6 +1562,7 @@ export const CollectionDetailPanel = ({
   saleContract,
   schedule,
   voucher,
+  receiptHref,
   onClose,
 }: {
   collection: {
@@ -1359,6 +1576,7 @@ export const CollectionDetailPanel = ({
   saleContract?: SaleContractRecord | null;
   schedule?: InstallmentScheduleRecord | null;
   voucher?: VoucherRecord | null;
+  receiptHref?: string;
   onClose: () => void;
 }) => (
   <div className="space-y-5">
@@ -1384,7 +1602,15 @@ export const CollectionDetailPanel = ({
         {collection.notes || 'No notes'}
       </div>
     </div>
-    <div className="flex justify-end">
+    <div className="flex flex-wrap justify-end gap-2">
+      {receiptHref ? (
+        <Link
+          className={cn(buttonVariants({ variant: 'outline' }))}
+          href={receiptHref}
+        >
+          Open Receipt
+        </Link>
+      ) : null}
       <Button onClick={onClose} type="button" variant="outline">
         Close
       </Button>
@@ -1403,7 +1629,10 @@ export const ReadOnlyBookingContext = ({
       label="Project"
       value={`${booking.projectCode} - ${booking.projectName}`}
     />
-    <ReadOnlyField label="Unit" value={`${booking.unitCode} - ${booking.unitName}`} />
+    <ReadOnlyField
+      label="Unit"
+      value={`${booking.unitCode} - ${booking.unitName}`}
+    />
     <ReadOnlyField
       label="Booking amount"
       value={formatAccountingAmount(booking.bookingAmount)}

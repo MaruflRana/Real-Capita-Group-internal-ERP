@@ -1,8 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 
-import { Button } from '@real-capita/ui';
+import { Button, buttonVariants, cn } from '@real-capita/ui';
 
 import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
@@ -24,12 +25,17 @@ import {
 import { isApiError } from '../../lib/api/client';
 import { listCollections } from '../../lib/api/crm-property-desk';
 import type { CollectionRecord } from '../../lib/api/types';
-import { formatAccountingAmount, formatDate, formatDateTime } from '../../lib/format';
+import {
+  formatAccountingAmount,
+  formatDate,
+  formatDateTime,
+} from '../../lib/format';
 import {
   buildExportFileName,
   exportPaginatedCsv,
   getExportDateStamp,
 } from '../../lib/output';
+import { getCollectionReceiptRoute } from '../../lib/routes';
 import {
   CollectionCreatePanel,
   CollectionDetailPanel,
@@ -138,8 +144,12 @@ export const CollectionsPage = () => {
       ...(deferredSearch ? { search: deferredSearch } : {}),
       ...(customerFilter !== 'all' ? { customerId: customerFilter } : {}),
       ...(bookingFilter !== 'all' ? { bookingId: bookingFilter } : {}),
-      ...(saleContractFilter !== 'all' ? { saleContractId: saleContractFilter } : {}),
-      ...(installmentFilter !== 'all' ? { installmentScheduleId: installmentFilter } : {}),
+      ...(saleContractFilter !== 'all'
+        ? { saleContractId: saleContractFilter }
+        : {}),
+      ...(installmentFilter !== 'all'
+        ? { installmentScheduleId: installmentFilter }
+        : {}),
       ...(dateFrom ? { dateFrom } : {}),
       ...(dateTo ? { dateTo } : {}),
     }),
@@ -206,7 +216,9 @@ export const CollectionsPage = () => {
   const saleContractMap = new Map(
     saleContracts.map((saleContract) => [saleContract.id, saleContract]),
   );
-  const scheduleMap = new Map(schedules.map((schedule) => [schedule.id, schedule]));
+  const scheduleMap = new Map(
+    schedules.map((schedule) => [schedule.id, schedule]),
+  );
   const voucherMap = new Map(vouchers.map((voucher) => [voucher.id, voucher]));
 
   const handleExport = async () => {
@@ -322,8 +334,12 @@ export const CollectionsPage = () => {
         }
       />
 
-      {actionError ? <CrmPropertyDeskQueryErrorBanner message={actionError} /> : null}
-      {exportError ? <CrmPropertyDeskQueryErrorBanner message={exportError} /> : null}
+      {actionError ? (
+        <CrmPropertyDeskQueryErrorBanner message={actionError} />
+      ) : null}
+      {exportError ? (
+        <CrmPropertyDeskQueryErrorBanner message={exportError} />
+      ) : null}
 
       <CrmAnalyticsPanel
         companyId={companyId}
@@ -453,7 +469,7 @@ export const CollectionsPage = () => {
                   <TableHead>Voucher</TableHead>
                   <TableHead>Collection</TableHead>
                   <TableHead>Updated</TableHead>
-                  <TableHead className="w-[160px]">Actions</TableHead>
+                  <TableHead className="w-[220px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -468,12 +484,14 @@ export const CollectionsPage = () => {
                       <div className="space-y-1 text-sm">
                         <p>
                           {collection.bookingId
-                            ? bookingMap.get(collection.bookingId)?.unitCode || collection.bookingId
+                            ? bookingMap.get(collection.bookingId)?.unitCode ||
+                              collection.bookingId
                             : 'No booking'}
                         </p>
                         <p className="text-muted-foreground">
                           {collection.saleContractId
-                            ? saleContractMap.get(collection.saleContractId)?.unitCode || collection.saleContractId
+                            ? saleContractMap.get(collection.saleContractId)
+                                ?.unitCode || collection.saleContractId
                             : 'No contract'}
                         </p>
                         <p className="text-muted-foreground">
@@ -485,9 +503,12 @@ export const CollectionsPage = () => {
                     </TableCell>
                     <TableCell>
                       <div className="space-y-1 text-sm">
-                        <p>{collection.voucherReference || collection.voucherId}</p>
+                        <p>
+                          {collection.voucherReference || collection.voucherId}
+                        </p>
                         <p className="text-muted-foreground">
-                          {collection.voucherStatus} - {formatDate(collection.voucherDate)}
+                          {collection.voucherStatus} -{' '}
+                          {formatDate(collection.voucherDate)}
                         </p>
                       </div>
                     </TableCell>
@@ -502,25 +523,40 @@ export const CollectionsPage = () => {
                         </p>
                       </div>
                     </TableCell>
-                    <TableCell>{formatDateTime(collection.updatedAt)}</TableCell>
                     <TableCell>
-                      <Button
-                        onClick={() => {
-                          setActionError(null);
-                          setEditor(collection);
-                          setPanelOpen(true);
-                        }}
-                        size="sm"
-                        variant="outline"
-                      >
-                        View
-                      </Button>
+                      {formatDateTime(collection.updatedAt)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-2">
+                        <Link
+                          className={cn(
+                            buttonVariants({ size: 'sm', variant: 'outline' }),
+                          )}
+                          href={getCollectionReceiptRoute(collection.id)}
+                        >
+                          Receipt
+                        </Link>
+                        <Button
+                          onClick={() => {
+                            setActionError(null);
+                            setEditor(collection);
+                            setPanelOpen(true);
+                          }}
+                          size="sm"
+                          variant="outline"
+                        >
+                          View
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-            <PaginationControls meta={collectionsQuery.data.meta} onPageChange={setPage} />
+            <PaginationControls
+              meta={collectionsQuery.data.meta}
+              onPageChange={setPage}
+            />
           </>
         ) : (
           <EmptyState
@@ -547,7 +583,7 @@ export const CollectionsPage = () => {
           <CollectionDetailPanel
             booking={
               collectionForDetail.bookingId
-                ? bookingMap.get(collectionForDetail.bookingId) ?? null
+                ? (bookingMap.get(collectionForDetail.bookingId) ?? null)
                 : null
             }
             collection={collectionForDetail}
@@ -555,14 +591,17 @@ export const CollectionsPage = () => {
               setPanelOpen(false);
               setEditor(null);
             }}
+            receiptHref={getCollectionReceiptRoute(collectionForDetail.id)}
             saleContract={
               collectionForDetail.saleContractId
-                ? saleContractMap.get(collectionForDetail.saleContractId) ?? null
+                ? (saleContractMap.get(collectionForDetail.saleContractId) ??
+                  null)
                 : null
             }
             schedule={
               collectionForDetail.installmentScheduleId
-                ? scheduleMap.get(collectionForDetail.installmentScheduleId) ?? null
+                ? (scheduleMap.get(collectionForDetail.installmentScheduleId) ??
+                  null)
                 : null
             }
             voucher={voucherMap.get(collectionForDetail.voucherId) ?? null}

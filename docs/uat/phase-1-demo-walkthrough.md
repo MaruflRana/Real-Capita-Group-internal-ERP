@@ -14,6 +14,7 @@ Before the session:
 - Confirm migrations have been applied with `corepack pnpm docker:migrate`.
 - Confirm a company admin exists through `corepack pnpm docker:bootstrap -- --company-name ...`.
 - For the seeded supervisor walkthrough, run `corepack pnpm seed:demo` and `corepack pnpm seed:demo:verify`.
+- `corepack pnpm seed:demo` now refreshes the reserved Demo/UAT company before reseeding, so use it as the authoritative demo reset before the walkthrough.
 - Confirm `corepack pnpm docker:smoke` passes.
 - Use the canonical browser origin `http://localhost:3000`.
 - Confirm the demo account, password, company, and role labels are known.
@@ -30,7 +31,7 @@ Before the session:
 | 4 min | Dashboard | Show company snapshot, recent activity, pending work, quick actions, and period control. | Dashboard is frontend-only and uses existing REST endpoints; widgets follow role access. |
 | 5 min | Financial Reports | Show business overview, daily/weekly/monthly/yearly reports, trial balance, general ledger, profit & loss, and balance sheet. Export one CSV and click Print on one report. | Reports are read-only, company-scoped, and based on posted vouchers plus existing CRM/property records where documented. Select a posting account before demonstrating General Ledger output. |
 | 4 min | Project/Property master | Show projects, cost centers, phases, blocks, zones, unit types/statuses, and units. | Master data supports inventory visibility and downstream CRM/property desk workflows. |
-| 4 min | CRM booking/sales/collections | Show customers, leads, bookings, sale contracts, installment schedules, and collections. | Sales users can access CRM without unrelated admin modules. Collections keep voucher-backed accounting context visible where the workflow expects it. |
+| 4 min | CRM booking/sales/collections | Show customers, leads, bookings, sale contracts, installment schedules, and collections. Search for `DEMO-COL-2026-001`, open the detail side panel, then open the receipt and click Print Receipt. | Sales users can access CRM without unrelated admin modules. `DEMO-COL-2026-001` demonstrates the seeded customer -> booking -> contract -> installment -> posted voucher -> collection -> printable receipt path. |
 | 4 min | HR attendance/leave | Show employees, attendance devices/mappings/logs, leave types, and leave requests. | HR users can reach HR and payroll; attendance and leave remain within Phase 1 lifecycle scope. |
 | 4 min | Payroll | Show salary structures, payroll runs, run detail, and payroll posting. | Payroll-only users reach payroll but not HR or accounting modules directly. |
 | 4 min | Audit & Documents | Show attachment list/detail, upload/finalize/download flow if storage is ready, and audit events as admin. | Files upload directly from browser to object storage through presigned URLs; audit events are admin-only. |
@@ -82,6 +83,7 @@ Recommended opening sequence:
 - Admin and sales users can work with customers, leads, bookings, sale contracts, installment schedules, and collections.
 - CRM selectors use scoped reference endpoints so sales users do not need unrelated admin navigation.
 - Collections use voucher-backed accounting context where the workflow expects it.
+- For the printable receipt walkthrough, sign in as `demo.sales@demo.realcapita.test` or `demo.admin@demo.realcapita.test`, open `/crm-property-desk/collections`, search for `DEMO-COL-2026-001`, then use `Receipt` or `Open Receipt`.
 
 ### HR
 

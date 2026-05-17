@@ -52,6 +52,156 @@ const makeCollectionRecord = (overrides = {}) => ({
     createdAt: ISO_DATE,
     updatedAt: ISO_DATE,
   },
+  booking: {
+    id: 'booking-1',
+    companyId: 'company-1',
+    projectId: 'project-1',
+    customerId: 'customer-1',
+    unitId: 'unit-1',
+    bookingDate: ISO_DATE,
+    bookingAmount: new Prisma.Decimal('50000.00'),
+    status: 'CONTRACTED',
+    notes: null,
+    createdAt: ISO_DATE,
+    updatedAt: ISO_DATE,
+    project: {
+      id: 'project-1',
+      companyId: 'company-1',
+      locationId: null,
+      code: 'RCH-TOWER',
+      name: 'Real Capita Tower',
+      description: null,
+      isActive: true,
+      createdAt: ISO_DATE,
+      updatedAt: ISO_DATE,
+    },
+    unit: {
+      id: 'unit-1',
+      projectId: 'project-1',
+      phaseId: null,
+      blockId: null,
+      zoneId: null,
+      unitTypeId: 'unit-type-1',
+      unitStatusId: 'unit-status-booked',
+      code: 'A-101',
+      name: 'Apartment 101',
+      description: null,
+      isActive: true,
+      createdAt: ISO_DATE,
+      updatedAt: ISO_DATE,
+    },
+  },
+  saleContract: {
+    id: 'contract-1',
+    companyId: 'company-1',
+    bookingId: 'booking-1',
+    contractDate: ISO_DATE,
+    contractAmount: new Prisma.Decimal('1500000.00'),
+    reference: 'SC-001',
+    notes: null,
+    createdAt: ISO_DATE,
+    updatedAt: ISO_DATE,
+    booking: {
+      id: 'booking-1',
+      companyId: 'company-1',
+      projectId: 'project-1',
+      customerId: 'customer-1',
+      unitId: 'unit-1',
+      bookingDate: ISO_DATE,
+      bookingAmount: new Prisma.Decimal('50000.00'),
+      status: 'CONTRACTED',
+      notes: null,
+      createdAt: ISO_DATE,
+      updatedAt: ISO_DATE,
+      project: {
+        id: 'project-1',
+        companyId: 'company-1',
+        locationId: null,
+        code: 'RCH-TOWER',
+        name: 'Real Capita Tower',
+        description: null,
+        isActive: true,
+        createdAt: ISO_DATE,
+        updatedAt: ISO_DATE,
+      },
+      unit: {
+        id: 'unit-1',
+        projectId: 'project-1',
+        phaseId: null,
+        blockId: null,
+        zoneId: null,
+        unitTypeId: 'unit-type-1',
+        unitStatusId: 'unit-status-booked',
+        code: 'A-101',
+        name: 'Apartment 101',
+        description: null,
+        isActive: true,
+        createdAt: ISO_DATE,
+        updatedAt: ISO_DATE,
+      },
+    },
+  },
+  installmentSchedule: {
+    id: 'schedule-1',
+    companyId: 'company-1',
+    saleContractId: 'contract-1',
+    sequenceNumber: 1,
+    dueDate: ISO_DATE,
+    amount: new Prisma.Decimal('250000.00'),
+    description: 'Down payment',
+    createdAt: ISO_DATE,
+    updatedAt: ISO_DATE,
+    saleContract: {
+      id: 'contract-1',
+      companyId: 'company-1',
+      bookingId: 'booking-1',
+      contractDate: ISO_DATE,
+      contractAmount: new Prisma.Decimal('1500000.00'),
+      reference: 'SC-001',
+      notes: null,
+      createdAt: ISO_DATE,
+      updatedAt: ISO_DATE,
+      booking: {
+        id: 'booking-1',
+        companyId: 'company-1',
+        projectId: 'project-1',
+        customerId: 'customer-1',
+        unitId: 'unit-1',
+        bookingDate: ISO_DATE,
+        bookingAmount: new Prisma.Decimal('50000.00'),
+        status: 'CONTRACTED',
+        notes: null,
+        createdAt: ISO_DATE,
+        updatedAt: ISO_DATE,
+        project: {
+          id: 'project-1',
+          companyId: 'company-1',
+          locationId: null,
+          code: 'RCH-TOWER',
+          name: 'Real Capita Tower',
+          description: null,
+          isActive: true,
+          createdAt: ISO_DATE,
+          updatedAt: ISO_DATE,
+        },
+        unit: {
+          id: 'unit-1',
+          projectId: 'project-1',
+          phaseId: null,
+          blockId: null,
+          zoneId: null,
+          unitTypeId: 'unit-type-1',
+          unitStatusId: 'unit-status-booked',
+          code: 'A-101',
+          name: 'Apartment 101',
+          description: null,
+          isActive: true,
+          createdAt: ISO_DATE,
+          updatedAt: ISO_DATE,
+        },
+      },
+    },
+  },
   ...overrides,
 });
 
@@ -110,7 +260,49 @@ test('collections service creates a collection with valid voucher linkage', asyn
   });
 
   assert.equal(collection.voucherStatus, 'POSTED');
+  assert.equal(collection.voucherType, 'RECEIPT');
   assert.equal(collection.bookingId, 'booking-1');
+  assert.equal(collection.customerPhone, '+8801712345678');
+  assert.equal(collection.customerEmail, 'jane@example.com');
+  assert.equal(collection.bookingProjectName, 'Real Capita Tower');
+  assert.equal(collection.bookingUnitCode, 'A-101');
+  assert.equal(collection.saleContractReference, 'SC-001');
+  assert.equal(collection.installmentSequenceNumber, 1);
+  assert.equal(collection.installmentAmount, '250000.00');
+});
+
+test('collections service returns nullable receipt context when optional links are absent', async () => {
+  const service = new CollectionsService(
+    {
+      collection: {
+        findFirst: async () =>
+          makeCollectionRecord({
+            bookingId: null,
+            saleContractId: null,
+            installmentScheduleId: null,
+            booking: null,
+            saleContract: null,
+            installmentSchedule: null,
+          }),
+      },
+    },
+    {
+      assertCompanyExists: async () => undefined,
+    },
+  );
+
+  const collection = await service.getCollectionDetail(
+    'company-1',
+    'collection-1',
+  );
+
+  assert.equal(collection.customerName, 'Jane Doe');
+  assert.equal(collection.voucherType, 'RECEIPT');
+  assert.equal(collection.bookingProjectName, null);
+  assert.equal(collection.bookingUnitCode, null);
+  assert.equal(collection.saleContractReference, null);
+  assert.equal(collection.installmentSequenceNumber, null);
+  assert.equal(collection.installmentAmount, null);
 });
 
 test('collections service rejects invalid cross-entity collection linkage', async () => {

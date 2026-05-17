@@ -36,11 +36,43 @@ const COLLECTION_SORT_FIELDS = [
   'updatedAt',
 ] as const;
 
+const COLLECTION_RECEIPT_INCLUDE = {
+  customer: true,
+  voucher: true,
+  booking: {
+    include: {
+      project: true,
+      unit: true,
+    },
+  },
+  saleContract: {
+    include: {
+      booking: {
+        include: {
+          project: true,
+          unit: true,
+        },
+      },
+    },
+  },
+  installmentSchedule: {
+    include: {
+      saleContract: {
+        include: {
+          booking: {
+            include: {
+              project: true,
+              unit: true,
+            },
+          },
+        },
+      },
+    },
+  },
+} satisfies Prisma.CollectionInclude;
+
 type CollectionRecord = Prisma.CollectionGetPayload<{
-  include: {
-    customer: true;
-    voucher: true;
-  };
+  include: typeof COLLECTION_RECEIPT_INCLUDE;
 }>;
 
 @Injectable()
@@ -114,10 +146,7 @@ export class CollectionsService {
     const [collections, total] = await Promise.all([
       this.prisma.collection.findMany({
         where,
-        include: {
-          customer: true,
-          voucher: true,
-        },
+        include: COLLECTION_RECEIPT_INCLUDE,
         orderBy,
         skip: getPaginationSkip(query),
         take: query.pageSize,
@@ -141,7 +170,10 @@ export class CollectionsService {
     return this.mapCollection(collection);
   }
 
-  async createCollection(companyId: string, createCollectionDto: CreateCollectionDto) {
+  async createCollection(
+    companyId: string,
+    createCollectionDto: CreateCollectionDto,
+  ) {
     await this.referenceService.assertCompanyExists(companyId);
 
     const customer = await this.referenceService.getCustomerRecord(
@@ -161,13 +193,18 @@ export class CollectionsService {
     );
 
     if (voucher.status !== 'POSTED') {
-      throw new BadRequestException('Collection must reference a posted voucher.');
+      throw new BadRequestException(
+        'Collection must reference a posted voucher.',
+      );
     }
 
     let bookingId = createCollectionDto.bookingId ?? null;
 
     if (bookingId) {
-      const booking = await this.referenceService.getBookingRecord(companyId, bookingId);
+      const booking = await this.referenceService.getBookingRecord(
+        companyId,
+        bookingId,
+      );
 
       if (booking.customerId !== createCollectionDto.customerId) {
         throw new BadRequestException(
@@ -215,7 +252,8 @@ export class CollectionsService {
 
       if (
         createCollectionDto.saleContractId &&
-        installmentSchedule.saleContractId !== createCollectionDto.saleContractId
+        installmentSchedule.saleContractId !==
+          createCollectionDto.saleContractId
       ) {
         throw new BadRequestException(
           'Collection sale contract and installment schedule do not match.',
@@ -247,7 +285,8 @@ export class CollectionsService {
             'collectionDate',
           ),
           amount: parseDecimalAmount(createCollectionDto.amount, 'amount'),
-          reference: normalizeOptionalString(createCollectionDto.reference) ?? null,
+          reference:
+            normalizeOptionalString(createCollectionDto.reference) ?? null,
           notes: normalizeOptionalString(createCollectionDto.notes) ?? null,
         },
       });
@@ -264,10 +303,7 @@ export class CollectionsService {
         id: collectionId,
         companyId,
       },
-      include: {
-        customer: true,
-        voucher: true,
-      },
+      include: COLLECTION_RECEIPT_INCLUDE,
     });
 
     if (!collection) {
@@ -278,18 +314,47 @@ export class CollectionsService {
   }
 
   private mapCollection(collection: CollectionRecord): CollectionDto {
+    const linkedBooking =
+      collection.booking ??
+      collection.saleContract?.booking ??
+      collection.installmentSchedule?.saleContract.booking ??
+      null;
+    const linkedSaleContract =
+      collection.saleContract ??
+      collection.installmentSchedule?.saleContract ??
+      null;
+    const linkedInstallmentSchedule = collection.installmentSchedule ?? null;
+
     return {
       id: collection.id,
       companyId: collection.companyId,
       customerId: collection.customerId,
       customerName: collection.customer.fullName,
+      customerPhone: collection.customer.phone,
+      customerEmail: collection.customer.email,
       voucherId: collection.voucherId,
+      voucherType: collection.voucher.voucherType,
       voucherStatus: collection.voucher.status,
       voucherDate: collection.voucher.voucherDate.toISOString().slice(0, 10),
       voucherReference: collection.voucher.reference,
       bookingId: collection.bookingId,
+      bookingProjectId: linkedBooking?.projectId ?? null,
+      bookingProjectName: linkedBooking?.project.name ?? null,
+      bookingUnitId: linkedBooking?.unitId ?? null,
+      bookingUnitCode: linkedBooking?.unit.code ?? null,
+      bookingUnitName: linkedBooking?.unit.name ?? null,
+      bookingDate:
+        linkedBooking?.bookingDate.toISOString().slice(0, 10) ?? null,
       saleContractId: collection.saleContractId,
+      saleContractReference: linkedSaleContract?.reference ?? null,
+      saleContractDate:
+        linkedSaleContract?.contractDate.toISOString().slice(0, 10) ?? null,
       installmentScheduleId: collection.installmentScheduleId,
+      installmentSequenceNumber:
+        linkedInstallmentSchedule?.sequenceNumber ?? null,
+      installmentDueDate:
+        linkedInstallmentSchedule?.dueDate.toISOString().slice(0, 10) ?? null,
+      installmentAmount: linkedInstallmentSchedule?.amount.toFixed(2) ?? null,
       collectionDate: collection.collectionDate.toISOString().slice(0, 10),
       amount: collection.amount.toFixed(2),
       reference: collection.reference,

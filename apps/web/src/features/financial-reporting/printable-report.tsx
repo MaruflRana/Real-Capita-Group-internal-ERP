@@ -63,6 +63,7 @@ export const PrintableReportHeader = ({
   activeCompany,
   additionalMetaItems = [],
   brandName = 'Real Capita ERP',
+  classificationLabel = 'Confidential - internal use only',
   companyName,
   dataSourceNote,
   generatedAt,
@@ -75,6 +76,7 @@ export const PrintableReportHeader = ({
   activeCompany: string;
   additionalMetaItems?: PrintableReportMetaItem[];
   brandName?: string;
+  classificationLabel?: ReactNode;
   companyName?: string;
   dataSourceNote?: ReactNode;
   generatedAt: ReactNode;
@@ -110,9 +112,7 @@ export const PrintableReportHeader = ({
             <p className="printable-report-company">{companyName}</p>
           ) : null}
         </div>
-        <p className="printable-report-classification">
-          Confidential - internal use only
-        </p>
+        <p className="printable-report-classification">{classificationLabel}</p>
       </div>
       <div className="printable-report-title-block">
         <h1>{title}</h1>

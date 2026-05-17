@@ -42,7 +42,8 @@ export class CollectionsListQueryDto extends ListQueryDto {
   voucherId?: string;
 
   @ApiPropertyOptional({
-    description: 'Inclusive lower bound for collectionDate in YYYY-MM-DD format.',
+    description:
+      'Inclusive lower bound for collectionDate in YYYY-MM-DD format.',
   })
   @trimToUndefined()
   @IsOptional()
@@ -52,7 +53,8 @@ export class CollectionsListQueryDto extends ListQueryDto {
   dateFrom?: string;
 
   @ApiPropertyOptional({
-    description: 'Inclusive upper bound for collectionDate in YYYY-MM-DD format.',
+    description:
+      'Inclusive upper bound for collectionDate in YYYY-MM-DD format.',
   })
   @trimToUndefined()
   @IsOptional()
@@ -101,7 +103,8 @@ export class CreateCollectionDto {
   collectionDate!: string;
 
   @ApiProperty({
-    description: 'Collection amount as a decimal string with up to 2 decimal places.',
+    description:
+      'Collection amount as a decimal string with up to 2 decimal places.',
     example: '250000.00',
   })
   @IsString()
@@ -143,8 +146,21 @@ export class CollectionDto {
   @ApiProperty()
   customerName!: string;
 
+  @ApiPropertyOptional({
+    nullable: true,
+  })
+  customerPhone!: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+  })
+  customerEmail!: string | null;
+
   @ApiProperty()
   voucherId!: string;
+
+  @ApiProperty()
+  voucherType!: string;
 
   @ApiProperty()
   voucherStatus!: string;
@@ -165,12 +181,67 @@ export class CollectionDto {
   @ApiPropertyOptional({
     nullable: true,
   })
+  bookingProjectId!: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+  })
+  bookingProjectName!: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+  })
+  bookingUnitId!: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+  })
+  bookingUnitCode!: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+  })
+  bookingUnitName!: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+  })
+  bookingDate!: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+  })
   saleContractId!: string | null;
 
   @ApiPropertyOptional({
     nullable: true,
   })
+  saleContractReference!: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+  })
+  saleContractDate!: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+  })
   installmentScheduleId!: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+  })
+  installmentSequenceNumber!: number | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+  })
+  installmentDueDate!: string | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+  })
+  installmentAmount!: string | null;
 
   @ApiProperty()
   collectionDate!: string;

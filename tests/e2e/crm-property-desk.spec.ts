@@ -71,13 +71,15 @@ const createMeta = (page: number, pageSize: number, total: number) => ({
   totalPages: Math.max(1, Math.ceil(total / pageSize)),
 });
 
-const paginate = <T,>(
+const paginate = <T>(
   items: T[],
   searchParams: URLSearchParams,
   defaultPageSize: number,
 ) => {
   const page = Number(searchParams.get('page') ?? '1');
-  const pageSize = Number(searchParams.get('pageSize') ?? String(defaultPageSize));
+  const pageSize = Number(
+    searchParams.get('pageSize') ?? String(defaultPageSize),
+  );
   const start = (page - 1) * pageSize;
 
   return {
@@ -91,11 +93,8 @@ const matchesSearch = (
   search: string | null,
 ) => !search || (value ?? '').toLowerCase().includes(search.toLowerCase());
 
-const inDateRange = (
-  value: string,
-  from: string | null,
-  to: string | null,
-) => (!from || value >= from) && (!to || value <= to);
+const inDateRange = (value: string, from: string | null, to: string | null) =>
+  (!from || value >= from) && (!to || value <= to);
 
 const optionalString = (value: unknown) =>
   typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
@@ -400,13 +399,27 @@ const setupCrmPropertyDeskApiMocks = async (
     companyId: string;
     customerId: string;
     customerName: string;
+    customerPhone: string | null;
+    customerEmail: string | null;
     voucherId: string;
+    voucherType: string;
     voucherStatus: string;
     voucherDate: string;
     voucherReference: string | null;
     bookingId: string | null;
+    bookingProjectId: string | null;
+    bookingProjectName: string | null;
+    bookingUnitId: string | null;
+    bookingUnitCode: string | null;
+    bookingUnitName: string | null;
+    bookingDate: string | null;
     saleContractId: string | null;
+    saleContractReference: string | null;
+    saleContractDate: string | null;
     installmentScheduleId: string | null;
+    installmentSequenceNumber: number | null;
+    installmentDueDate: string | null;
+    installmentAmount: string | null;
     collectionDate: string;
     amount: string;
     reference: string | null;
@@ -499,7 +512,9 @@ const setupCrmPropertyDeskApiMocks = async (
     }
 
     if (
-      pathname.endsWith('/companies/company-1/crm-property-desk/references/projects')
+      pathname.endsWith(
+        '/companies/company-1/crm-property-desk/references/projects',
+      )
     ) {
       const items = projects.filter(
         (project) =>
@@ -514,7 +529,9 @@ const setupCrmPropertyDeskApiMocks = async (
     }
 
     if (
-      pathname.endsWith('/companies/company-1/crm-property-desk/references/units')
+      pathname.endsWith(
+        '/companies/company-1/crm-property-desk/references/units',
+      )
     ) {
       const items = units.filter(
         (unit) =>
@@ -532,7 +549,9 @@ const setupCrmPropertyDeskApiMocks = async (
     }
 
     if (
-      pathname.endsWith('/companies/company-1/crm-property-desk/references/vouchers')
+      pathname.endsWith(
+        '/companies/company-1/crm-property-desk/references/vouchers',
+      )
     ) {
       const items = vouchers.filter(
         (voucher) =>
@@ -581,7 +600,10 @@ const setupCrmPropertyDeskApiMocks = async (
         await fulfillJson(
           route,
           409,
-          createApiError(409, 'A customer with this email already exists in the company.'),
+          createApiError(
+            409,
+            'A customer with this email already exists in the company.',
+          ),
         );
         return;
       }
@@ -590,7 +612,10 @@ const setupCrmPropertyDeskApiMocks = async (
         await fulfillJson(
           route,
           409,
-          createApiError(409, 'A customer with this phone already exists in the company.'),
+          createApiError(
+            409,
+            'A customer with this phone already exists in the company.',
+          ),
         );
         return;
       }
@@ -619,7 +644,11 @@ const setupCrmPropertyDeskApiMocks = async (
       const customer = getCustomer(getRequiredPathSegment(pathname));
 
       if (!customer) {
-        await fulfillJson(route, 404, createApiError(404, 'Customer not found.'));
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Customer not found.'),
+        );
         return;
       }
 
@@ -635,7 +664,11 @@ const setupCrmPropertyDeskApiMocks = async (
       const existing = getCustomer(customerId);
 
       if (!existing) {
-        await fulfillJson(route, 404, createApiError(404, 'Customer not found.'));
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Customer not found.'),
+        );
         return;
       }
 
@@ -647,13 +680,17 @@ const setupCrmPropertyDeskApiMocks = async (
       if (
         nextEmail &&
         customers.some(
-          (customer) => customer.id !== customerId && customer.email === nextEmail,
+          (customer) =>
+            customer.id !== customerId && customer.email === nextEmail,
         )
       ) {
         await fulfillJson(
           route,
           409,
-          createApiError(409, 'A customer with this email already exists in the company.'),
+          createApiError(
+            409,
+            'A customer with this email already exists in the company.',
+          ),
         );
         return;
       }
@@ -661,13 +698,17 @@ const setupCrmPropertyDeskApiMocks = async (
       if (
         nextPhone &&
         customers.some(
-          (customer) => customer.id !== customerId && customer.phone === nextPhone,
+          (customer) =>
+            customer.id !== customerId && customer.phone === nextPhone,
         )
       ) {
         await fulfillJson(
           route,
           409,
-          createApiError(409, 'A customer with this phone already exists in the company.'),
+          createApiError(
+            409,
+            'A customer with this phone already exists in the company.',
+          ),
         );
         return;
       }
@@ -678,8 +719,13 @@ const setupCrmPropertyDeskApiMocks = async (
         email: nextEmail,
         phone: nextPhone,
         address:
-          body.address === undefined ? existing.address : optionalString(body.address),
-        notes: body.notes === undefined ? existing.notes : optionalString(body.notes),
+          body.address === undefined
+            ? existing.address
+            : optionalString(body.address),
+        notes:
+          body.notes === undefined
+            ? existing.notes
+            : optionalString(body.notes),
         updatedAt: now,
       };
       customers = customers.map((customer) =>
@@ -697,7 +743,11 @@ const setupCrmPropertyDeskApiMocks = async (
       const existing = getCustomer(customerId);
 
       if (!existing) {
-        await fulfillJson(route, 404, createApiError(404, 'Customer not found.'));
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Customer not found.'),
+        );
         return;
       }
 
@@ -710,14 +760,20 @@ const setupCrmPropertyDeskApiMocks = async (
     }
 
     if (
-      pathname.match(/\/companies\/company-1\/customers\/[^/]+\/deactivate$/u) &&
+      pathname.match(
+        /\/companies\/company-1\/customers\/[^/]+\/deactivate$/u,
+      ) &&
       request.method() === 'POST'
     ) {
       const customerId = getRequiredPathSegment(pathname, 2);
       const existing = getCustomer(customerId);
 
       if (!existing) {
-        await fulfillJson(route, 404, createApiError(404, 'Customer not found.'));
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Customer not found.'),
+        );
         return;
       }
 
@@ -735,7 +791,8 @@ const setupCrmPropertyDeskApiMocks = async (
     ) {
       const items = leads.filter(
         (lead) =>
-          (!searchParams.get('projectId') || lead.projectId === searchParams.get('projectId')) &&
+          (!searchParams.get('projectId') ||
+            lead.projectId === searchParams.get('projectId')) &&
           (searchParams.get('status') === null ||
             lead.status === searchParams.get('status')) &&
           (searchParams.get('isActive') === null ||
@@ -758,7 +815,11 @@ const setupCrmPropertyDeskApiMocks = async (
       const project = projectId ? getProject(projectId) : null;
 
       if (projectId && !project) {
-        await fulfillJson(route, 404, createApiError(404, 'Project not found.'));
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Project not found.'),
+        );
         return;
       }
 
@@ -811,11 +872,17 @@ const setupCrmPropertyDeskApiMocks = async (
       }
 
       const projectId =
-        body.projectId === undefined ? existing.projectId : optionalString(body.projectId);
+        body.projectId === undefined
+          ? existing.projectId
+          : optionalString(body.projectId);
       const project = projectId ? getProject(projectId) : null;
 
       if (projectId && !project) {
-        await fulfillJson(route, 404, createApiError(404, 'Project not found.'));
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Project not found.'),
+        );
         return;
       }
 
@@ -825,11 +892,23 @@ const setupCrmPropertyDeskApiMocks = async (
         projectCode: project?.code ?? null,
         projectName: project?.name ?? null,
         fullName: (body.fullName as string | undefined) ?? existing.fullName,
-        email: body.email === undefined ? existing.email : normalizeEmail(body.email),
-        phone: body.phone === undefined ? existing.phone : normalizePhone(body.phone),
-        source: body.source === undefined ? existing.source : optionalString(body.source),
+        email:
+          body.email === undefined
+            ? existing.email
+            : normalizeEmail(body.email),
+        phone:
+          body.phone === undefined
+            ? existing.phone
+            : normalizePhone(body.phone),
+        source:
+          body.source === undefined
+            ? existing.source
+            : optionalString(body.source),
         status: (body.status as string | undefined) ?? existing.status,
-        notes: body.notes === undefined ? existing.notes : optionalString(body.notes),
+        notes:
+          body.notes === undefined
+            ? existing.notes
+            : optionalString(body.notes),
         updatedAt: now,
       };
       leads = leads.map((lead) => (lead.id === leadId ? updated : lead));
@@ -883,7 +962,8 @@ const setupCrmPropertyDeskApiMocks = async (
             booking.customerId === searchParams.get('customerId')) &&
           (!searchParams.get('projectId') ||
             booking.projectId === searchParams.get('projectId')) &&
-          (!searchParams.get('unitId') || booking.unitId === searchParams.get('unitId')) &&
+          (!searchParams.get('unitId') ||
+            booking.unitId === searchParams.get('unitId')) &&
           (searchParams.get('status') === null ||
             booking.status === searchParams.get('status')) &&
           inDateRange(
@@ -910,7 +990,11 @@ const setupCrmPropertyDeskApiMocks = async (
       const unit = getUnit(String(body.unitId));
 
       if (!customer) {
-        await fulfillJson(route, 404, createApiError(404, 'Customer not found.'));
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Customer not found.'),
+        );
         return;
       }
 
@@ -928,7 +1012,10 @@ const setupCrmPropertyDeskApiMocks = async (
         return;
       }
 
-      if (String(body.bookingAmount) === '999.00' || unit.unitStatusCode !== 'AVAILABLE') {
+      if (
+        String(body.bookingAmount) === '999.00' ||
+        unit.unitStatusCode !== 'AVAILABLE'
+      ) {
         await fulfillJson(
           route,
           400,
@@ -974,7 +1061,11 @@ const setupCrmPropertyDeskApiMocks = async (
       const booking = getBooking(getRequiredPathSegment(pathname));
 
       if (!booking) {
-        await fulfillJson(route, 404, createApiError(404, 'Booking not found.'));
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Booking not found.'),
+        );
         return;
       }
 
@@ -990,16 +1081,25 @@ const setupCrmPropertyDeskApiMocks = async (
       const existing = getBooking(bookingId);
 
       if (!existing) {
-        await fulfillJson(route, 404, createApiError(404, 'Booking not found.'));
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Booking not found.'),
+        );
         return;
       }
 
       const updated = {
         ...existing,
-        notes: body.notes === undefined ? existing.notes : optionalString(body.notes),
+        notes:
+          body.notes === undefined
+            ? existing.notes
+            : optionalString(body.notes),
         updatedAt: now,
       };
-      bookings = bookings.map((booking) => (booking.id === bookingId ? updated : booking));
+      bookings = bookings.map((booking) =>
+        booking.id === bookingId ? updated : booking,
+      );
       await fulfillJson(route, 200, updated);
       return;
     }
@@ -1021,8 +1121,14 @@ const setupCrmPropertyDeskApiMocks = async (
             searchParams.get('dateFrom'),
             searchParams.get('dateTo'),
           ) &&
-          (matchesSearch(saleContract.customerName, searchParams.get('search')) ||
-            matchesSearch(saleContract.projectName, searchParams.get('search')) ||
+          (matchesSearch(
+            saleContract.customerName,
+            searchParams.get('search'),
+          ) ||
+            matchesSearch(
+              saleContract.projectName,
+              searchParams.get('search'),
+            ) ||
             matchesSearch(saleContract.unitCode, searchParams.get('search')) ||
             matchesSearch(saleContract.reference, searchParams.get('search')) ||
             matchesSearch(saleContract.notes, searchParams.get('search'))),
@@ -1038,7 +1144,11 @@ const setupCrmPropertyDeskApiMocks = async (
       const booking = getBooking(String(body.bookingId));
 
       if (!booking) {
-        await fulfillJson(route, 404, createApiError(404, 'Booking not found.'));
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Booking not found.'),
+        );
         return;
       }
 
@@ -1046,7 +1156,10 @@ const setupCrmPropertyDeskApiMocks = async (
         await fulfillJson(
           route,
           400,
-          createApiError(400, 'Sale contract can only be created from an active booking.'),
+          createApiError(
+            400,
+            'Sale contract can only be created from an active booking.',
+          ),
         );
         return;
       }
@@ -1055,7 +1168,10 @@ const setupCrmPropertyDeskApiMocks = async (
         await fulfillJson(
           route,
           409,
-          createApiError(409, 'A sale contract already exists for the requested booking.'),
+          createApiError(
+            409,
+            'A sale contract already exists for the requested booking.',
+          ),
         );
         return;
       }
@@ -1064,7 +1180,10 @@ const setupCrmPropertyDeskApiMocks = async (
         await fulfillJson(
           route,
           400,
-          createApiError(400, 'Sale contract can only be created from an active booking.'),
+          createApiError(
+            400,
+            'Sale contract can only be created from an active booking.',
+          ),
         );
         return;
       }
@@ -1112,7 +1231,11 @@ const setupCrmPropertyDeskApiMocks = async (
       const saleContract = getSaleContract(getRequiredPathSegment(pathname));
 
       if (!saleContract) {
-        await fulfillJson(route, 404, createApiError(404, 'Sale contract not found.'));
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Sale contract not found.'),
+        );
         return;
       }
 
@@ -1128,15 +1251,24 @@ const setupCrmPropertyDeskApiMocks = async (
       const existing = getSaleContract(saleContractId);
 
       if (!existing) {
-        await fulfillJson(route, 404, createApiError(404, 'Sale contract not found.'));
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Sale contract not found.'),
+        );
         return;
       }
 
       const updated = {
         ...existing,
         reference:
-          body.reference === undefined ? existing.reference : optionalString(body.reference),
-        notes: body.notes === undefined ? existing.notes : optionalString(body.notes),
+          body.reference === undefined
+            ? existing.reference
+            : optionalString(body.reference),
+        notes:
+          body.notes === undefined
+            ? existing.notes
+            : optionalString(body.notes),
         updatedAt: now,
       };
       saleContracts = saleContracts.map((saleContract) =>
@@ -1155,8 +1287,10 @@ const setupCrmPropertyDeskApiMocks = async (
           (!searchParams.get('saleContractId') ||
             schedule.saleContractId === searchParams.get('saleContractId')) &&
           (searchParams.get('dueState') === null ||
-            (searchParams.get('dueState') === 'due' && schedule.dueDate === today) ||
-            (searchParams.get('dueState') === 'overdue' && schedule.dueDate < today)) &&
+            (searchParams.get('dueState') === 'due' &&
+              schedule.dueDate === today) ||
+            (searchParams.get('dueState') === 'overdue' &&
+              schedule.dueDate < today)) &&
           (matchesSearch(schedule.customerName, searchParams.get('search')) ||
             matchesSearch(schedule.unitCode, searchParams.get('search')) ||
             matchesSearch(schedule.unitName, searchParams.get('search')) ||
@@ -1180,7 +1314,11 @@ const setupCrmPropertyDeskApiMocks = async (
         : [];
 
       if (!saleContract) {
-        await fulfillJson(route, 404, createApiError(404, 'Sale contract not found.'));
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Sale contract not found.'),
+        );
         return;
       }
 
@@ -1248,13 +1386,19 @@ const setupCrmPropertyDeskApiMocks = async (
     }
 
     if (
-      pathname.match(/\/companies\/company-1\/installment-schedules\/[^/]+$/u) &&
+      pathname.match(
+        /\/companies\/company-1\/installment-schedules\/[^/]+$/u,
+      ) &&
       request.method() === 'GET'
     ) {
       const schedule = getSchedule(getRequiredPathSegment(pathname));
 
       if (!schedule) {
-        await fulfillJson(route, 404, createApiError(404, 'Installment schedule not found.'));
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Installment schedule not found.'),
+        );
         return;
       }
 
@@ -1263,22 +1407,35 @@ const setupCrmPropertyDeskApiMocks = async (
     }
 
     if (
-      pathname.match(/\/companies\/company-1\/installment-schedules\/[^/]+$/u) &&
+      pathname.match(
+        /\/companies\/company-1\/installment-schedules\/[^/]+$/u,
+      ) &&
       request.method() === 'PATCH'
     ) {
       const scheduleId = getRequiredPathSegment(pathname);
       const existing = getSchedule(scheduleId);
 
       if (!existing) {
-        await fulfillJson(route, 404, createApiError(404, 'Installment schedule not found.'));
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Installment schedule not found.'),
+        );
         return;
       }
 
-      if (collections.some((collection) => collection.installmentScheduleId === scheduleId)) {
+      if (
+        collections.some(
+          (collection) => collection.installmentScheduleId === scheduleId,
+        )
+      ) {
         await fulfillJson(
           route,
           400,
-          createApiError(400, 'Installment schedules with linked collections cannot be changed.'),
+          createApiError(
+            400,
+            'Installment schedules with linked collections cannot be changed.',
+          ),
         );
         return;
       }
@@ -1303,7 +1460,8 @@ const setupCrmPropertyDeskApiMocks = async (
         return;
       }
 
-      const nextAmount = body.amount === undefined ? existing.amount : String(body.amount);
+      const nextAmount =
+        body.amount === undefined ? existing.amount : String(body.amount);
       const updated = {
         ...existing,
         sequenceNumber:
@@ -1321,28 +1479,43 @@ const setupCrmPropertyDeskApiMocks = async (
             : optionalString(body.description),
         updatedAt: now,
       };
-      schedules = schedules.map((schedule) => (schedule.id === scheduleId ? updated : schedule));
+      schedules = schedules.map((schedule) =>
+        schedule.id === scheduleId ? updated : schedule,
+      );
       await fulfillJson(route, 200, updated);
       return;
     }
 
     if (
-      pathname.match(/\/companies\/company-1\/installment-schedules\/[^/]+$/u) &&
+      pathname.match(
+        /\/companies\/company-1\/installment-schedules\/[^/]+$/u,
+      ) &&
       request.method() === 'DELETE'
     ) {
       const scheduleId = getRequiredPathSegment(pathname);
       const existing = getSchedule(scheduleId);
 
       if (!existing) {
-        await fulfillJson(route, 404, createApiError(404, 'Installment schedule not found.'));
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Installment schedule not found.'),
+        );
         return;
       }
 
-      if (collections.some((collection) => collection.installmentScheduleId === scheduleId)) {
+      if (
+        collections.some(
+          (collection) => collection.installmentScheduleId === scheduleId,
+        )
+      ) {
         await fulfillJson(
           route,
           400,
-          createApiError(400, 'Installment schedules with linked collections cannot be changed.'),
+          createApiError(
+            400,
+            'Installment schedules with linked collections cannot be changed.',
+          ),
         );
         return;
       }
@@ -1365,7 +1538,8 @@ const setupCrmPropertyDeskApiMocks = async (
           (!searchParams.get('saleContractId') ||
             collection.saleContractId === searchParams.get('saleContractId')) &&
           (!searchParams.get('installmentScheduleId') ||
-            collection.installmentScheduleId === searchParams.get('installmentScheduleId')) &&
+            collection.installmentScheduleId ===
+              searchParams.get('installmentScheduleId')) &&
           (!searchParams.get('voucherId') ||
             collection.voucherId === searchParams.get('voucherId')) &&
           inDateRange(
@@ -1376,7 +1550,10 @@ const setupCrmPropertyDeskApiMocks = async (
           (matchesSearch(collection.customerName, searchParams.get('search')) ||
             matchesSearch(collection.reference, searchParams.get('search')) ||
             matchesSearch(collection.notes, searchParams.get('search')) ||
-            matchesSearch(collection.voucherReference, searchParams.get('search'))),
+            matchesSearch(
+              collection.voucherReference,
+              searchParams.get('search'),
+            )),
       );
       await fulfillJson(route, 200, paginate(items, searchParams, 100));
       return;
@@ -1393,7 +1570,11 @@ const setupCrmPropertyDeskApiMocks = async (
       const installmentScheduleId = optionalString(body.installmentScheduleId);
 
       if (!customer) {
-        await fulfillJson(route, 404, createApiError(404, 'Customer not found.'));
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Customer not found.'),
+        );
         return;
       }
 
@@ -1401,13 +1582,20 @@ const setupCrmPropertyDeskApiMocks = async (
         await fulfillJson(
           route,
           400,
-          createApiError(400, 'Inactive customers cannot receive new collections.'),
+          createApiError(
+            400,
+            'Inactive customers cannot receive new collections.',
+          ),
         );
         return;
       }
 
       if (!voucher) {
-        await fulfillJson(route, 404, createApiError(404, 'Voucher not found.'));
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Voucher not found.'),
+        );
         return;
       }
 
@@ -1420,11 +1608,16 @@ const setupCrmPropertyDeskApiMocks = async (
         return;
       }
 
-      if (collections.some((collection) => collection.voucherId === voucher.id)) {
+      if (
+        collections.some((collection) => collection.voucherId === voucher.id)
+      ) {
         await fulfillJson(
           route,
           409,
-          createApiError(409, 'The voucher is already linked to an existing collection.'),
+          createApiError(
+            409,
+            'The voucher is already linked to an existing collection.',
+          ),
         );
         return;
       }
@@ -1433,7 +1626,10 @@ const setupCrmPropertyDeskApiMocks = async (
         await fulfillJson(
           route,
           400,
-          createApiError(400, 'Collection booking and sale contract do not match.'),
+          createApiError(
+            400,
+            'Collection booking and sale contract do not match.',
+          ),
         );
         return;
       }
@@ -1444,7 +1640,11 @@ const setupCrmPropertyDeskApiMocks = async (
         const booking = getBooking(bookingId);
 
         if (!booking) {
-          await fulfillJson(route, 404, createApiError(404, 'Booking not found.'));
+          await fulfillJson(
+            route,
+            404,
+            createApiError(404, 'Booking not found.'),
+          );
           return;
         }
 
@@ -1452,7 +1652,10 @@ const setupCrmPropertyDeskApiMocks = async (
           await fulfillJson(
             route,
             400,
-            createApiError(400, 'Collection customer does not match the referenced booking.'),
+            createApiError(
+              400,
+              'Collection customer does not match the referenced booking.',
+            ),
           );
           return;
         }
@@ -1462,7 +1665,11 @@ const setupCrmPropertyDeskApiMocks = async (
         const saleContract = getSaleContract(saleContractId);
 
         if (!saleContract) {
-          await fulfillJson(route, 404, createApiError(404, 'Sale contract not found.'));
+          await fulfillJson(
+            route,
+            404,
+            createApiError(404, 'Sale contract not found.'),
+          );
           return;
         }
 
@@ -1482,7 +1689,10 @@ const setupCrmPropertyDeskApiMocks = async (
           await fulfillJson(
             route,
             400,
-            createApiError(400, 'Collection booking and sale contract do not match.'),
+            createApiError(
+              400,
+              'Collection booking and sale contract do not match.',
+            ),
           );
           return;
         }
@@ -1541,18 +1751,67 @@ const setupCrmPropertyDeskApiMocks = async (
         resolvedBookingId = schedule.bookingId;
       }
 
+      const linkedSchedule = installmentScheduleId
+        ? (getSchedule(installmentScheduleId) ?? null)
+        : null;
+      const linkedSaleContract = saleContractId
+        ? (getSaleContract(saleContractId) ?? null)
+        : linkedSchedule
+          ? (getSaleContract(linkedSchedule.saleContractId) ?? null)
+          : null;
+      const linkedBooking = resolvedBookingId
+        ? (getBooking(resolvedBookingId) ?? null)
+        : linkedSaleContract
+          ? (getBooking(linkedSaleContract.bookingId) ?? null)
+          : null;
+
       const record = {
         id: `collection-${collections.length + 1}`,
         companyId: 'company-1',
         customerId: customer.id,
         customerName: customer.fullName,
+        customerPhone: customer.phone,
+        customerEmail: customer.email,
         voucherId: voucher.id,
+        voucherType: voucher.voucherType,
         voucherStatus: voucher.status,
         voucherDate: voucher.voucherDate,
         voucherReference: voucher.reference,
         bookingId: resolvedBookingId,
+        bookingProjectId:
+          linkedBooking?.projectId ??
+          linkedSaleContract?.projectId ??
+          linkedSchedule?.projectId ??
+          null,
+        bookingProjectName:
+          linkedBooking?.projectName ??
+          linkedSaleContract?.projectName ??
+          linkedSchedule?.projectName ??
+          null,
+        bookingUnitId:
+          linkedBooking?.unitId ??
+          linkedSaleContract?.unitId ??
+          linkedSchedule?.unitId ??
+          null,
+        bookingUnitCode:
+          linkedBooking?.unitCode ??
+          linkedSaleContract?.unitCode ??
+          linkedSchedule?.unitCode ??
+          null,
+        bookingUnitName:
+          linkedBooking?.unitName ??
+          linkedSaleContract?.unitName ??
+          linkedSchedule?.unitName ??
+          null,
+        bookingDate:
+          linkedBooking?.bookingDate ?? linkedSaleContract?.bookingDate ?? null,
         saleContractId,
+        saleContractReference: linkedSaleContract?.reference ?? null,
+        saleContractDate: linkedSaleContract?.contractDate ?? null,
         installmentScheduleId,
+        installmentSequenceNumber: linkedSchedule?.sequenceNumber ?? null,
+        installmentDueDate: linkedSchedule?.dueDate ?? null,
+        installmentAmount: linkedSchedule?.amount ?? null,
         collectionDate: String(body.collectionDate),
         amount: String(body.amount),
         reference: optionalString(body.reference),
@@ -1591,7 +1850,11 @@ const setupCrmPropertyDeskApiMocks = async (
       const collection = getCollection(getRequiredPathSegment(pathname));
 
       if (!collection) {
-        await fulfillJson(route, 404, createApiError(404, 'Collection not found.'));
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Collection not found.'),
+        );
         return;
       }
 
@@ -1612,7 +1875,9 @@ test('redirects CRM/property desk routes to login when no browser session exists
 }) => {
   await page.goto('/crm-property-desk/customers');
 
-  await expect(page).toHaveURL(/\/login\?next=%2Fcrm-property-desk%2Fcustomers/);
+  await expect(page).toHaveURL(
+    /\/login\?next=%2Fcrm-property-desk%2Fcustomers/,
+  );
 });
 
 test('renders CRM/property desk navigation and supports customer and lead operations', async ({
@@ -1628,8 +1893,12 @@ test('renders CRM/property desk navigation and supports customer and lead operat
   await expect(page.getByRole('link', { name: 'Customers' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Leads' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Bookings' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Sale Contracts' })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Installment Schedules' })).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'Sale Contracts' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'Installment Schedules' }),
+  ).toBeVisible();
   await expect(page.getByRole('link', { name: 'Collections' })).toBeVisible();
 
   await page.getByRole('button', { name: 'New customer' }).click();
@@ -1638,16 +1907,24 @@ test('renders CRM/property desk navigation and supports customer and lead operat
   await customerDialog.getByLabel('Email').fill('nadia.islam@example.com');
   await customerDialog.getByLabel('Phone').fill('8801910000000');
   await customerDialog.getByLabel('Address').fill('Gulshan, Dhaka');
-  await customerDialog.getByLabel('Notes').fill('Created from Prompt 15 smoke test');
+  await customerDialog
+    .getByLabel('Notes')
+    .fill('Created from Prompt 15 smoke test');
   await customerDialog.getByRole('button', { name: 'Create customer' }).click();
   await expect(customerDialog).toBeHidden();
   await expect(page.locator('tr', { hasText: 'Nadia Islam' })).toBeVisible();
 
   await page.getByRole('button', { name: 'New customer' }).click();
   const duplicateCustomerDialog = page.getByRole('dialog');
-  await duplicateCustomerDialog.getByLabel('Customer name').fill('Duplicate Sarah');
-  await duplicateCustomerDialog.getByLabel('Email').fill('sarah.ahmed@example.com');
-  await duplicateCustomerDialog.getByRole('button', { name: 'Create customer' }).click();
+  await duplicateCustomerDialog
+    .getByLabel('Customer name')
+    .fill('Duplicate Sarah');
+  await duplicateCustomerDialog
+    .getByLabel('Email')
+    .fill('sarah.ahmed@example.com');
+  await duplicateCustomerDialog
+    .getByRole('button', { name: 'Create customer' })
+    .click();
   await expect(
     duplicateCustomerDialog.getByText(
       'A customer with this email already exists in the company.',
@@ -1687,12 +1964,18 @@ test('supports booking create and detail flow and surfaces invalid booking error
   await bookingDialog.getByLabel('Unit').selectOption('unit-available-1');
   await bookingDialog.getByLabel('Booking date').fill(today);
   await bookingDialog.getByLabel('Booking amount').fill('999.00');
-  await bookingDialog.getByLabel('Notes').fill('Should surface backend unit-state error');
+  await bookingDialog
+    .getByLabel('Notes')
+    .fill('Should surface backend unit-state error');
   await bookingDialog.getByRole('button', { name: 'Create booking' }).click();
-  await expect(bookingDialog.getByText('Only AVAILABLE units can be booked.')).toBeVisible();
+  await expect(
+    bookingDialog.getByText('Only AVAILABLE units can be booked.'),
+  ).toBeVisible();
 
   await bookingDialog.getByLabel('Booking amount').fill('75000.00');
-  await bookingDialog.getByLabel('Notes').fill('First booking created from the Prompt 15 UI');
+  await bookingDialog
+    .getByLabel('Notes')
+    .fill('First booking created from the Prompt 15 UI');
   await bookingDialog.getByRole('button', { name: 'Create booking' }).click();
   await expect(bookingDialog).toBeHidden();
 
@@ -1703,12 +1986,16 @@ test('supports booking create and detail flow and surfaces invalid booking error
   const bookingDetailDialog = page.getByRole('dialog');
   await expect(bookingDetailDialog.getByText('Apartment 101')).toBeVisible();
   await bookingDetailDialog.getByLabel('Notes').fill('Booking notes updated');
-  await bookingDetailDialog.getByRole('button', { name: 'Save changes' }).click();
+  await bookingDetailDialog
+    .getByRole('button', { name: 'Save changes' })
+    .click();
   await expect(bookingDetailDialog).toBeHidden();
 
   await newBookingRow.getByRole('button', { name: 'View / Edit' }).click();
   const reopenedBookingDialog = page.getByRole('dialog');
-  await expect(reopenedBookingDialog.getByLabel('Notes')).toHaveValue('Booking notes updated');
+  await expect(reopenedBookingDialog.getByLabel('Notes')).toHaveValue(
+    'Booking notes updated',
+  );
 });
 
 test('supports sale contract creation plus installment schedule CRUD and invalid contract errors', async ({
@@ -1718,7 +2005,9 @@ test('supports sale contract creation plus installment schedule CRUD and invalid
   await setupCrmPropertyDeskApiMocks(page, { authenticated: true });
 
   await page.goto('/crm-property-desk/sale-contracts');
-  await expect(page.getByRole('heading', { name: 'Sale Contracts' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Sale Contracts' }),
+  ).toBeVisible();
 
   await page.getByRole('button', { name: 'New contract' }).click();
   const contractDialog = page.getByRole('dialog');
@@ -1727,7 +2016,9 @@ test('supports sale contract creation plus installment schedule CRUD and invalid
   await contractDialog.getByLabel('Contract amount').fill('999.00');
   await contractDialog.getByRole('button', { name: 'Create contract' }).click();
   await expect(
-    contractDialog.getByText('Sale contract can only be created from an active booking.'),
+    contractDialog.getByText(
+      'Sale contract can only be created from an active booking.',
+    ),
   ).toBeVisible();
 
   await contractDialog.getByLabel('Contract amount').fill('900000.00');
@@ -1738,15 +2029,21 @@ test('supports sale contract creation plus installment schedule CRUD and invalid
   await expect(page.locator('tr', { hasText: 'SC-002' })).toBeVisible();
 
   await page.getByRole('link', { name: 'Installment Schedules' }).click();
-  await expect(page.getByRole('heading', { name: 'Installment Schedules' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Installment Schedules' }),
+  ).toBeVisible();
   await page.getByRole('button', { name: 'New schedules' }).click();
 
   const scheduleDialog = page.getByRole('dialog');
-  await scheduleDialog.getByLabel('Sale contract').selectOption('sale-contract-2');
+  await scheduleDialog
+    .getByLabel('Sale contract')
+    .selectOption('sale-contract-2');
   await scheduleDialog.locator('#schedule-sequence-0').fill('1');
   await scheduleDialog.locator('#schedule-date-0').fill(today);
   await scheduleDialog.locator('#schedule-amount-0').fill('250000.00');
-  await scheduleDialog.locator('#schedule-description-0').fill('Down payment created');
+  await scheduleDialog
+    .locator('#schedule-description-0')
+    .fill('Down payment created');
   await scheduleDialog.getByRole('button', { name: 'Add row' }).click();
   await scheduleDialog.locator('#schedule-sequence-1').fill('2');
   await scheduleDialog.locator('#schedule-date-1').fill('2026-04-17');
@@ -1754,7 +2051,9 @@ test('supports sale contract creation plus installment schedule CRUD and invalid
   await scheduleDialog
     .locator('#schedule-description-1')
     .fill('Milestone installment created');
-  await scheduleDialog.getByRole('button', { name: 'Create schedules' }).click();
+  await scheduleDialog
+    .getByRole('button', { name: 'Create schedules' })
+    .click();
   await expect(scheduleDialog).toBeHidden();
 
   const primaryScheduleRow = page
@@ -1766,14 +2065,20 @@ test('supports sale contract creation plus installment schedule CRUD and invalid
   await primaryScheduleRow.getByRole('button', { name: 'Edit' }).click();
 
   const editScheduleDialog = page.getByRole('dialog');
-  await editScheduleDialog.getByLabel('Description').fill('Down payment revised');
+  await editScheduleDialog
+    .getByLabel('Description')
+    .fill('Down payment revised');
   const scheduleUpdateResponse = page.waitForResponse(
     (response) =>
-      response.url().includes('/api/v1/companies/company-1/installment-schedules/') &&
+      response
+        .url()
+        .includes('/api/v1/companies/company-1/installment-schedules/') &&
       response.request().method() === 'PATCH' &&
       response.status() === 200,
   );
-  await editScheduleDialog.getByRole('button', { name: 'Save changes' }).click();
+  await editScheduleDialog
+    .getByRole('button', { name: 'Save changes' })
+    .click();
   await scheduleUpdateResponse;
   await expect(editScheduleDialog).toBeHidden();
   await page.reload();
@@ -1809,27 +2114,92 @@ test('supports collection creation and linkage detail and surfaces invalid colle
   const collectionDialog = page.getByRole('dialog');
   await collectionDialog.getByLabel('Customer').selectOption('customer-1');
   await collectionDialog.getByLabel('Posted voucher').selectOption('voucher-1');
-  await collectionDialog.getByLabel('Booking').selectOption('booking-existing-1');
-  await collectionDialog.getByLabel('Sale contract').selectOption('sale-contract-existing-1');
-  await collectionDialog.getByLabel('Installment schedule').selectOption('schedule-existing-1');
+  await collectionDialog
+    .getByLabel('Booking')
+    .selectOption('booking-existing-1');
+  await collectionDialog
+    .getByLabel('Sale contract')
+    .selectOption('sale-contract-existing-1');
+  await collectionDialog
+    .getByLabel('Installment schedule')
+    .selectOption('schedule-existing-1');
   await collectionDialog.getByLabel('Collection date').fill(today);
   await collectionDialog.getByLabel('Collection amount').fill('999.00');
-  await collectionDialog.getByRole('button', { name: 'Create collection' }).click();
+  await collectionDialog
+    .getByRole('button', { name: 'Create collection' })
+    .click();
   await expect(
-    collectionDialog.getByText('Collection booking and sale contract do not match.'),
+    collectionDialog.getByText(
+      'Collection booking and sale contract do not match.',
+    ),
   ).toBeVisible();
 
   await collectionDialog.getByLabel('Collection amount').fill('100000.00');
   await collectionDialog.getByLabel('Reference').fill('COL-001');
-  await collectionDialog.getByLabel('Notes').fill('Installment collected through receipt voucher');
-  await collectionDialog.getByRole('button', { name: 'Create collection' }).click();
+  await collectionDialog
+    .getByLabel('Notes')
+    .fill('Installment collected through receipt voucher');
+  await collectionDialog
+    .getByRole('button', { name: 'Create collection' })
+    .click();
   await expect(collectionDialog).toBeHidden();
 
   const collectionRow = page.locator('tr', { hasText: 'RC-RECEIPT-001' });
   await expect(collectionRow).toContainText('Sarah Ahmed');
+  await expect(
+    collectionRow.getByRole('link', { name: 'Receipt' }),
+  ).toBeVisible();
   await collectionRow.getByRole('button', { name: 'View' }).click();
 
   const detailDialog = page.getByRole('dialog');
-  await expect(detailDialog.getByText('Installment collected through receipt voucher')).toBeVisible();
+  await expect(
+    detailDialog.getByText('Installment collected through receipt voucher'),
+  ).toBeVisible();
   await expect(detailDialog.getByText('RC-RECEIPT-001')).toBeVisible();
+  await expect(
+    detailDialog.getByRole('link', { name: 'Open Receipt' }),
+  ).toHaveAttribute(
+    'href',
+    '/crm-property-desk/collections/collection-1/receipt',
+  );
+  await detailDialog.getByRole('link', { name: 'Open Receipt' }).click();
+
+  await expect(page).toHaveURL(
+    /\/crm-property-desk\/collections\/collection-1\/receipt/u,
+  );
+  await expect(
+    page.getByRole('heading', { name: 'Customer Collection Receipt' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Print Receipt' }),
+  ).toBeVisible();
+  await expect(page.getByText('100,000.00').first()).toBeVisible();
+  await expect(page.getByText('Real Capita Tower').first()).toBeVisible();
+  await expect(page.getByText('C-301').first()).toBeVisible();
+  await expect(page.getByText('SC-001').first()).toBeVisible();
+  await expect(page.getByText('Installment #1').first()).toBeVisible();
+  await expect(page.getByText('Posted').first()).toBeVisible();
+  await expect(
+    page
+      .getByTestId('printable-report-screen-content')
+      .getByText(
+        'This acknowledgement records an ERP collection linked to a posted accounting voucher.',
+      ),
+  ).toBeVisible();
+
+  await page.emulateMedia({ media: 'print' });
+  await expect(
+    page.getByRole('button', { name: 'Print Receipt' }),
+  ).toBeHidden();
+  await expect(
+    page.getByTestId('printable-report-screen-content'),
+  ).toBeHidden();
+  await expect(page.getByTestId('collection-receipt-printable')).toBeVisible();
+  await expect(
+    page.getByTestId('collection-receipt-printable'),
+  ).not.toContainText('undefined');
+  await expect(
+    page.getByTestId('collection-receipt-printable'),
+  ).not.toContainText('null');
+  await page.emulateMedia({ media: 'screen' });
 });
