@@ -16,6 +16,7 @@ import {
   getBooking,
   getCollection,
   getCustomer,
+  getCustomerProfile,
   getInstallmentSchedule,
   getLead,
   getSaleContract,
@@ -60,7 +61,9 @@ import type {
 
 const assertCompanyId = (companyId: string | undefined): string => {
   if (!companyId) {
-    throw new Error('A company context is required for CRM/property desk operations.');
+    throw new Error(
+      'A company context is required for CRM/property desk operations.',
+    );
   }
 
   return companyId;
@@ -78,6 +81,8 @@ export const crmPropertyDeskKeys = {
     ['crm-property-desk', companyId, 'customers', query] as const,
   customer: (companyId: string, customerId: string) =>
     ['crm-property-desk', companyId, 'customer', customerId] as const,
+  customerProfile: (companyId: string, customerId: string) =>
+    ['crm-property-desk', companyId, 'customer-profile', customerId] as const,
   leads: (companyId: string, query: LeadListQueryParams) =>
     ['crm-property-desk', companyId, 'leads', query] as const,
   lead: (companyId: string, leadId: string) =>
@@ -93,7 +98,8 @@ export const crmPropertyDeskKeys = {
   installmentSchedules: (
     companyId: string,
     query: InstallmentScheduleListQueryParams,
-  ) => ['crm-property-desk', companyId, 'installment-schedules', query] as const,
+  ) =>
+    ['crm-property-desk', companyId, 'installment-schedules', query] as const,
   installmentSchedule: (companyId: string, installmentScheduleId: string) =>
     [
       'crm-property-desk',
@@ -170,8 +176,25 @@ export const useCustomer = (
   enabled = true,
 ) =>
   useQuery({
-    queryKey: crmPropertyDeskKeys.customer(companyId ?? 'no-company', customerId),
+    queryKey: crmPropertyDeskKeys.customer(
+      companyId ?? 'no-company',
+      customerId,
+    ),
     queryFn: () => getCustomer(assertCompanyId(companyId), customerId),
+    enabled: enabled && Boolean(companyId) && customerId.length > 0,
+  });
+
+export const useCustomerProfile = (
+  companyId: string | undefined,
+  customerId: string,
+  enabled = true,
+) =>
+  useQuery({
+    queryKey: crmPropertyDeskKeys.customerProfile(
+      companyId ?? 'no-company',
+      customerId,
+    ),
+    queryFn: () => getCustomerProfile(assertCompanyId(companyId), customerId),
     enabled: enabled && Boolean(companyId) && customerId.length > 0,
   });
 
@@ -270,11 +293,18 @@ export const useSaveLead = (companyId: string | undefined) => {
       payload: CreateLeadPayload | UpdateLeadPayload;
     }) =>
       leadId
-        ? updateLead(assertCompanyId(companyId), leadId, payload as UpdateLeadPayload)
+        ? updateLead(
+            assertCompanyId(companyId),
+            leadId,
+            payload as UpdateLeadPayload,
+          )
         : createLead(assertCompanyId(companyId), payload as CreateLeadPayload),
     onSuccess: async (lead) => {
       if (companyId) {
-        queryClient.setQueryData(crmPropertyDeskKeys.lead(companyId, lead.id), lead);
+        queryClient.setQueryData(
+          crmPropertyDeskKeys.lead(companyId, lead.id),
+          lead,
+        );
       }
 
       await invalidateCrmPropertyDesk(queryClient, companyId);
@@ -298,7 +328,10 @@ export const useToggleLead = (companyId: string | undefined) => {
         : activateLead(assertCompanyId(companyId), leadId),
     onSuccess: async (lead) => {
       if (companyId) {
-        queryClient.setQueryData(crmPropertyDeskKeys.lead(companyId, lead.id), lead);
+        queryClient.setQueryData(
+          crmPropertyDeskKeys.lead(companyId, lead.id),
+          lead,
+        );
       }
 
       await invalidateCrmPropertyDesk(queryClient, companyId);
@@ -368,7 +401,10 @@ export const useSaleContracts = (
   enabled = true,
 ) =>
   useQuery({
-    queryKey: crmPropertyDeskKeys.saleContracts(companyId ?? 'no-company', query),
+    queryKey: crmPropertyDeskKeys.saleContracts(
+      companyId ?? 'no-company',
+      query,
+    ),
     queryFn: () => listSaleContracts(assertCompanyId(companyId), query),
     enabled: enabled && Boolean(companyId),
   });
@@ -450,7 +486,9 @@ export const useInstallmentSchedule = (
     enabled: enabled && Boolean(companyId) && installmentScheduleId.length > 0,
   });
 
-export const useCreateInstallmentSchedules = (companyId: string | undefined) => {
+export const useCreateInstallmentSchedules = (
+  companyId: string | undefined,
+) => {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -481,7 +519,10 @@ export const useUpdateInstallmentSchedule = (companyId: string | undefined) => {
     onSuccess: async (installmentSchedule) => {
       if (companyId) {
         queryClient.setQueryData(
-          crmPropertyDeskKeys.installmentSchedule(companyId, installmentSchedule.id),
+          crmPropertyDeskKeys.installmentSchedule(
+            companyId,
+            installmentSchedule.id,
+          ),
           installmentSchedule,
         );
       }
@@ -496,7 +537,10 @@ export const useRemoveInstallmentSchedule = (companyId: string | undefined) => {
 
   return useMutation({
     mutationFn: (installmentScheduleId: string) =>
-      removeInstallmentSchedule(assertCompanyId(companyId), installmentScheduleId),
+      removeInstallmentSchedule(
+        assertCompanyId(companyId),
+        installmentScheduleId,
+      ),
     onSuccess: async () => {
       await invalidateCrmPropertyDesk(queryClient, companyId);
     },
@@ -520,7 +564,10 @@ export const useCollection = (
   enabled = true,
 ) =>
   useQuery({
-    queryKey: crmPropertyDeskKeys.collection(companyId ?? 'no-company', collectionId),
+    queryKey: crmPropertyDeskKeys.collection(
+      companyId ?? 'no-company',
+      collectionId,
+    ),
     queryFn: () => getCollection(assertCompanyId(companyId), collectionId),
     enabled: enabled && Boolean(companyId) && collectionId.length > 0,
   });

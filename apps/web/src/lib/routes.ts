@@ -60,6 +60,9 @@ export const getPayrollRunDetailRoute = (payrollRunId: string) =>
 export const getCollectionReceiptRoute = (collectionId: string) =>
   `${APP_ROUTES.crmPropertyDeskCollections}/${collectionId}/receipt`;
 
+export const getCustomerProfileRoute = (customerId: string) =>
+  `${APP_ROUTES.crmPropertyDeskCustomers}/${customerId}`;
+
 export const PROTECTED_ROUTE_PREFIXES = [
   '/dashboard',
   '/accounting',

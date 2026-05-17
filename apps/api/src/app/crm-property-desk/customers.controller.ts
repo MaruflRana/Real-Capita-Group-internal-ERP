@@ -25,6 +25,7 @@ import { CustomersService } from './customers.service';
 import {
   CreateCustomerDto,
   CustomerDto,
+  CustomerProfileDto,
   CustomersListQueryDto,
   CustomersListResponseDto,
   UpdateCustomerDto,
@@ -58,6 +59,25 @@ export class CustomersController {
     @Query() query: CustomersListQueryDto,
   ) {
     return this.customersService.listCustomers(companyId, query);
+  }
+
+  @Get(':customerId/profile')
+  @ApiOperation({
+    summary: 'Return a consolidated read-only customer profile.',
+  })
+  @ApiOkResponse({
+    description: 'Customer profile was returned.',
+    type: CustomerProfileDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'Company or customer was not found.',
+    type: ApiErrorResponseDto,
+  })
+  getCustomerProfile(
+    @Param('companyId') companyId: string,
+    @Param('customerId') customerId: string,
+  ) {
+    return this.customersService.getCustomerProfile(companyId, customerId);
   }
 
   @Get(':customerId')

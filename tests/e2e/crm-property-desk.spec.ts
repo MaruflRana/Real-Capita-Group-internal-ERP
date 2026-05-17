@@ -461,6 +461,270 @@ const setupCrmPropertyDeskApiMocks = async (
     );
   };
 
+  const sumMoney = (values: string[]) =>
+    values.reduce((total, value) => total + Number(value), 0).toFixed(2);
+
+  const addCollectionRecord = (
+    overrides: Partial<(typeof collections)[number]> = {},
+  ) => {
+    const customer = getCustomer(overrides.customerId ?? 'customer-1');
+    const voucher = getVoucher(overrides.voucherId ?? 'voucher-1');
+    const linkedSchedule = getSchedule(
+      overrides.installmentScheduleId ?? 'schedule-existing-1',
+    );
+    const linkedSaleContract = linkedSchedule
+      ? getSaleContract(linkedSchedule.saleContractId)
+      : getSaleContract(overrides.saleContractId ?? 'sale-contract-existing-1');
+    const linkedBooking = linkedSaleContract
+      ? getBooking(linkedSaleContract.bookingId)
+      : getBooking(overrides.bookingId ?? 'booking-existing-1');
+
+    if (!customer || !voucher || !linkedBooking) {
+      throw new Error('Unable to create mock collection profile fixture.');
+    }
+
+    const record = {
+      id: `collection-${collections.length + 1}`,
+      companyId: 'company-1',
+      customerId: customer.id,
+      customerName: customer.fullName,
+      customerPhone: customer.phone,
+      customerEmail: customer.email,
+      voucherId: voucher.id,
+      voucherType: voucher.voucherType,
+      voucherStatus: voucher.status,
+      voucherDate: voucher.voucherDate,
+      voucherReference: voucher.reference,
+      bookingId: linkedBooking.id,
+      bookingProjectId: linkedBooking.projectId,
+      bookingProjectName: linkedBooking.projectName,
+      bookingUnitId: linkedBooking.unitId,
+      bookingUnitCode: linkedBooking.unitCode,
+      bookingUnitName: linkedBooking.unitName,
+      bookingDate: linkedBooking.bookingDate,
+      saleContractId: linkedSaleContract?.id ?? null,
+      saleContractReference: linkedSaleContract?.reference ?? null,
+      saleContractDate: linkedSaleContract?.contractDate ?? null,
+      installmentScheduleId: linkedSchedule?.id ?? null,
+      installmentSequenceNumber: linkedSchedule?.sequenceNumber ?? null,
+      installmentDueDate: linkedSchedule?.dueDate ?? null,
+      installmentAmount: linkedSchedule?.amount ?? null,
+      collectionDate: today,
+      amount: '100000.00',
+      reference: 'COL-001',
+      notes: 'Installment collected through receipt voucher',
+      createdAt: now,
+      updatedAt: now,
+      ...overrides,
+    };
+
+    collections = [record, ...collections];
+
+    return record;
+  };
+
+  const buildCustomerProfile = (customerId: string) => {
+    const customer = getCustomer(customerId);
+
+    if (!customer) {
+      return null;
+    }
+
+    const customerBookings = bookings.filter(
+      (booking) => booking.customerId === customerId,
+    );
+    const customerSaleContracts = saleContracts.filter(
+      (saleContract) => saleContract.customerId === customerId,
+    );
+    const customerSchedules = schedules.filter(
+      (schedule) => schedule.customerId === customerId,
+    );
+    const customerCollections = collections
+      .filter((collection) => collection.customerId === customerId)
+      .sort((left, right) =>
+        right.collectionDate.localeCompare(left.collectionDate),
+      );
+
+    const timeline = [
+      {
+        id: `customer-created-${customer.id}`,
+        type: 'CUSTOMER_CREATED',
+        eventDate: customer.createdAt,
+        title: 'Customer created',
+        description: 'Customer record opened in CRM & Property Desk.',
+        recordId: customer.id,
+        recordReference: null,
+      },
+      ...customerBookings.map((booking) => ({
+        id: `booking-recorded-${booking.id}`,
+        type: 'BOOKING_RECORDED',
+        eventDate: booking.bookingDate,
+        title: 'Booking recorded',
+        description: `${booking.projectName} / ${booking.unitCode} booking for ${booking.bookingAmount}.`,
+        recordId: booking.id,
+        recordReference: booking.unitCode,
+      })),
+      ...customerSaleContracts.map((saleContract) => ({
+        id: `sale-contract-recorded-${saleContract.id}`,
+        type: 'SALE_CONTRACT_RECORDED',
+        eventDate: saleContract.contractDate,
+        title: 'Sale contract recorded',
+        description: `${saleContract.reference ?? 'Sale contract'} for ${saleContract.projectName} / ${saleContract.unitCode}.`,
+        recordId: saleContract.id,
+        recordReference: saleContract.reference,
+      })),
+      ...customerSchedules.map((schedule) => ({
+        id: `installment-scheduled-${schedule.id}`,
+        type: 'INSTALLMENT_SCHEDULED',
+        eventDate: schedule.dueDate,
+        title: 'Installment scheduled',
+        description: `Installment #${schedule.sequenceNumber} scheduled for ${schedule.amount}.`,
+        recordId: schedule.id,
+        recordReference: `#${schedule.sequenceNumber}`,
+      })),
+      ...customerCollections.map((collection) => ({
+        id: `collection-recorded-${collection.id}`,
+        type: 'COLLECTION_RECORDED',
+        eventDate: collection.collectionDate,
+        title: 'Collection recorded',
+        description: `${collection.reference ?? collection.voucherReference ?? 'Collection'} received for ${collection.amount}.`,
+        recordId: collection.id,
+        recordReference: collection.reference ?? collection.voucherReference,
+      })),
+    ].sort((left, right) => left.eventDate.localeCompare(right.eventDate));
+
+    return {
+      customer: {
+        id: customer.id,
+        fullName: customer.fullName,
+        phone: customer.phone,
+        email: customer.email,
+        address: customer.address,
+        notes: customer.notes,
+        isActive: customer.isActive,
+        createdAt: customer.createdAt,
+        updatedAt: customer.updatedAt,
+      },
+      summary: {
+        totalBookings: customerBookings.length,
+        activeBookingCount: customerBookings.filter(
+          (booking) => booking.status === 'ACTIVE',
+        ).length,
+        saleContractCount: customerSaleContracts.length,
+        totalContractAmount: sumMoney(
+          customerSaleContracts.map(
+            (saleContract) => saleContract.contractAmount,
+          ),
+        ),
+        installmentScheduleCount: customerSchedules.length,
+        totalScheduledInstallmentAmount: sumMoney(
+          customerSchedules.map((schedule) => schedule.amount),
+        ),
+        totalCollectionsCount: customerCollections.length,
+        totalCollectedAmount: sumMoney(
+          customerCollections.map((collection) => collection.amount),
+        ),
+        latestCollectionDate: customerCollections[0]?.collectionDate ?? null,
+        postedVoucherBackedCollectionAmount: sumMoney(
+          customerCollections
+            .filter((collection) => collection.voucherStatus === 'POSTED')
+            .map((collection) => collection.amount),
+        ),
+      },
+      bookings: customerBookings.map((booking) => ({
+        id: booking.id,
+        bookingDate: booking.bookingDate,
+        bookingAmount: booking.bookingAmount,
+        status: booking.status,
+        projectId: booking.projectId,
+        projectCode: booking.projectCode,
+        projectName: booking.projectName,
+        unitId: booking.unitId,
+        unitCode: booking.unitCode,
+        unitName: booking.unitName,
+        saleContractId: booking.saleContractId,
+        saleContractReference:
+          customerSaleContracts.find(
+            (saleContract) => saleContract.bookingId === booking.id,
+          )?.reference ?? null,
+      })),
+      saleContracts: customerSaleContracts.map((saleContract) => ({
+        id: saleContract.id,
+        reference: saleContract.reference,
+        contractDate: saleContract.contractDate,
+        contractAmount: saleContract.contractAmount,
+        bookingId: saleContract.bookingId,
+        bookingDate: saleContract.bookingDate,
+        projectId: saleContract.projectId,
+        projectCode: saleContract.projectCode,
+        projectName: saleContract.projectName,
+        unitId: saleContract.unitId,
+        unitCode: saleContract.unitCode,
+        unitName: saleContract.unitName,
+      })),
+      installmentSchedules: customerSchedules.map((schedule) => {
+        const linkedCollections = customerCollections.filter(
+          (collection) => collection.installmentScheduleId === schedule.id,
+        );
+        const collectedAmount =
+          linkedCollections.length > 0
+            ? sumMoney(linkedCollections.map((collection) => collection.amount))
+            : null;
+
+        return {
+          id: schedule.id,
+          saleContractId: schedule.saleContractId,
+          saleContractReference:
+            customerSaleContracts.find(
+              (saleContract) => saleContract.id === schedule.saleContractId,
+            )?.reference ?? null,
+          sequenceNumber: schedule.sequenceNumber,
+          dueDate: schedule.dueDate,
+          amount: schedule.amount,
+          collectedAmount,
+          balanceAmount: collectedAmount
+            ? (Number(schedule.amount) - Number(collectedAmount)).toFixed(2)
+            : null,
+          bookingId: schedule.bookingId,
+          projectId: schedule.projectId,
+          projectCode: schedule.projectCode,
+          projectName: schedule.projectName,
+          unitId: schedule.unitId,
+          unitCode: schedule.unitCode,
+          unitName: schedule.unitName,
+        };
+      }),
+      transactionHistory: customerCollections.map((collection) => ({
+        id: collection.id,
+        reference: collection.reference,
+        collectionDate: collection.collectionDate,
+        amount: collection.amount,
+        notes: collection.notes,
+        voucherId: collection.voucherId,
+        voucherReference: collection.voucherReference,
+        voucherType: collection.voucherType,
+        voucherDate: collection.voucherDate,
+        voucherStatus: collection.voucherStatus,
+        bookingId: collection.bookingId,
+        bookingDate: collection.bookingDate,
+        bookingProjectName: collection.bookingProjectName,
+        bookingUnitCode: collection.bookingUnitCode,
+        bookingUnitName: collection.bookingUnitName,
+        saleContractId: collection.saleContractId,
+        saleContractReference: collection.saleContractReference,
+        saleContractDate: collection.saleContractDate,
+        installmentScheduleId: collection.installmentScheduleId,
+        installmentSequenceNumber: collection.installmentSequenceNumber,
+        installmentDueDate: collection.installmentDueDate,
+      })),
+      timeline,
+      assumptions: [
+        'Installment collected and balance fields use only collections directly linked to the exact installment schedule.',
+        'Customer-level outstanding, remaining, and overdue totals are intentionally deferred until payment allocation rules support those claims.',
+      ],
+    };
+  };
+
   await page.route('**/api/v1/**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -634,6 +898,25 @@ const setupCrmPropertyDeskApiMocks = async (
       };
       customers = [record, ...customers];
       await fulfillJson(route, 201, record);
+      return;
+    }
+
+    if (
+      pathname.match(/\/companies\/company-1\/customers\/[^/]+\/profile$/u) &&
+      request.method() === 'GET'
+    ) {
+      const profile = buildCustomerProfile(getRequiredPathSegment(pathname, 2));
+
+      if (!profile) {
+        await fulfillJson(
+          route,
+          404,
+          createApiError(404, 'Customer not found.'),
+        );
+        return;
+      }
+
+      await fulfillJson(route, 200, profile);
       return;
     }
 
@@ -1866,6 +2149,7 @@ const setupCrmPropertyDeskApiMocks = async (
   });
 
   return {
+    addCollectionRecord,
     getSchedule,
   };
 };
@@ -1946,6 +2230,68 @@ test('renders CRM/property desk navigation and supports customer and lead operat
   await leadDialog.getByRole('button', { name: 'Create lead' }).click();
   await expect(leadDialog).toBeHidden();
   await expect(page.locator('tr', { hasText: 'Karim Uddin' })).toBeVisible();
+});
+
+test('opens a full customer profile with transaction history and receipt action', async ({
+  page,
+}) => {
+  await addAuthenticatedCookie(page);
+  const { addCollectionRecord } = await setupCrmPropertyDeskApiMocks(page, {
+    authenticated: true,
+  });
+  addCollectionRecord({
+    id: 'collection-profile-1',
+    reference: 'COL-PROFILE-001',
+  });
+
+  await page.goto('/crm-property-desk/customers');
+  const customerRow = page.locator('tr', { hasText: 'Sarah Ahmed' });
+  await expect(
+    customerRow.getByRole('link', { name: 'View Profile' }),
+  ).toHaveAttribute('href', '/crm-property-desk/customers/customer-1');
+  await customerRow.getByRole('link', { name: 'View Profile' }).click();
+
+  await expect(page).toHaveURL(/\/crm-property-desk\/customers\/customer-1/u);
+  await expect(
+    page.getByRole('heading', { name: 'Customer Profile' }),
+  ).toBeVisible();
+  await expect(page.getByText('Sarah Ahmed').first()).toBeVisible();
+  await expect(page.getByText('Primary customer record')).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Customer Records Summary' }),
+  ).toBeVisible();
+  await expect(page.getByText('Total collected amount')).toBeVisible();
+  await expect(page.getByText('100,000.00').first()).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Booking Records' }),
+  ).toBeVisible();
+  await expect(page.getByText('Real Capita Tower').first()).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Sale Contracts' }),
+  ).toBeVisible();
+  await expect(page.getByText('SC-001').first()).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Installment Schedule' }),
+  ).toBeVisible();
+  await expect(page.getByText('#1').first()).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Transaction History' }),
+  ).toBeVisible();
+  await expect(
+    page.locator('tr', { hasText: 'COL-PROFILE-001' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'Printable Receipt' }),
+  ).toHaveAttribute(
+    'href',
+    '/crm-property-desk/collections/collection-profile-1/receipt',
+  );
+  await expect(
+    page.getByRole('heading', { name: 'Customer Activity Timeline' }),
+  ).toBeVisible();
+  await expect(page.getByText('Collection recorded')).toBeVisible();
+  await expect(page.locator('body')).not.toContainText('undefined');
+  await expect(page.locator('body')).not.toContainText('null');
 });
 
 test('supports booking create and detail flow and surfaces invalid booking errors', async ({

@@ -29,7 +29,7 @@
 4. Show Financial Reports: business overview, periodic reports including yearly, trial balance, general ledger, profit & loss, and balance sheet.
 5. Export one financial report CSV and click Print Report on one supported report. Business Overview, Daily, Weekly, Monthly, Yearly, Trial Balance, General Ledger, Profit & Loss, and Balance Sheet now use the shared A4 printable report template. For General Ledger, select a posting account first.
 6. Show Project & Property Master routes for projects, hierarchy masters, and units.
-7. Show CRM & Property Desk routes for customers, leads, bookings, sale contracts, installments, and collections. Use `demo.sales@demo.realcapita.test`, search Collections for `DEMO-COL-2026-001`, then open the Customer Collection Receipt to show the posted-voucher acknowledgement and browser-print path.
+7. Show CRM & Property Desk routes for customers, leads, bookings, sale contracts, installments, and collections. Use `demo.sales@demo.realcapita.test`, open the `DEMO Customer Nadia Synthetic` customer profile behind `DEMO-COL-2026-001` from Customers, then open the transaction-history Customer Collection Receipt to show the posted-voucher acknowledgement and browser-print path.
 8. Show HR routes for employees, attendance devices/logs, leave types, and leave requests.
 9. Show Payroll routes for salary structures, payroll runs, run detail, and posting.
 10. Show Attachments and Audit Events if storage and role context are ready.
@@ -54,6 +54,7 @@
 
 - CSV export on one financial report.
 - Browser print on one financial report or voucher detail.
+- Customer Profile on `/crm-property-desk/customers/[customerId]` for `DEMO Customer Nadia Synthetic`, showing customer identity, booking records, sale contracts, installment schedules, collection transaction history, posted voucher context, timeline, and receipt actions.
 - Browser print on a CRM & Property Desk Customer Collection Receipt when demonstrating the customer payment acknowledgement story.
 - For the receipt demo, use seeded collection `DEMO-COL-2026-001` from the Collections register and open it through `Receipt` or `Open Receipt`.
 - Business Overview, Daily, Weekly, Monthly, Yearly, Trial Balance, General Ledger, Profit & Loss, and Balance Sheet now use the shared A4 printable report template.

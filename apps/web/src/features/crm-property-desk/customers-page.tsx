@@ -1,8 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 
-import { Button } from '@real-capita/ui';
+import { Button, buttonVariants, cn } from '@real-capita/ui';
 
 import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
@@ -31,6 +32,7 @@ import {
   exportPaginatedCsv,
   getExportDateStamp,
 } from '../../lib/output';
+import { getCustomerProfileRoute } from '../../lib/routes';
 import { CustomerFormPanel, type CustomerFormValues } from './forms';
 import {
   useCustomer,
@@ -58,9 +60,9 @@ export const CustomersPage = () => {
   const isEnabled = canAccessCrmPropertyDesk && Boolean(companyId);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>(
-    'all',
-  );
+  const [statusFilter, setStatusFilter] = useState<
+    'all' | 'active' | 'inactive'
+  >('all');
   const [panelOpen, setPanelOpen] = useState(false);
   const [editor, setEditor] = useState<CustomerRecord | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -68,21 +70,18 @@ export const CustomersPage = () => {
   const [isExporting, setIsExporting] = useState(false);
   const deferredSearch = useDeferredValue(search);
 
-  const query = useMemo(
-    () => {
-      const isActive = getStatusQueryValue(statusFilter);
+  const query = useMemo(() => {
+    const isActive = getStatusQueryValue(statusFilter);
 
-      return {
-        page,
-        pageSize: PAGE_SIZE,
-        sortBy: 'fullName',
-        sortOrder: 'asc' as const,
-        ...(deferredSearch ? { search: deferredSearch } : {}),
-        ...(isActive !== undefined ? { isActive } : {}),
-      };
-    },
-    [deferredSearch, page, statusFilter],
-  );
+    return {
+      page,
+      pageSize: PAGE_SIZE,
+      sortBy: 'fullName',
+      sortOrder: 'asc' as const,
+      ...(deferredSearch ? { search: deferredSearch } : {}),
+      ...(isActive !== undefined ? { isActive } : {}),
+    };
+  }, [deferredSearch, page, statusFilter]);
 
   useEffect(() => {
     setPage(1);
@@ -208,8 +207,12 @@ export const CustomersPage = () => {
         }
       />
 
-      {actionError ? <CrmPropertyDeskQueryErrorBanner message={actionError} /> : null}
-      {exportError ? <CrmPropertyDeskQueryErrorBanner message={exportError} /> : null}
+      {actionError ? (
+        <CrmPropertyDeskQueryErrorBanner message={actionError} />
+      ) : null}
+      {exportError ? (
+        <CrmPropertyDeskQueryErrorBanner message={exportError} />
+      ) : null}
 
       <CrmAnalyticsPanel
         companyId={companyId}
@@ -236,7 +239,9 @@ export const CustomersPage = () => {
             <Select
               id="customer-status-filter"
               onChange={(event) =>
-                setStatusFilter(event.target.value as 'all' | 'active' | 'inactive')
+                setStatusFilter(
+                  event.target.value as 'all' | 'active' | 'inactive',
+                )
               }
               value={statusFilter}
             >
@@ -266,7 +271,7 @@ export const CustomersPage = () => {
                   <TableHead>Contact</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Updated</TableHead>
-                  <TableHead className="w-[220px]">Actions</TableHead>
+                  <TableHead className="w-[260px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -274,7 +279,9 @@ export const CustomersPage = () => {
                   <TableRow key={customer.id}>
                     <TableCell>
                       <div>
-                        <p className="font-semibold text-foreground">{customer.fullName}</p>
+                        <p className="font-semibold text-foreground">
+                          {customer.fullName}
+                        </p>
                         {customer.address ? (
                           <p className="mt-1 text-sm text-muted-foreground">
                             {customer.address}
@@ -301,6 +308,14 @@ export const CustomersPage = () => {
                     <TableCell>{formatDateTime(customer.updatedAt)}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-2">
+                        <Link
+                          className={cn(
+                            buttonVariants({ size: 'sm', variant: 'outline' }),
+                          )}
+                          href={getCustomerProfileRoute(customer.id)}
+                        >
+                          View Profile
+                        </Link>
                         <Button
                           onClick={() => {
                             setActionError(null);
@@ -340,7 +355,10 @@ export const CustomersPage = () => {
                 ))}
               </TableBody>
             </Table>
-            <PaginationControls meta={customersQuery.data.meta} onPageChange={setPage} />
+            <PaginationControls
+              meta={customersQuery.data.meta}
+              onPageChange={setPage}
+            />
           </>
         ) : (
           <EmptyState

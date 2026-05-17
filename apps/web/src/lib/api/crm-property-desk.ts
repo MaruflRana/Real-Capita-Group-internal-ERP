@@ -13,6 +13,7 @@ import type {
   CreateLeadPayload,
   CreateSaleContractPayload,
   CustomerListQueryParams,
+  CustomerProfileRecord,
   CustomerRecord,
   InstallmentScheduleListQueryParams,
   InstallmentScheduleRecord,
@@ -65,6 +66,11 @@ export const listCustomers = (
 
 export const getCustomer = (companyId: string, customerId: string) =>
   apiRequest<CustomerRecord>(`companies/${companyId}/customers/${customerId}`);
+
+export const getCustomerProfile = (companyId: string, customerId: string) =>
+  apiRequest<CustomerProfileRecord>(
+    `companies/${companyId}/customers/${customerId}/profile`,
+  );
 
 export const createCustomer = (
   companyId: string,
@@ -265,7 +271,9 @@ export const listCollections = (
   );
 
 export const getCollection = (companyId: string, collectionId: string) =>
-  apiRequest<CollectionRecord>(`companies/${companyId}/collections/${collectionId}`);
+  apiRequest<CollectionRecord>(
+    `companies/${companyId}/collections/${collectionId}`,
+  );
 
 export const createCollection = (
   companyId: string,

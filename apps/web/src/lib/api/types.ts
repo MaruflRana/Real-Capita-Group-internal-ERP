@@ -995,6 +995,131 @@ export interface CustomerRecord {
   updatedAt: string;
 }
 
+export interface CustomerProfileCustomerRecord {
+  id: string;
+  fullName: string;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  notes: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CustomerProfileSummaryRecord {
+  totalBookings: number;
+  activeBookingCount: number;
+  saleContractCount: number;
+  totalContractAmount: string;
+  installmentScheduleCount: number;
+  totalScheduledInstallmentAmount: string;
+  totalCollectionsCount: number;
+  totalCollectedAmount: string;
+  latestCollectionDate: string | null;
+  postedVoucherBackedCollectionAmount: string;
+}
+
+export interface CustomerProfileBookingRecord {
+  id: string;
+  bookingDate: string;
+  bookingAmount: string;
+  status: PropertyDeskBookingStatus;
+  projectId: string;
+  projectCode: string;
+  projectName: string;
+  unitId: string;
+  unitCode: string;
+  unitName: string;
+  saleContractId: string | null;
+  saleContractReference: string | null;
+}
+
+export interface CustomerProfileSaleContractRecord {
+  id: string;
+  reference: string | null;
+  contractDate: string;
+  contractAmount: string;
+  bookingId: string;
+  bookingDate: string;
+  projectId: string;
+  projectCode: string;
+  projectName: string;
+  unitId: string;
+  unitCode: string;
+  unitName: string;
+}
+
+export interface CustomerProfileInstallmentScheduleRecord {
+  id: string;
+  saleContractId: string;
+  saleContractReference: string | null;
+  sequenceNumber: number;
+  dueDate: string;
+  amount: string;
+  collectedAmount: string | null;
+  balanceAmount: string | null;
+  bookingId: string;
+  projectId: string;
+  projectCode: string;
+  projectName: string;
+  unitId: string;
+  unitCode: string;
+  unitName: string;
+}
+
+export interface CustomerProfileTransactionRecord {
+  id: string;
+  reference: string | null;
+  collectionDate: string;
+  amount: string;
+  notes: string | null;
+  voucherId: string;
+  voucherReference: string | null;
+  voucherType: AccountingVoucherType;
+  voucherDate: string;
+  voucherStatus: AccountingVoucherStatus;
+  bookingId: string | null;
+  bookingDate: string | null;
+  bookingProjectName: string | null;
+  bookingUnitCode: string | null;
+  bookingUnitName: string | null;
+  saleContractId: string | null;
+  saleContractReference: string | null;
+  saleContractDate: string | null;
+  installmentScheduleId: string | null;
+  installmentSequenceNumber: number | null;
+  installmentDueDate: string | null;
+}
+
+export type CustomerProfileTimelineEventType =
+  | 'CUSTOMER_CREATED'
+  | 'BOOKING_RECORDED'
+  | 'SALE_CONTRACT_RECORDED'
+  | 'INSTALLMENT_SCHEDULED'
+  | 'COLLECTION_RECORDED';
+
+export interface CustomerProfileTimelineEventRecord {
+  id: string;
+  type: CustomerProfileTimelineEventType;
+  eventDate: string;
+  title: string;
+  description: string;
+  recordId: string | null;
+  recordReference: string | null;
+}
+
+export interface CustomerProfileRecord {
+  customer: CustomerProfileCustomerRecord;
+  summary: CustomerProfileSummaryRecord;
+  bookings: CustomerProfileBookingRecord[];
+  saleContracts: CustomerProfileSaleContractRecord[];
+  installmentSchedules: CustomerProfileInstallmentScheduleRecord[];
+  transactionHistory: CustomerProfileTransactionRecord[];
+  timeline: CustomerProfileTimelineEventRecord[];
+  assumptions: string[];
+}
+
 export interface LeadRecord {
   id: string;
   companyId: string;

@@ -110,6 +110,12 @@ Recommended seeded collection:
 DEMO-COL-2026-001
 ```
 
+Recommended Customer 360 profile candidate:
+
+```text
+DEMO Customer Nadia Synthetic
+```
+
 That seeded scenario provides the full walkthrough chain:
 
 ```text
@@ -125,9 +131,9 @@ DEMO Customer Nadia Synthetic
 Receipt demo path:
 
 1. Sign in as `demo.sales@demo.realcapita.test` or `demo.admin@demo.realcapita.test`.
-2. Open `/crm-property-desk/collections`.
-3. Search for `DEMO-COL-2026-001`.
-4. Open `Receipt` from the table or `Open Receipt` from the detail side panel.
+2. Open `/crm-property-desk/customers` and open the profile for `DEMO Customer Nadia Synthetic` to show identity, booking, sale contract, installment schedule, collection transaction history, posted voucher context, timeline, and receipt action.
+3. From the profile transaction history, use `Printable Receipt`, or open `/crm-property-desk/collections` and search for `DEMO-COL-2026-001`.
+4. Open `Receipt` from the collections table or `Open Receipt` from the detail side panel.
 5. Use `Print Receipt` for the browser-print acknowledgement view.
 
 ## Dashboard And Report Readiness
