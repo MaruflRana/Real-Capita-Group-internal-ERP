@@ -1,58 +1,120 @@
-# Real Capita ERP Agent Notes
+# Real Capita ERP — Agent Operating Guide
 
-## Locked Stack
+## 1. Project Identity and Locked Architecture
 
-- Monorepo: Nx + pnpm
-- Frontend: Next.js App Router, frontend only
-- Backend: NestJS, REST API only
-- Database: Prisma + PostgreSQL 15
-- Object storage: MinIO for S3-compatible storage
-- Testing: Playwright
-- CI: GitHub Actions
-- Deployment baseline: Docker Compose for a single VM
+- **Project**: Real Capita Group internal ERP, production-minded Nx + pnpm monorepo.
+- **apps/web**: Next.js App Router, frontend-only API consumer. No server actions for business operations.
+- **apps/api**: NestJS REST API, sole backend source of truth for all business endpoints and orchestration.
+- **Database**: Prisma + PostgreSQL 15. Prisma for CRUD, migrations, and generated types. Raw SQL only for complex reporting queries and transaction-enforcement flows already justified by the design.
+- **Storage**: MinIO for S3-compatible object storage in local development; browser-to-storage presigned upload/download flows, never proxied through Next.js.
+- **Deployment**: Docker Compose for a single-VM baseline. Runner-style app containers, health checks, and repo-root maintenance commands.
+- **Testing**: Playwright e2e + NestJS backend unit/integration tests. GitHub Actions CI validates lint, typecheck, build, tests, and Docker Compose boot plus runtime smoke.
+- **Canonical Dockerfiles**: `apps/api/Dockerfile` and `apps/web/Dockerfile` only.
+- **Canonical orchestration**: `docker-compose.yml` only.
+- **Compose services**: `web`, `api`, `postgres`, `minio`.
 
-## Architecture Rules
+## 2. Non-Negotiable Architecture Rules
 
-- Keep a strict REST-only boundary between `apps/web` and `apps/api`.
-- Do not add Next.js server actions for business operations.
-- NestJS owns backend REST endpoints and business-operation orchestration.
-- Prisma is the default tool for normal CRUD, migrations, and generated types.
-- Use raw SQL only for complex transactions and PL/pgSQL-triggered database flows.
+- Keep a strict REST-only boundary between `apps/web` and `apps/api`. No Next.js server actions or API routes for business operations.
+- NestJS owns all REST endpoints and business-operation orchestration.
+- No unnecessary Prisma schema changes or migrations. Schema changes must be explicitly scoped and approved.
+- No fake, demo, or placeholder ERP values unless explicitly working on documented demo-data flows under `docs/operations/demo-data.md`.
+- Preserve current module boundaries across apps and packages. Do not cross-wire unrelated domain concerns.
+- Preserve existing ERP workflows, access models, and endpoint contracts. Do not redesign them without explicit scope approval.
+- `apps/web` is an API consumer only. `apps/api` is the only backend entry point.
 
-## Coding Rules
+## 3. Current Project State
 
-- Do not make business assumptions that are not explicitly requested.
-- Do not add fake ERP data, demo CRUD modules, or tutorial placeholders.
-- Preserve module boundaries across apps and packages.
-- Prefer clean, production-ready structure over fast scaffolding.
-- Keep `apps/web` as an API consumer only.
-- Keep `apps/api` as the only backend entry point.
+- The repository is currently beyond **Prompt 42C**.
+- Latest completed feature: **Customer 360 Profile + Customer Records + Transaction History** (Prompt 42B/42C).
+- Prompt 42C completed runtime QA, seeded Demo/UAT verification, responsive checks at 1440px/1366px/1024px, receipt-link regression, and final validation (lint, typecheck, build, test all passed).
+- Customer 360 adds `GET /companies/:companyId/customers/:customerId/profile` and `/crm-property-desk/customers/[customerId]` behind existing CRM access (`company_admin`, `company_sales`).
+- Do not invent next-feature scope. Read the latest handoff scope/status docs for continuation guidance.
+
+## 4. Canonical Documentation Reading Order
+
+New agents should read docs in this order before making changes:
+
+1. **AGENTS.md** — this file; operating guide and architecture rules.
+2. **docs/handoffs/foundation-status.md** — cumulative project state, route inventory, authorization matrix, and implementation history.
+3. **Latest prompt scope/status docs** — e.g. `docs/handoffs/prompt-42-scope.md`, `docs/handoffs/prompt-42b-status.md`, `docs/handoffs/prompt-42c-status.md` for the active continuation scope.
+4. **docs/operations/demo-data.md** — when demo/UAT seed data matters for testing or verification.
+5. **docs/operations/phase-1-route-inventory.md** — when routes, modules, or access-role surfaces matter.
+6. **docs/release/demo-readiness-guide.md** and **docs/uat/phase-1-demo-walkthrough.md** — when preparing demos or stakeholder-facing flows.
+7. **docs/architecture/phase-1-architecture-baseline.md** — when architectural context or use-case/ERD reference is needed.
+
+## 5. Implementation Discipline
+
+- Read relevant docs first. Understand the existing module surface, access rules, and contracts before writing code.
+- Make only scoped changes. Do not expand beyond the approved prompt scope.
+- Preserve verified commands (`corepack pnpm docker:migrate`, `docker:bootstrap`, `docker:smoke`, `seed:demo`, `seed:demo:verify`, `backup:db`, `ops:env-check`, etc.) and the established architecture.
+- Update the relevant handoff status doc when a prompt is completed.
+- Never stage unsafe or generated files (see Git/checkpoint discipline below) unless explicitly requested.
+
+## 6. Verification Expectations
+
+- Prefer targeted/focused tests first (e.g. single service spec or single Playwright spec relevant to the change).
+- Then run the full validation suite when the change scope requires it: `corepack pnpm lint`, `typecheck`, `build`, `test`.
+- For Docker-based changes, rebuild and smoke: `docker compose up -d --build`, `corepack pnpm seed:demo`, `seed:demo:verify`, `corepack pnpm docker:smoke`.
+- For UI changes, verify at 1440px, 1366px, and 1024px widths as established by recent prompt QA practice.
+- Preserve the repository's established validation style documented in recent status files.
+
+## 7. Git and Checkpoint Discipline
+
+- Respect the project's safe checkpoint flow: stage only intentional, reviewed changes; commit with descriptive messages; verify before push.
+- Never stage or commit these paths unless explicitly requested:
+  - `.env` and local env overrides
+  - `.env.tunnel-backup` and `.env.tunnel-backup-*`
+  - `Caddyfile.tunnel`
+  - `backups/` and `*.dump` files
+  - `node_modules/`, `dist/`, `.next/`
+  - `test-results/`, `playwright-report/`
+  - `.playwright-mcp/`, `.live-demo/`
+  - `docs/diagrams/`
+  - `*.tsbuildinfo`
+- Update the handoff docs (`docs/handoffs/`) as part of the checkpoint when completing a prompt.
+
+## 8. Repository-Local Droid Skills
+
+- Repository-local Droid skills live under `.factory/skills/<skill-name>/SKILL.md`.
+- These skills supplement `AGENTS.md` and the existing `docs/handoffs/` continuity system; they do not replace the Markdown handoff memory.
+- Keep Droid skill edits scoped to agent-infrastructure tasks unless explicitly requested.
 
 ## Verified Local URLs
 
-- Web: `http://localhost:3000`
+- Web: `http://localhost:3000` (canonical browser origin; `127.0.0.1:3000` redirects here)
 - API: `http://localhost:3333`
 - API health: `http://localhost:3333/api/v1/health`
+- API readiness: `http://localhost:3333/api/v1/health/ready`
 - Swagger: `http://localhost:3333/api/docs`
 - PostgreSQL: `localhost:5432`
 - MinIO API: `http://localhost:9000`
 - MinIO Console: `http://localhost:9001`
 
-## Canonical Docker Strategy
+## Key Commands Quick Reference
 
-- Canonical Dockerfiles:
-  - `apps/api/Dockerfile`
-  - `apps/web/Dockerfile`
-- Canonical orchestration file:
-  - `docker-compose.yml`
-- Compose baseline services:
-  - `web`
-  - `api`
-  - `postgres`
-  - `minio`
-- Nx runtime state inside app containers is isolated with named volumes to avoid host/container lock contention.
-
-## Prompt 3 Starting Point
-
-- Prompt 3 begins the backend integration foundation.
-- Prompt 3 must stay within its defined scope and must not introduce unrelated business modules beyond that scope.
+| Purpose | Command |
+|---|---|
+| Install deps | `corepack pnpm install` |
+| Dev both apps | `corepack pnpm dev` |
+| Dev web only | `corepack pnpm dev:web` |
+| Dev api only | `corepack pnpm dev:api` |
+| Lint | `corepack pnpm lint` |
+| Typecheck | `corepack pnpm typecheck` |
+| Build | `corepack pnpm build` |
+| All tests | `corepack pnpm test` |
+| Full verify | `corepack pnpm verify` |
+| Docker full stack | `docker compose up -d --build` |
+| Docker infra only | `corepack pnpm docker:infra` |
+| Docker migrate | `corepack pnpm docker:migrate` |
+| Docker bootstrap | `corepack pnpm docker:bootstrap -- --company-name ... --admin-email ... --admin-password ...` |
+| Docker smoke | `corepack pnpm docker:smoke` |
+| Seed demo data | `corepack pnpm seed:demo` |
+| Verify demo data | `corepack pnpm seed:demo:verify` |
+| Reset demo data | `corepack pnpm seed:demo:reset` |
+| Backup DB | `corepack pnpm backup:db` |
+| Verify backup | `corepack pnpm verify:backup -- --file <path>` |
+| Restore DB (dry-run) | `corepack pnpm restore:db -- --file <path> --dry-run` |
+| Env safety check | `corepack pnpm ops:env-check -- --strict` |
+| Prisma generate | `corepack pnpm prisma:generate` |
+| Prisma migrate deploy | `corepack pnpm prisma:migrate:deploy` |
