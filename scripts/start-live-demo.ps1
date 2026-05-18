@@ -2,7 +2,10 @@
 [CmdletBinding()]
 param(
   [int]$HealthTimeoutSeconds = 420,
-  [int]$TunnelTimeoutSeconds = 120
+  [int]$TunnelTimeoutSeconds = 120,
+  [switch]$SkipInitialBuild,
+  [string]$DemoEmail = 'demo.admin@demo.realcapita.test',
+  [string]$DemoPassword = 'change-me-demo-uat-password'
 )
 
 Set-StrictMode -Version Latest
@@ -49,11 +52,12 @@ function Invoke-CheckedCommand {
     [string[]]$Arguments
   )
 
-  Write-Host "> $FilePath $($Arguments -join ' ')" -ForegroundColor DarkGray
+  $argDisplay = $Arguments -join ' '
+  Write-Host "> $FilePath $argDisplay" -ForegroundColor DarkGray
   & $FilePath @Arguments
 
   if ($LASTEXITCODE -ne 0) {
-    throw "$FilePath $($Arguments -join ' ') exited with code $LASTEXITCODE."
+    throw "$FilePath $argDisplay exited with code $LASTEXITCODE."
   }
 }
 
@@ -66,7 +70,8 @@ function Invoke-CapturedCommand {
   $output = & $FilePath @Arguments 2>&1
 
   if ($LASTEXITCODE -ne 0) {
-    throw "$FilePath $($Arguments -join ' ') exited with code $LASTEXITCODE. $output"
+    $argDisplay = $Arguments -join ' '
+    throw "$FilePath $argDisplay exited with code $LASTEXITCODE. $output"
   }
 
   return $output
@@ -127,12 +132,12 @@ function Stop-ExistingCloudflared {
     }
   }
 
-  $matchingProcesses = Get-CimInstance Win32_Process -Filter "name = 'cloudflared.exe'" -ErrorAction SilentlyContinue |
+  $matchingProcesses = @(Get-CimInstance Win32_Process -Filter "name = 'cloudflared.exe'" -ErrorAction SilentlyContinue |
     Where-Object {
       $_.CommandLine -and
       $_.CommandLine -match '\btunnel\b' -and
       $_.CommandLine -match 'http://localhost:8080'
-    }
+    })
 
   foreach ($process in $matchingProcesses) {
     if (-not $stopped.Contains([int]$process.ProcessId)) {
@@ -145,8 +150,9 @@ function Stop-ExistingCloudflared {
     Remove-Item -LiteralPath $CloudflaredPidPath -Force
   }
 
-  if ($stopped.Count -gt 0) {
-    Write-Note "stopped old cloudflared process(es): $($stopped -join ', ')"
+  if ($stopped.count -gt 0) {
+    $stoppedStr = $stopped -join ', '
+    Write-Note "stopped old cloudflared process(es): $stoppedStr"
   }
 }
 
@@ -375,12 +381,151 @@ function Start-QuickTunnel {
 
 function Backup-EnvIfNeeded {
   if (-not (Test-Path -LiteralPath $EnvBackupPath)) {
+    $envContent = Get-Content -LiteralPath $EnvPath -Raw
+    $tunnelPattern = 'trycloudflare\.com'
+    $tunnelizedKeys = @('WEB_APP_URL', 'API_BASE_URL', 'NEXT_PUBLIC_API_BASE_URL', 'CORS_ORIGIN')
+
+    $staleKeys = @()
+
+    foreach ($key in $tunnelizedKeys) {
+      $keyPattern = [regex]::Escape($key)
+      $match = [regex]::Match($envContent, "$keyPattern\s*=\s*(.+)")
+
+      if ($match.Success -and $match.Groups[1].Value -match $tunnelPattern) {
+        $staleKeys += $key
+      }
+    }
+
+    if ($staleKeys.Count -gt 0) {
+      $staleKeysStr = $staleKeys -join ', '
+      Write-Host "WARNING: Current .env contains tunnel URLs for keys: $staleKeysStr" -ForegroundColor Yellow
+      Write-Host 'Creating a restore backup from this tunnelized state would prevent safe' -ForegroundColor Yellow
+      Write-Host 'restoration to local-dev values after the demo session ends.' -ForegroundColor Yellow
+
+      $envExamplePath = Join-Path $RepoRoot '.env.example'
+
+      if (Test-Path -LiteralPath $envExamplePath) {
+        Write-Note 'repairing .env to local-dev values before creating restore backup'
+
+        $exampleContent = @(Get-Content -LiteralPath $envExamplePath)
+        $currentLines = @(Get-Content -LiteralPath $EnvPath)
+        $repairedLines = New-Object System.Collections.Generic.List[string]
+
+        foreach ($line in $currentLines) {
+          $updated = $false
+
+          foreach ($key in $staleKeys) {
+            $keyPattern = [regex]::Escape($key)
+
+            if ($line -match "^\s*$keyPattern\s*=") {
+              $localDevValue = switch ($key) {
+                'WEB_APP_URL' { 'http://localhost:3000' }
+                'API_BASE_URL' { 'http://localhost:3333' }
+                'NEXT_PUBLIC_API_BASE_URL' { 'http://localhost:3333' }
+                'CORS_ORIGIN' { 'http://localhost:3000' }
+                default { 'http://localhost:3333' }
+              }
+
+              $repairedLines.Add("$key=$localDevValue")
+              $updated = $true
+              break
+            }
+          }
+
+          if (-not $updated) {
+            $repairedLines.Add($line)
+          }
+        }
+
+        Set-Content -LiteralPath $EnvPath -Value $repairedLines -Encoding UTF8
+        Write-Note '.env repaired to local-dev values'
+      } else {
+        throw 'Cannot repair .env: .env.example not found. Fix the .env tunnel URL values manually before starting the demo.'
+      }
+    }
+
     Copy-Item -LiteralPath $EnvPath -Destination $EnvBackupPath -Force
     Write-Note 'created .env restore backup in .live-demo/'
     return
   }
 
-  Write-Note 'using existing .live-demo .env restore backup'
+  $existingBackup = Get-Content -LiteralPath $EnvBackupPath -Raw
+  $tunnelPattern = 'trycloudflare\.com'
+  $tunnelizedKeys = @('WEB_APP_URL', 'API_BASE_URL', 'NEXT_PUBLIC_API_BASE_URL', 'CORS_ORIGIN')
+
+  $staleBackupKeys = @()
+
+  foreach ($key in $tunnelizedKeys) {
+    $keyPattern = [regex]::Escape($key)
+    $match = [regex]::Match($existingBackup, "$keyPattern\s*=\s*(.+)")
+
+    if ($match.Success -and $match.Groups[1].Value -match $tunnelPattern) {
+      $staleBackupKeys += $key
+    }
+  }
+
+  if ($staleBackupKeys.Count -gt 0) {
+    $staleBackupKeysStr = $staleBackupKeys -join ', '
+    Write-Host "WARNING: Existing .live-demo/env.restore.env contains stale tunnel URLs for keys: $staleBackupKeysStr" -ForegroundColor Yellow
+    Write-Host 'This backup cannot be used for safe restoration after the demo session.' -ForegroundColor Yellow
+    Write-Note 'removing stale tunnelized restore backup and creating a fresh local-dev baseline'
+
+    Remove-Item -LiteralPath $EnvBackupPath -Force
+
+    $envContent = Get-Content -LiteralPath $EnvPath -Raw
+    $currentStaleKeys = @()
+
+    foreach ($key in $tunnelizedKeys) {
+      $keyPattern = [regex]::Escape($key)
+      $match = [regex]::Match($envContent, "$keyPattern\s*=\s*(.+)")
+
+      if ($match.Success -and $match.Groups[1].Value -match $tunnelPattern) {
+        $currentStaleKeys += $key
+      }
+    }
+
+    if ($currentStaleKeys.Count -gt 0) {
+      Write-Note 'current .env also contains tunnel URLs; repairing before backup'
+
+      $currentLines = @(Get-Content -LiteralPath $EnvPath)
+      $repairedLines = New-Object System.Collections.Generic.List[string]
+
+      foreach ($line in $currentLines) {
+        $updated = $false
+
+        foreach ($key in $currentStaleKeys) {
+          $keyPattern = [regex]::Escape($key)
+
+          if ($line -match "^\s*$keyPattern\s*=") {
+            $localDevValue = switch ($key) {
+              'WEB_APP_URL' { 'http://localhost:3000' }
+              'API_BASE_URL' { 'http://localhost:3333' }
+              'NEXT_PUBLIC_API_BASE_URL' { 'http://localhost:3333' }
+              'CORS_ORIGIN' { 'http://localhost:3000' }
+              default { 'http://localhost:3333' }
+            }
+
+            $repairedLines.Add("$key=$localDevValue")
+            $updated = $true
+            break
+          }
+        }
+
+        if (-not $updated) {
+          $repairedLines.Add($line)
+        }
+      }
+
+      Set-Content -LiteralPath $EnvPath -Value $repairedLines -Encoding UTF8
+      Write-Note '.env repaired to local-dev values before backup'
+    }
+
+    Copy-Item -LiteralPath $EnvPath -Destination $EnvBackupPath -Force
+    Write-Note 'fresh local-dev restore backup created in .live-demo/'
+    return
+  }
+
+  Write-Note 'using existing .live-demo .env restore backup (verified non-tunnelized)'
 }
 
 function Set-TunnelEnvValues {
@@ -492,6 +637,48 @@ function Wait-PublicLogin {
   throw "Public tunnel did not verify within 120 seconds: $lastError"
 }
 
+function Verify-PublicDemoLogin {
+  param(
+    [string]$PublicUrl,
+    [string]$Email = $DemoEmail,
+    [string]$Password = $DemoPassword
+  )
+
+  Write-Note "verifying demo login through tunnel URL: $PublicUrl/api/v1/auth/login"
+
+  Add-Type -AssemblyName System.Net.Http
+
+  $handler = New-Object System.Net.Http.HttpClientHandler
+  $client = New-Object System.Net.Http.HttpClient($handler)
+  $client.Timeout = [TimeSpan]::FromSeconds(30)
+
+  $loginUrl = "$PublicUrl/api/v1/auth/login"
+  $body = "{`"email`":`"$Email`",`"password`":`"$Password`"}"
+  $content = New-Object System.Net.Http.StringContent($body, [System.Text.Encoding]::UTF8, 'application/json')
+
+  try {
+    $response = $client.PostAsync($loginUrl, $content).GetAwaiter().GetResult()
+    $statusCode = [int]$response.StatusCode
+    $responseBody = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+
+    if ($statusCode -eq 201 -or $statusCode -eq 200) {
+      Write-Note "public demo login verified: HTTP $statusCode"
+      return $true
+    }
+
+    Write-Host "Public demo login FAILED: HTTP $statusCode" -ForegroundColor Red
+    Write-Host "  Response: $responseBody" -ForegroundColor Red
+    return $false
+  } catch {
+    Write-Host "Public demo login FAILED: network error" -ForegroundColor Red
+    Write-Host "  Error: $($_.Exception.Message)" -ForegroundColor Red
+    return $false
+  } finally {
+    $client.Dispose()
+    $handler.Dispose()
+  }
+}
+
 try {
   New-Item -ItemType Directory -Force -Path $LiveDemoDir | Out-Null
 
@@ -502,10 +689,15 @@ try {
   Stop-ExistingCloudflared
   Remove-CaddyProxy
 
-  Write-Step 'Starting Real Capita ERP Docker stack'
-  Invoke-CheckedCommand 'docker' @('compose', 'up', '-d', '--build')
-  Wait-ComposeServicesHealthy @('postgres', 'minio', 'api') $HealthTimeoutSeconds
-  Wait-WebHealthyOrReachable 120
+  if (-not $SkipInitialBuild) {
+    Write-Step 'Starting Real Capita ERP Docker stack'
+    Invoke-CheckedCommand 'docker' @('compose', 'up', '-d', '--build')
+    Wait-ComposeServicesHealthy @('postgres', 'minio', 'api') $HealthTimeoutSeconds
+    Wait-WebHealthyOrReachable 120
+  } else {
+    Write-Note 'skipping initial Docker build/start (orchestrated by wrapper script)'
+    Wait-ComposeServicesHealthy @('postgres', 'minio', 'api') $HealthTimeoutSeconds
+  }
 
   Write-Step 'Starting local Caddy tunnel proxy on http://localhost:8080'
   Start-CaddyProxy
@@ -527,11 +719,19 @@ try {
   Write-Note "root status: HTTP $($verification.RootStatusCode), location: $($verification.RootLocation)"
   Write-Note "login page status: HTTP $($verification.LoginStatusCode)"
 
+  Write-Step 'Verifying demo login through public tunnel URL'
+  $publicLoginOk = Verify-PublicDemoLogin $publicUrl
+
+  if (-not $publicLoginOk) {
+    throw 'Public demo login verification failed. The tunnel is live but login does not work. Run stop-live-demo.ps1 to clean up.'
+  }
+
   Write-Host ''
   Write-Host '============================================================' -ForegroundColor Green
   Write-Host 'REAL CAPITA ERP TEMPORARY PUBLIC DEMO IS LIVE' -ForegroundColor Green
   Write-Host '============================================================' -ForegroundColor Green
   Write-Host "PUBLIC DEMO URL: $publicUrl" -ForegroundColor Yellow
+  Write-Host 'Demo login verified through the public URL.' -ForegroundColor Green
   Write-Host ''
   Write-Host 'Keep these running during the demo:'
   Write-Host '- Docker Desktop'
@@ -539,7 +739,7 @@ try {
   Write-Host "- Caddy proxy container: $CaddyContainerName"
   Write-Host "- cloudflared process PID: $((Get-Content -LiteralPath $CloudflaredPidPath -Raw).Trim())"
   Write-Host ''
-  Write-Host 'Manual next step: open the public URL and sign in with the existing demo credentials.'
+  Write-Host 'Sign in at the public URL using the documented demo credentials.'
   Write-Host 'The Quick Tunnel URL changes after every fresh run.'
   Write-Host 'Known caveat: MinIO-backed direct upload/download links may remain local-only because S3_PUBLIC_ENDPOINT is not tunneled.'
   Write-Host ''
@@ -547,7 +747,7 @@ try {
   Write-Host 'powershell -ExecutionPolicy Bypass -File .\scripts\stop-live-demo.ps1'
   Write-Host '============================================================' -ForegroundColor Green
 } catch {
-  Write-Error "[live-demo] failed: $($_.Exception.Message)"
+  Write-Error ('[live-demo] failed: ' + $_.Exception.Message)
   Write-Host ''
   Write-Host 'Troubleshooting files are under .live-demo/. To clean up, run:'
   Write-Host 'powershell -ExecutionPolicy Bypass -File .\scripts\stop-live-demo.ps1'

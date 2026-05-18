@@ -35,11 +35,12 @@ function Invoke-CheckedCommand {
     [string[]]$Arguments
   )
 
-  Write-Host "> $FilePath $($Arguments -join ' ')" -ForegroundColor DarkGray
+  $argDisplay = $Arguments -join ' '
+  Write-Host "> $FilePath $argDisplay" -ForegroundColor DarkGray
   & $FilePath @Arguments
 
   if ($LASTEXITCODE -ne 0) {
-    throw "$FilePath $($Arguments -join ' ') exited with code $LASTEXITCODE."
+    throw "$FilePath $argDisplay exited with code $LASTEXITCODE."
   }
 }
 
@@ -71,12 +72,12 @@ function Stop-Cloudflared {
     Remove-Item -LiteralPath $CloudflaredPidPath -Force
   }
 
-  $matchingProcesses = Get-CimInstance Win32_Process -Filter "name = 'cloudflared.exe'" -ErrorAction SilentlyContinue |
+  $matchingProcesses = @(Get-CimInstance Win32_Process -Filter "name = 'cloudflared.exe'" -ErrorAction SilentlyContinue |
     Where-Object {
       $_.CommandLine -and
       $_.CommandLine -match '\btunnel\b' -and
       $_.CommandLine -match 'http://localhost:8080'
-    }
+    })
 
   foreach ($process in $matchingProcesses) {
     if (-not $stopped.Contains([int]$process.ProcessId)) {
@@ -89,7 +90,8 @@ function Stop-Cloudflared {
     return 'not running'
   }
 
-  return "stopped PID(s): $($stopped -join ', ')"
+  $stoppedStr = $stopped -join ', '
+  return "stopped PID(s): $stoppedStr"
 }
 
 function Remove-CaddyProxy {
@@ -230,6 +232,84 @@ function Restore-Env {
     return $false
   }
 
+  $backupContent = Get-Content -LiteralPath $EnvBackupPath -Raw
+  $tunnelPattern = 'trycloudflare\.com'
+  $tunnelizedKeys = @('WEB_APP_URL', 'API_BASE_URL', 'NEXT_PUBLIC_API_BASE_URL', 'CORS_ORIGIN')
+
+  $staleBackupKeys = @()
+
+  foreach ($key in $tunnelizedKeys) {
+    $keyPattern = [regex]::Escape($key)
+    $match = [regex]::Match($backupContent, "$keyPattern\s*=\s*(.+)")
+
+    if ($match.Success -and $match.Groups[1].Value -match $tunnelPattern) {
+      $staleBackupKeys += $key
+    }
+  }
+
+  if ($staleBackupKeys.Count -gt 0) {
+    $staleBackupKeysStr = $staleBackupKeys -join ', '
+    Write-Host "WARNING: .live-demo/env.restore.env contains stale tunnel URLs for: $staleBackupKeysStr" -ForegroundColor Yellow
+    Write-Host 'Cannot safely restore from a tunnelized backup. Removing it.' -ForegroundColor Yellow
+    Remove-Item -LiteralPath $EnvBackupPath -Force
+    Write-Note 'stale tunnelized backup removed; .env will not be restored from it'
+
+    if (Test-Path -LiteralPath $CurrentUrlPath) {
+      Remove-Item -LiteralPath $CurrentUrlPath -Force
+    }
+
+    $envContent = Get-Content -LiteralPath $EnvPath -Raw
+    $currentStaleKeys = @()
+
+    foreach ($key in $tunnelizedKeys) {
+      $keyPattern = [regex]::Escape($key)
+      $match = [regex]::Match($envContent, "$keyPattern\s*=\s*(.+)")
+
+      if ($match.Success -and $match.Groups[1].Value -match $tunnelPattern) {
+        $currentStaleKeys += $key
+      }
+    }
+
+    if ($currentStaleKeys.Count -gt 0) {
+      Write-Note 'current .env also contains tunnel URLs; repairing to local-dev values'
+
+      $currentLines = @(Get-Content -LiteralPath $EnvPath)
+      $repairedLines = New-Object System.Collections.Generic.List[string]
+
+      foreach ($line in $currentLines) {
+        $updated = $false
+
+        foreach ($key in $currentStaleKeys) {
+          $keyPattern = [regex]::Escape($key)
+
+          if ($line -match "^\s*$keyPattern\s*=") {
+            $localDevValue = switch ($key) {
+              'WEB_APP_URL' { 'http://localhost:3000' }
+              'API_BASE_URL' { 'http://localhost:3333' }
+              'NEXT_PUBLIC_API_BASE_URL' { 'http://localhost:3333' }
+              'CORS_ORIGIN' { 'http://localhost:3000' }
+              default { 'http://localhost:3333' }
+            }
+
+            $repairedLines.Add("$key=$localDevValue")
+            $updated = $true
+            break
+          }
+        }
+
+        if (-not $updated) {
+          $repairedLines.Add($line)
+        }
+      }
+
+      Set-Content -LiteralPath $EnvPath -Value $repairedLines -Encoding UTF8
+      Write-Note '.env repaired to local-dev values'
+      return $true
+    }
+
+    return $false
+  }
+
   Copy-Item -LiteralPath $EnvBackupPath -Destination $EnvPath -Force
   Remove-Item -LiteralPath $EnvBackupPath -Force
 
@@ -290,6 +370,6 @@ try {
   Write-Host "ERP stack: $stackResult"
   Write-Host '============================================================' -ForegroundColor Green
 } catch {
-  Write-Error "[live-demo] stop failed: $($_.Exception.Message)"
+  Write-Error ('[live-demo] stop failed: ' + $_.Exception.Message)
   exit 1
 }

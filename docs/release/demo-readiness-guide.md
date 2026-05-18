@@ -2,6 +2,14 @@
 
 ## Pre-Demo Checklist
 
+For a supervisor desktop one-command live demo setup:
+
+- Run `powershell -ExecutionPolicy Bypass -File .\scripts\update-and-start-live-demo.ps1` to pull latest code, rebuild, verify demo data and login, and launch the Cloudflare tunnel.
+- For fresh demo data, add `-RefreshDemoData`.
+- The script outputs the final public URL when the live demo is verified and ready.
+
+For manual local-only demo preparation:
+
 - Confirm the Docker Compose stack is running with `docker compose up -d --build`.
 - Confirm migrations have run with `corepack pnpm docker:migrate`.
 - Confirm a company admin exists through `corepack pnpm docker:bootstrap -- --company-name ...` when needed.
