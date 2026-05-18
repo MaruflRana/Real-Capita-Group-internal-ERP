@@ -130,26 +130,28 @@ export const LoginPage = ({ nextRoute }: { nextRoute: string }) => {
   }
 
   return (
-    <div className="flex w-full items-center justify-center">
-      <Card className="w-full max-w-[420px] overflow-hidden">
-        <CardHeader className="flex flex-col items-center gap-4 text-center">
-          <div className="w-full max-w-[300px]">
+    <div className="flex w-full items-center justify-center py-8">
+      <Card className="w-full max-w-[520px] overflow-hidden rounded-2xl shadow-md shadow-black/5">
+        <CardHeader className="flex flex-col items-center gap-5 pt-8 text-center">
+          <div className="w-full max-w-[440px]">
             <Image
               alt="Real Capita Group"
               className="h-auto w-full object-contain"
               height={1545}
               priority
-              sizes="300px"
+              sizes="(min-width: 520px) 440px, 100vw"
               src="/brand/real-capita-group-logo.png"
               width={7735}
             />
           </div>
-          <CardTitle>Sign in to Real Capita ERP</CardTitle>
-          <CardDescription>
-            Use your authorized account to access the company workspace.
-          </CardDescription>
+          <div className="space-y-1.5">
+            <CardTitle className="text-xl">Sign in to Real Capita ERP</CardTitle>
+            <CardDescription>
+              Use your authorized account to access the company workspace.
+            </CardDescription>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-5">
+        <CardContent className="space-y-5 pb-6">
           {submitError ? (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               {submitError}
@@ -222,7 +224,7 @@ export const LoginPage = ({ nextRoute }: { nextRoute: string }) => {
             </Button>
           </form>
         </CardContent>
-        <div className="border-t border-border/50 px-5 py-3 sm:px-6 text-center text-xs text-muted-foreground">
+        <div className="border-t border-border/50 px-6 py-4 text-center text-xs text-muted-foreground">
           Secure company-aware access for authorized Real Capita ERP users.
         </div>
       </Card>

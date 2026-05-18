@@ -1280,3 +1280,6 @@ Backend foundations through Prompt 11 remain intact. Prompt 12 established the a
   - the generic left brand/info card and "SECURE ACCESS" overline were removed
   - auth/session/redirect logic, form fields, company selector, and error banners remain unchanged
   - no backend, schema, migration, seed, or route changes
+- Prompt 43C completed runtime QA, responsive verification, functional login-flow testing, Playwright strict-mode fix, full validation, and git checkpoint for the login branding redesign
+- Prompt 43D applied a premium visual polish pass to the login card, widening the card from 420px to 520px, increasing the logo from 300px to 440px, improving vertical rhythm and card shadow/border treatment, and strengthening brand presence on wide desktop screens without touching auth logic
+- Prompt 43E completed final runtime verification of the 43D login polish, confirmed the wider card and larger logo are visibly served at 1440px, 1366px, and 1024px, deleted the untracked local `docs/diagrams/` folder per authorized cleanup, and committed and pushed the 43D visual polish checkpoint

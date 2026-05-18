@@ -37,3 +37,10 @@ The login page remains unauthenticated; no access-role changes.
 - No demo credential display on the login page
 - No dark-mode toggle or theme switching
 - No sidebar, shell, or authenticated-page redesign
+
+## Completion Notes
+
+- Prompt 43B: logo asset swap + centered single-card redesign — completed and pushed
+- Prompt 43C: runtime QA, responsive QA, functional QA, Playwright fix, full validation, git checkpoint — completed and pushed
+- Prompt 43D: premium visual polish pass widening card (420→520px), enlarging logo (300→440px), improving vertical rhythm and card shadow/border treatment — completed and pushed via 43E
+- Prompt 43E: final runtime verification, authorized cleanup of untracked local `docs/diagrams/` folder, confirmed 43D polish at 1440px/1366px/1024px, committed and pushed
