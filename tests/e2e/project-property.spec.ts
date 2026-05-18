@@ -847,7 +847,7 @@ test('supports unit create, edit, and filter flow with hierarchy context', async
   await setupProjectPropertyApiMocks(page, { authenticated: true });
 
   await page.goto('/project-property/units');
-  await expect(page.getByRole('heading', { name: 'Units' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Units', exact: true })).toBeVisible();
   await expect(page.locator('tr', { hasText: 'Tower 10A' })).toBeVisible();
 
   await page.getByRole('button', { name: 'New unit' }).click();
