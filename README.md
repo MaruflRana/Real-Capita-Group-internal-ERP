@@ -1,339 +1,259 @@
-# Real Capita ERP Monorepo
+# Real Capita Group Internal ERP
 
-Production-minded Nx monorepo foundation for the Real Capita Group internal ERP.
+Production-minded internal ERP for Real Capita Group, built as an Nx + pnpm monorepo with a Next.js frontend, NestJS REST API, PostgreSQL, Prisma, MinIO, and Docker Compose.
 
-## Stack
+## Project Overview
 
-- Monorepo: `pnpm` workspaces + `Nx`
-- Frontend: Next.js App Router + TypeScript + Tailwind + shadcn/ui-style shared primitives + TanStack Query
-- Backend: NestJS + TypeScript + REST + Swagger/OpenAPI
-- Database: PostgreSQL 15
-- ORM: Prisma
-- Storage: S3-compatible object storage via MinIO in local development
-- Testing: Playwright + Node test runner for backend integration units
-- Local orchestration: Docker Compose
-- Developer environment: VS Code devcontainer
+Real Capita Group Internal ERP is a company-scoped operations platform for authenticated Real Capita users. It supports role-aware access across finance, property, CRM, HR, payroll, audit, document, and demo/UAT workflows while preserving a strict REST boundary: the web app consumes the NestJS API, and the API remains the only backend source of truth for ERP business operations.
+
+## Current Implemented Scope
+
+- **Dashboard**: company-aware operational dashboard with role-filtered widgets, recent activity, pending work, quick actions, and analytics summaries.
+- **Org & Security**: companies, locations, departments, users, and company-scoped role assignments.
+- **Accounting**: chart of accounts, vouchers, voucher lines, draft editing, balanced posting, and voucher detail output.
+- **Financial Reports**: business overview, daily, weekly, monthly, yearly, trial balance, general ledger, profit and loss, and balance sheet reporting.
+- **Project & Property Master**: projects, cost centers, phases, blocks, zones, unit types, unit statuses, and units.
+- **CRM & Property Desk**: customers, Customer 360 profiles, leads, bookings, sale contracts, installment schedules, collections, and customer collection receipts.
+- **HR**: employees, attendance devices, device mappings, attendance logs, leave types, and leave requests.
+- **Payroll**: salary structures, payroll runs, payroll run detail/line editing, finalization/cancellation, and payroll posting.
+- **Audit & Documents**: attachments, direct browser-to-storage upload/finalize/download flows, attachment links, archive actions, and audit event browsing.
+
+## Highlighted Current Capabilities
+
+- Printable financial reports for Business Overview, Daily, Weekly, Monthly, Yearly, Trial Balance, General Ledger, Profit & Loss, and Balance Sheet.
+- Browser print and CSV output for documented finance surfaces and voucher detail.
+- Printable CRM customer collection receipt at `/crm-property-desk/collections/[collectionId]/receipt`.
+- Customer 360 Profile + Transaction History at `/crm-property-desk/customers/[customerId]`, backed by `GET /companies/:companyId/customers/:customerId/profile`.
+- Polished Real Capita branded login screen using the official logo asset.
+- Synthetic Demo/UAT data workflow with explicit seed, verify, and reset commands.
+- Verified supervisor/office-desktop live-demo workflow using `scripts/update-and-start-live-demo.ps1`.
+
+## Architecture Boundaries
+
+- `apps/web` is a Next.js App Router frontend and REST API consumer only.
+- `apps/api` is the NestJS REST API and sole backend/business-logic owner.
+- ERP business operations must not be implemented as Next.js server actions or Next.js API routes.
+- Prisma + PostgreSQL 15 own persistence, migrations, and generated types.
+- Raw SQL is reserved for justified reporting and transaction-enforcement paths already established in the design.
+- MinIO provides S3-compatible local object storage; browser upload/download flows use presigned URLs and are not proxied through Next.js.
+- Docker Compose is the canonical local and single-VM orchestration baseline.
+- Canonical Dockerfiles are `apps/api/Dockerfile` and `apps/web/Dockerfile`; canonical orchestration is `docker-compose.yml`.
+
+## Technology Stack
+
+| Area | Technology |
+| --- | --- |
+| Monorepo | pnpm workspaces, Nx |
+| Frontend | Next.js App Router, React, TypeScript, Tailwind, shared UI primitives, TanStack Query |
+| Backend | NestJS, TypeScript, REST, Swagger/OpenAPI |
+| Database | PostgreSQL 15, Prisma |
+| Object storage | MinIO / S3-compatible storage |
+| Testing | NestJS/API tests, Playwright e2e |
+| Runtime | Docker Compose with runner-style `web` and `api` containers |
+| Tooling | Node 22+, Corepack, pnpm 10.32.1+ |
 
 ## Repository Layout
 
 ```text
 apps/
-  api/              NestJS REST API and Dockerfile
-  web/              Next.js frontend and Dockerfile
+  api/              NestJS REST API, business logic, Swagger, API Dockerfile
+  web/              Next.js frontend, app shell, routes, web Dockerfile
 packages/
-  config/           Shared runtime constants and env helpers
+  config/           Shared access matrix, constants, and env helpers
   eslint-config/    Shared flat ESLint config
   tsconfig/         Shared TypeScript base configs
   types/            Shared TypeScript contracts
   ui/               Shared non-business UI primitives
 prisma/
-  schema.prisma     Auth/org-security foundation schema and migrations
+  schema.prisma     Database schema and migrations
+scripts/
+  *.mjs             Docker, backup/restore, demo seed, smoke, env helpers
+  *.ps1             Windows live-demo start/stop/update scripts
+docs/
+  architecture/     Architecture baseline and design references
+  operations/       Runtime, route inventory, demo data, live-demo operations
+  release/          Demo readiness, release, and operator references
+  uat/              UAT walkthrough, known limitations, sign-off material
+  handoffs/         Prompt continuity and implementation history
 tests/
-  e2e/              Playwright smoke coverage
-.devcontainer/
-  devcontainer.json Developer container baseline
+  e2e/              Playwright end-to-end coverage
 ```
 
-## Service Responsibilities
+## Prerequisites
 
-- `web`: Next.js UI shell. API consumer only.
-- `api`: NestJS REST API, auth owner, and future business logic owner.
-- `postgres`: relational persistence target for Prisma.
-- `minio`: local S3-compatible object storage for development and test workflows.
-- No Next.js API routes exist under `apps/web`; all backend operations belong in the NestJS API.
+- Git.
+- Node.js 22 or newer.
+- Corepack with pnpm 10.32.1 or newer.
+- Docker Desktop with Docker Compose.
+- PowerShell for Windows operator scripts.
+- `cloudflared` for the temporary public live-demo workflow. The live-demo guide documents the expected Windows install/location if it is missing.
 
-## Operations Guide
+## Fresh Local Setup
 
-- Phase 1 release, runtime, and single-VM deployment notes live in [docs/operations/deployment.md](docs/operations/deployment.md).
-- Phase 1 backup, restore, MinIO/S3, and disaster-recovery notes live in [docs/operations/backup-restore.md](docs/operations/backup-restore.md).
-- Phase 1 route/module inventory lives in [docs/operations/phase-1-route-inventory.md](docs/operations/phase-1-route-inventory.md).
-- Phase 1 UAT checklist lives in [docs/operations/phase-1-uat-checklist.md](docs/operations/phase-1-uat-checklist.md).
-- Synthetic demo/UAT seed, reset, and verify commands live in [docs/operations/demo-data.md](docs/operations/demo-data.md).
-- Phase 1 release checklist and caveats register live in [docs/operations/phase-1-release-checklist.md](docs/operations/phase-1-release-checklist.md).
-- Phase 1 UAT, demo, issue-log, and sign-off package lives in [docs/uat/README.md](docs/uat/README.md).
-
-## Phase 1 Release Handoff
-
-- Final release notes: [docs/release/phase-1-release-notes.md](docs/release/phase-1-release-notes.md).
-- Technical handoff: [docs/release/phase-1-technical-handoff.md](docs/release/phase-1-technical-handoff.md).
-- Operator quick start: [docs/release/operator-quick-start.md](docs/release/operator-quick-start.md).
-- UAT package: [docs/uat/README.md](docs/uat/README.md).
-- Deployment guide: [docs/operations/deployment.md](docs/operations/deployment.md).
-- Backup/restore guide: [docs/operations/backup-restore.md](docs/operations/backup-restore.md).
-
-## Current Frontend Coverage
-
-- authenticated application shell
-- login/logout/session handling against the NestJS auth API
-- company-aware protected routing
-- role-aware shell navigation, page guarding, forbidden states, and dashboard/widget visibility aligned with company-scoped RBAC
-- operational dashboard and signed-in home
-- Org & Security admin pages for companies, locations, departments, users, and company-scoped role assignments
-- accounting pages for chart of accounts and vouchers
-- finance output actions for trial balance, general ledger, profit & loss, balance sheet, and voucher detail via CSV export plus browser print-friendly rendering
-- project/property master pages for projects, cost centers, phases, blocks, zones, unit types, unit statuses, and units
-- CRM/property desk pages for customers, leads, bookings, sale contracts, installment schedules, and collections
-- HR Core pages for employees, attendance devices, device mappings, attendance logs, leave types, and leave requests
-- Payroll Core pages for salary structures, payroll runs, payroll run detail/line editing, and posting
-- Audit & Documents pages for attachments, attachment detail, secure upload/finalize/link/download/archive actions, and audit event browsing
-- selected Phase 1 CSV exports for units, customers, bookings, collections, employees, leave requests, payroll runs, attachments, and audit events
-
-## Phase 1 Export And Print Coverage
-
-- CSV export is the only Phase 1 structured file format added in this repo. No `.xlsx` generation or server-side PDF pipeline exists.
-- Browser print-friendly output is available for:
-  - trial balance
-  - general ledger
-  - profit & loss
-  - balance sheet
-  - voucher detail
-- CSV export is available for:
-  - trial balance
-  - general ledger
-  - profit & loss
-  - balance sheet
-  - voucher detail
-  - units
-  - customers
-  - bookings
-  - collections
-  - employees
-  - leave requests
-  - payroll runs
-  - attachments
-  - audit events
-- Export and print actions follow the existing company-scoped authorization model. Users can only see or use output actions for pages they can already access.
-
-## Phase 1 Access Behavior
-
-- Protected application routes redirect unauthenticated browser sessions to `/login`.
-- Authenticated sessions that lack company-scoped access for a route now receive a clear forbidden state instead of a generic page failure.
-- Shell navigation, dashboard quick actions, and dashboard widgets only surface modules that the current company role set can actually reach.
-- Current company-scoped roles used by Phase 1 access rules are:
-  - `company_admin`
-  - `company_accountant`
-  - `company_hr`
-  - `company_payroll`
-  - `company_sales`
-  - `company_member`
-
-## What Is Intentionally Not Built Yet
-
-- No password-reset, MFA, invite, SSO, or broader org-management flows
-- No fake CRUD modules or sample business data
-- No OCR/text extraction, virus scanning, approval workflow, e-signature, or public-sharing document flows
-- No report builder or dashboard-heavy audit/document analytics
-- No payslip PDF, bank payout/export, or broader reporting workflows
-- No `.xlsx` generation, server-side PDF rendering, automated scheduled backups, or point-in-time recovery
-
-## Environment Files
-
-Root:
-
-- `.env.example`: full-stack local defaults for direct runs and Docker Compose
-- `.env`: your local working copy for Compose and shared defaults
-- `NODE_ENV=development` is included in the root example so the API runtime validation can fail fast during direct local runs
-- In Docker Compose, `WEB_PORT`, `API_PORT`, `POSTGRES_PORT`, `MINIO_API_PORT`, and `MINIO_CONSOLE_PORT` are host-exposed ports; app containers keep stable internal ports
-- `WEB_APP_URL` and `API_BASE_URL` are backend-facing URLs consumed by `apps/api`; do not point the API at `NEXT_PUBLIC_*` variables
-- `CORS_ORIGIN` defaults to `WEB_APP_URL` if omitted, but keeping it explicit is recommended
-- `JWT_ACCESS_TOKEN_SECRET` and `JWT_REFRESH_TOKEN_SECRET` must each be at least 32 characters long
-- `S3_PUBLIC_ENDPOINT` must stay browser-resolvable for direct-upload/download document flows; local Docker defaults use `http://localhost:9000`
-- `BOOTSTRAP_*` values are optional and are only needed when you run the containerized admin-bootstrap helper
-- The root `build` scripts force `NODE_ENV=production` for Next.js builds so the shared local `.env` can stay on development settings for API work
-- Before release work, run `corepack pnpm ops:env-check -- --strict` and replace placeholder secrets.
-- Do not commit `.env`, local env overrides, database dumps, or object-storage backups.
-
-App-level examples:
-
-- `apps/api/.env.example`: backend-only variables
-- `apps/web/.env.example`: frontend public variables
-
-Recommended pattern:
-
-- Copy `.env.example` to `.env` at the repository root
-- Use `apps/api/.env.local` or `apps/web/.env.local` only when you need app-specific overrides during direct non-Docker development
-
-## Local Setup Without Docker
-
-Install dependencies:
-
-```powershell
-corepack pnpm install
-```
-
-Create the root env file:
+The Docker Compose path is the recommended first-run route because it mirrors the local/single-VM runtime baseline.
 
 ```powershell
 Copy-Item .env.example .env
+corepack pnpm install
+docker compose up -d --build
+corepack pnpm docker:migrate
+corepack pnpm seed:demo
+corepack pnpm seed:demo:verify
+corepack pnpm docker:smoke
 ```
 
-Start only infrastructure with Docker if you want PostgreSQL and MinIO locally:
+Open the app at:
+
+```text
+http://localhost:3000
+```
+
+Environment notes:
+
+- `.env.example` is the repository template; `.env` is the local machine copy used by Compose and local tooling.
+- `WEB_APP_URL`, `API_BASE_URL`, and `CORS_ORIGIN` should stay aligned for the current browser origin.
+- `S3_PUBLIC_ENDPOINT` must stay browser-resolvable for presigned document upload/download flows; local Docker defaults use `http://localhost:9000`.
+- Do not commit `.env` or local tunnel/env backup files.
+
+If you need a blank company instead of the synthetic Demo/UAT company, bootstrap an admin explicitly:
+
+```powershell
+corepack pnpm docker:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "change-me-secure-admin-password"
+```
+
+For direct app development without runner containers, keep PostgreSQL and MinIO running and start the apps directly:
 
 ```powershell
 corepack pnpm docker:infra
+corepack pnpm dev
 ```
 
-Start the apps directly:
+You can also run only one app while developing:
 
 ```powershell
 corepack pnpm dev:web
 corepack pnpm dev:api
 ```
 
-Or run both app processes together:
+## Existing Machine Update
+
+Use this when a development or office machine already has the repository and local runtime configured.
 
 ```powershell
-corepack pnpm dev
-```
-
-Apply the existing Prisma migrations locally:
-
-```powershell
-corepack pnpm prisma:generate
-corepack pnpm prisma:migrate:deploy
-```
-
-Create the first company admin explicitly:
-
-```powershell
-corepack pnpm auth:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "change-me-secure-admin-password"
-```
-
-## Local Setup With Docker Compose
-
-Create the root env file:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Start the full stack in the same production-minded mode used for the single-VM target:
-
-```powershell
+git pull --ff-only origin main
+corepack pnpm install
 docker compose up -d --build
-```
-
-Apply database migrations against the running Compose database:
-
-```powershell
 corepack pnpm docker:migrate
-```
-
-Bootstrap the first company admin against the running Compose database:
-
-```powershell
-corepack pnpm docker:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "change-me-secure-admin-password"
-```
-
-Run the runtime smoke checks:
-
-```powershell
+corepack pnpm seed:demo:verify
 corepack pnpm docker:smoke
 ```
 
-Create and verify a PostgreSQL backup from the running Compose stack:
+If Demo/UAT verification fails and the database is intended to be refreshed, reseed explicitly:
 
 ```powershell
-corepack pnpm backup:db
-corepack pnpm verify:backup -- --file backups/postgres/real_capita_erp-YYYYMMDDTHHMMSSZ.dump
+corepack pnpm seed:demo
+corepack pnpm seed:demo:verify
 ```
 
-Stop the stack:
+## Demo/UAT Data And Login
+
+The repository includes an explicit, resettable synthetic Demo/UAT seed for the reserved company:
+
+```text
+Real Capita Demo / UAT
+real-capita-demo-uat
+```
+
+Demo users:
+
+```text
+demo.admin@demo.realcapita.test
+demo.accountant@demo.realcapita.test
+demo.hr@demo.realcapita.test
+demo.payroll@demo.realcapita.test
+demo.sales@demo.realcapita.test
+demo.member@demo.realcapita.test
+```
+
+Local demo password:
+
+```text
+change-me-demo-uat-password
+```
+
+Demo data rules:
+
+- Demo data is never seeded automatically during app startup, Docker startup, migrations, or admin bootstrap.
+- `corepack pnpm seed:demo:verify` is the default safety check before demos.
+- `corepack pnpm seed:demo` refreshes the reserved Demo/UAT company and should be run only when that refresh is intentional.
+- `corepack pnpm seed:demo:reset` is guarded and should not be used against non-demo company data.
+- The Customer 360 and receipt demo path uses `DEMO Customer Nadia Synthetic` and collection `DEMO-COL-2026-001`.
+
+## Supervisor Desktop Live Demo
+
+For a supervisor or office desktop that needs to pull the latest ERP changes, restore a healthy runtime, verify demo readiness, and create a fresh public demo link, run:
 
 ```powershell
-docker compose down
+powershell -ExecutionPolicy Bypass -File .\scripts\update-and-start-live-demo.ps1
 ```
 
-Follow logs:
+Run the fresh local setup once on that machine before relying on this wrapper; the script assumes Git, Docker, PowerShell, cloudflared, and local Node dependencies are already available.
+
+The wrapper:
+
+- checks the Git worktree before pulling,
+- pulls `origin/main` with fast-forward only,
+- repairs stale tunnel URL values in `.env` when needed,
+- rebuilds and recreates the Docker runtime,
+- verifies API health,
+- verifies Demo/UAT data by default,
+- verifies local demo login,
+- launches a Cloudflare Quick Tunnel,
+- verifies the public login page and public demo login before printing the final URL.
+
+To intentionally refresh Demo/UAT data before launching the public link:
 
 ```powershell
-docker compose logs -f
+powershell -ExecutionPolicy Bypass -File .\scripts\update-and-start-live-demo.ps1 -RefreshDemoData
 ```
 
-## Developer URLs and Ports
+This workflow is for temporary demo/UAT link generation only. Cloudflare Quick Tunnel URLs change on every fresh start and are not permanent hosting.
 
-| Service       | URL / Port                                         | Notes                           |
-| ------------- | -------------------------------------------------- | ------------------------------- |
-| Web           | `http://localhost:3000`                            | Next.js app shell               |
-| API           | `http://localhost:3333`                            | NestJS REST API                 |
-| Swagger       | `http://localhost:3333/api/docs`                   | OpenAPI UI                      |
-| Auth Me       | `http://localhost:3333/api/v1/auth/me`             | Bearer-protected current user   |
-| Liveness      | `http://localhost:3333/api/v1/health`              | API runtime probe               |
-| Readiness     | `http://localhost:3333/api/v1/health/ready`        | Runtime + PostgreSQL + S3 check |
-| Dependencies  | `http://localhost:3333/api/v1/health/dependencies` | Structured dependency report    |
-| PostgreSQL    | `localhost:5432`                                   | Uses credentials from `.env`    |
-| MinIO API     | `http://localhost:9000`                            | S3-compatible endpoint          |
-| MinIO Console | `http://localhost:9001`                            | Local object storage admin UI   |
+## Stop Or Restore Live Demo
 
-- Canonical local browser origin: `http://localhost:3000`
-- `http://127.0.0.1:3000` redirects to the canonical localhost origin and should not be used in docs, tests, or normal browser verification
-
-## MinIO In Local Development
-
-- MinIO exists only to emulate the intended S3-compatible storage boundary during development.
-- Application containers should treat object storage as an external service, not as a local disk write target.
-- Uploaded file strategies in later prompts should target the S3 API, not the app container filesystem.
-- The API readiness check verifies S3-compatible connectivity, not upload flows.
-- In Docker Compose, the API container uses the MinIO root credential pair from `.env`.
-- In Docker Compose, presigned document upload/download URLs must use `S3_PUBLIC_ENDPOINT`, not the internal `minio` container hostname, so browser-driven attachment flows continue to work from the host machine.
-- For direct non-Docker API runs, keep `S3_ACCESS_KEY` and `S3_SECRET_KEY` aligned with an actual MinIO access key pair.
-- The configured bucket (`real-capita-erp-dev` by default) remains the target bucket for future document features.
-
-## Auth Core Verification
-
-After `docker compose up -d --build`, verify the runtime and auth core:
+Stop the temporary tunnel and restore local `.env` URL/CORS values:
 
 ```powershell
-Invoke-WebRequest http://localhost:3333/api/v1/health
-Invoke-WebRequest http://localhost:3333/api/v1/health/ready
-Invoke-WebRequest http://localhost:3333/api/v1/health/dependencies
-Invoke-WebRequest http://localhost:3333/api/docs
-
-corepack pnpm docker:migrate
-corepack pnpm docker:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "change-me-secure-admin-password"
-corepack pnpm docker:smoke
-
-$loginBody = @{
-  email = 'admin@example.com'
-  password = 'change-me-secure-admin-password'
-} | ConvertTo-Json
-
-$session = Invoke-RestMethod -Method Post -Uri http://localhost:3333/api/v1/auth/login -ContentType 'application/json' -Body $loginBody
-$accessToken = $session.accessToken
-$refreshToken = $session.refreshToken
-
-Invoke-RestMethod -Headers @{ Authorization = "Bearer $accessToken" } -Uri http://localhost:3333/api/v1/auth/me
-
-$rotatedSession = Invoke-RestMethod -Method Post -Uri http://localhost:3333/api/v1/auth/refresh -ContentType 'application/json' -Body (@{
-  refreshToken = $refreshToken
-} | ConvertTo-Json)
-
-Invoke-RestMethod -Method Post -Uri http://localhost:3333/api/v1/auth/logout -ContentType 'application/json' -Body (@{
-  refreshToken = $rotatedSession.refreshToken
-} | ConvertTo-Json)
+powershell -ExecutionPolicy Bypass -File .\scripts\stop-live-demo.ps1
 ```
 
-If the same user later belongs to multiple companies, include `companyId` in the login request body to choose the company-scoped session context.
+Stop the tunnel and also stop the main Docker Compose stack:
 
-## Docker Baseline
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\stop-live-demo.ps1 -StopStack
+```
 
-- `apps/api/Dockerfile`: multi-stage local-first API image with `development`, `builder`, and `runner` stages
-- `apps/web/Dockerfile`: multi-stage web image with `development`, `builder`, and standalone `runner` stages
-- `docker-compose.yml`: production-minded Compose stack with runner containers for `api` and `web`, healthchecks, env-driven configuration, official `postgres:15-alpine`, a pinned official MinIO image, and `ops` profile helpers for migrations and admin bootstrap
-- The only canonical Dockerfiles in this repository are `apps/api/Dockerfile` and `apps/web/Dockerfile`
+If a tunnel dies after a machine/session ends, run the stop script first to restore local mode, then run `update-and-start-live-demo.ps1` again to generate a fresh public URL.
 
-## Devcontainer
+## Local URLs
 
-The repository includes `.devcontainer/devcontainer.json` with:
+| Service | URL / Port | Notes |
+| --- | --- | --- |
+| Web | `http://localhost:3000` | Canonical browser origin |
+| API | `http://localhost:3333` | NestJS REST API |
+| Swagger | `http://localhost:3333/api/docs` | OpenAPI UI |
+| API liveness | `http://localhost:3333/api/v1/health` | Runtime probe |
+| API readiness | `http://localhost:3333/api/v1/health/ready` | Runtime + PostgreSQL + S3 check |
+| API dependencies | `http://localhost:3333/api/v1/health/dependencies` | Structured dependency report |
+| PostgreSQL | `localhost:5432` | Uses credentials from `.env` |
+| MinIO API | `http://localhost:9000` | S3-compatible endpoint |
+| MinIO Console | `http://localhost:9001` | Local object-storage admin UI |
 
-- Node 22
-- `pnpm`/Nx workflow support
-- Docker-outside-of-Docker
-- VS Code extensions for TypeScript, Prisma, ESLint, Prettier, Docker, Playwright, Tailwind, and PostgreSQL
+Use `http://localhost:3000` in browsers, docs, and tests. `http://127.0.0.1:3000` redirects to the canonical localhost origin.
 
-Open the repository in a devcontainer, then run the same root commands documented here.
+## Validation Commands
 
-## Quality Commands
+Core validation:
 
 ```powershell
 corepack pnpm verify
@@ -341,47 +261,58 @@ corepack pnpm lint
 corepack pnpm typecheck
 corepack pnpm build
 corepack pnpm test
+```
+
+Docker/runtime validation:
+
+```powershell
+docker compose up -d --build
 corepack pnpm docker:migrate
-corepack pnpm docker:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "change-me-secure-admin-password"
+corepack pnpm seed:demo:verify
 corepack pnpm docker:smoke
-corepack pnpm ops:smoke
+```
+
+Demo data:
+
+```powershell
+corepack pnpm seed:demo -- --dry-run
+corepack pnpm seed:demo
+corepack pnpm seed:demo:verify
+corepack pnpm seed:demo:reset -- --dry-run
+corepack pnpm seed:demo:reset
+```
+
+Backup, restore, and environment checks:
+
+```powershell
 corepack pnpm backup:db
 corepack pnpm verify:backup -- --file backups/postgres/real_capita_erp-YYYYMMDDTHHMMSSZ.dump
 corepack pnpm restore:db -- --file backups/postgres/real_capita_erp-YYYYMMDDTHHMMSSZ.dump --dry-run
 corepack pnpm ops:env-check -- --strict
-corepack pnpm format
-corepack pnpm prisma:format
-corepack pnpm prisma:generate
 ```
 
-## Phase 1 Release Candidate References
+## Documentation Map
 
-- Route and module inventory: [docs/operations/phase-1-route-inventory.md](docs/operations/phase-1-route-inventory.md)
-- Human UAT checklist: [docs/operations/phase-1-uat-checklist.md](docs/operations/phase-1-uat-checklist.md)
-- Release checklist and caveats register: [docs/operations/phase-1-release-checklist.md](docs/operations/phase-1-release-checklist.md)
-- UAT, demo, issue-log, and sign-off package: [docs/uat/README.md](docs/uat/README.md)
+- Architecture baseline: [docs/architecture/phase-1-architecture-baseline.md](docs/architecture/phase-1-architecture-baseline.md)
+- Route, module, role, and output inventory: [docs/operations/phase-1-route-inventory.md](docs/operations/phase-1-route-inventory.md)
+- Demo/UAT seed data guide: [docs/operations/demo-data.md](docs/operations/demo-data.md)
+- Temporary live-demo operations: [docs/operations/temporary-live-demo.md](docs/operations/temporary-live-demo.md)
+- Demo readiness guide: [docs/release/demo-readiness-guide.md](docs/release/demo-readiness-guide.md)
+- UAT demo walkthrough: [docs/uat/phase-1-demo-walkthrough.md](docs/uat/phase-1-demo-walkthrough.md)
+- Deployment operations: [docs/operations/deployment.md](docs/operations/deployment.md)
+- Backup and restore operations: [docs/operations/backup-restore.md](docs/operations/backup-restore.md)
+- Phase 1 UAT package: [docs/uat/README.md](docs/uat/README.md)
+- Agent continuity and prompt history: [docs/handoffs/foundation-status.md](docs/handoffs/foundation-status.md)
 
-## CI Baseline
+## Operational Notes And Known Limitations
 
-GitHub Actions currently validates:
-
-- dependency installation
-- Docker Compose config rendering
-- backup/restore helper help output and env-template safety validation
-- lint
-- typecheck
-- build
-- API unit tests plus Playwright smoke coverage
-- Docker Compose boot plus runtime smoke on the documented localhost URLs
-
-## Operational Notes
-
-- Docker Compose is the intended Phase 1 local and single-VM orchestration baseline.
-- Secrets are not embedded in Compose; they come from `.env`.
-- Compose now runs the production-minded `runner` stages for `api` and `web` instead of bind-mounted dev processes.
-- The `ops` profile exposes the canonical containerized maintenance helpers:
-  - `api-migrate`
-  - `api-bootstrap`
-- The API now exposes auth, liveness, readiness, dependency, and Swagger endpoints for backend verification.
-- Refresh tokens are stored as SHA-256 hashes with rotation and family-wide revocation support.
-- The bootstrap admin path is explicit only; no auth seed runs automatically during app startup.
+- CSV is the only structured export format currently implemented.
+- Browser print is the print/PDF-from-browser path; there is no server-side PDF pipeline.
+- Supported print surfaces are documented in the route inventory and demo readiness guide.
+- PostgreSQL backup helpers do not back up MinIO/S3 object bytes.
+- Automated scheduled backups and point-in-time recovery are not implemented in this repository.
+- Password reset, MFA, SSO, invites, public portals, imports, notifications, approval engines, e-signature, OCR, and virus scanning are outside the current scope.
+- Freshly bootstrapped companies can show empty lists and reports until real records or the synthetic Demo/UAT seed are added.
+- Non-localhost production-style browser sessions require HTTPS-compatible origins and real secrets.
+- Swagger should not be exposed publicly in production unless intentionally enabled.
+- Do not commit `.env`, `.env.tunnel-backup*`, `Caddyfile.tunnel`, `.live-demo/`, `backups/`, database dumps, object-storage backups, `node_modules/`, build outputs, Playwright reports, or `*.tsbuildinfo`.
