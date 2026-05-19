@@ -297,6 +297,7 @@ corepack pnpm ops:env-check -- --strict
 - Route, module, role, and output inventory: [docs/operations/phase-1-route-inventory.md](docs/operations/phase-1-route-inventory.md)
 - Demo/UAT seed data guide: [docs/operations/demo-data.md](docs/operations/demo-data.md)
 - Temporary live-demo operations: [docs/operations/temporary-live-demo.md](docs/operations/temporary-live-demo.md)
+- Agent handoff protocol: [docs/operations/agent-handoff-protocol.md](docs/operations/agent-handoff-protocol.md)
 - Demo readiness guide: [docs/release/demo-readiness-guide.md](docs/release/demo-readiness-guide.md)
 - UAT demo walkthrough: [docs/uat/phase-1-demo-walkthrough.md](docs/uat/phase-1-demo-walkthrough.md)
 - Deployment operations: [docs/operations/deployment.md](docs/operations/deployment.md)

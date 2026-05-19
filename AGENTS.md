@@ -25,10 +25,14 @@
 
 ## 3. Current Project State
 
-- The repository is currently beyond **Prompt 42C**.
-- Latest completed feature: **Customer 360 Profile + Customer Records + Transaction History** (Prompt 42B/42C).
-- Prompt 42C completed runtime QA, seeded Demo/UAT verification, responsive checks at 1440px/1366px/1024px, receipt-link regression, and final validation (lint, typecheck, build, test all passed).
-- Customer 360 adds `GET /companies/:companyId/customers/:customerId/profile` and `/crm-property-desk/customers/[customerId]` behind existing CRM access (`company_admin`, `company_sales`).
+- The repository checkpoint is beyond **Prompt 45**.
+- Recent completed milestones include:
+  - Prompt 42: Customer 360 Profile + Transaction History.
+  - Prompt 43: Real Capita login branding and visual polish.
+  - Prompt 44: cross-machine live-demo workflow plus update/start/stop scripts.
+  - Prompt 45: refreshed README and runbook.
+- Active continuation scope must always be read from the latest `docs/handoffs/` scope/status files.
+- Do not treat Prompt 46 work as checkpointed until git history confirms it; Prompt 46B/46C may be present as active uncommitted work.
 - Do not invent next-feature scope. Read the latest handoff scope/status docs for continuation guidance.
 
 ## 4. Canonical Documentation Reading Order
@@ -70,7 +74,6 @@ New agents should read docs in this order before making changes:
   - `node_modules/`, `dist/`, `.next/`
   - `test-results/`, `playwright-report/`
   - `.playwright-mcp/`, `.live-demo/`
-  - `docs/diagrams/`
   - `*.tsbuildinfo`
 - Update the handoff docs (`docs/handoffs/`) as part of the checkpoint when completing a prompt.
 
@@ -79,6 +82,7 @@ New agents should read docs in this order before making changes:
 - Repository-local Droid skills live under `.factory/skills/<skill-name>/SKILL.md`.
 - These skills supplement `AGENTS.md` and the existing `docs/handoffs/` continuity system; they do not replace the Markdown handoff memory.
 - Keep Droid skill edits scoped to agent-infrastructure tasks unless explicitly requested.
+- When switching between Codex App and Droid CLI implementation lanes, follow `docs/operations/agent-handoff-protocol.md`; it defines lane-switching discipline and does not replace this guide or `docs/handoffs/`.
 
 ## Verified Local URLs
 
