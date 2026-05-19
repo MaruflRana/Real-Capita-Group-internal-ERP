@@ -6,9 +6,9 @@ Prompt 44C completed the final end-to-end proof and checkpoint for the superviso
 
 ## Local Commit Created
 
-- Commit: `bef2156a2 ops: add verified one-command live demo workflow`
+- Commit: `983a583cb8009cadb6a2682f8cc78882824d43a2 ops: add verified one-command live demo workflow`
+- Original pre-amend hash was `bef2156a2`; the commit was amended 5 times during Prompt 44C to fix PowerShell 5.1 compatibility issues discovered during live execution
 - Created from a clean tracked state (only `.tmp/` untracked, not staged)
-- The commit was amended 5 times during Prompt 44C to fix PowerShell 5.1 compatibility issues discovered during live execution
 
 ## Script Corrections Required During Prompt 44C
 
@@ -57,9 +57,9 @@ Default verify-only demo data behavior (no `-RefreshDemoData`).
 
 ## Final Public Cloudflare Live URL
 
-**https://playback-snow-brook-work.trycloudflare.com**
+**https://playback-snow-brook-work.trycloudflare.com** (original, now dead)
 
-Note: Cloudflare Quick Tunnel URLs change on every fresh run. This URL is valid only for the current live session.
+Note: Cloudflare Quick Tunnel URLs change on every fresh run. The original Prompt 44C tunnel was terminated after the session ended. Prompt 44D restored the runtime and re-launched with a new URL: `https://instances-forest-worked-papua.trycloudflare.com`.
 
 ## Public Login Verification Result
 
@@ -69,17 +69,13 @@ Note: Cloudflare Quick Tunnel URLs change on every fresh run. This URL is valid 
 
 ## Live Demo Left Running
 
-Yes. The live demo was left running after Prompt 44C verification. The tunnel, Caddy proxy, Docker stack, and cloudflared process all remain active.
+Yes, at the time of Prompt 44C completion. The tunnel, Caddy proxy, Docker stack, and cloudflared process all remained active.
 
-Active services:
-- Docker Compose: `web`, `api`, `postgres`, `minio` containers healthy
-- Caddy proxy: `real-capita-tunnel-caddy` container running
-- Cloudflared process: PID running
-- Public URL accessible through the Cloudflare Quick Tunnel
+However, the tunnel died after the VS Code session ended (cloudflared terminated gracefully at `2026-05-18T21:57:03Z`). The `.env` was left stuck in tunnel mode and the `web` container became unhealthy (redirecting to the dead tunnel URL). Prompt 44D restored the runtime and re-launched a fresh live demo.
 
 ## Files Changed in Prompt 44C Commit
 
-The final commit `bef2156a2` includes all Prompt 44B and 44C changes:
+The final commit `983a583cb8009cadb6a2682f8cc78882824d43a2` includes all Prompt 44B and 44C changes:
 
 - `scripts/update-and-start-live-demo.ps1` (new, with Prompt 44C PS5.1 compat fixes)
 - `scripts/start-live-demo.ps1` (modified, with Prompt 44C PS5.1 compat fixes)
@@ -91,11 +87,11 @@ The final commit `bef2156a2` includes all Prompt 44B and 44C changes:
 - `docs/handoffs/prompt-44a-status.md` (new)
 - `docs/handoffs/prompt-44b-status.md` (new)
 
-Plus this new Prompt 44C status doc (to be amended into the commit before push).
+Plus the Prompt 44C status doc.
 
 ## Push Result
 
-Pending. Push to `origin/main` will be performed after this doc is committed.
+Completed. The commit was pushed to `origin/main` after the Prompt 44C session ended. HEAD and origin/main both resolve to `983a583cb8009cadb6a2682f8cc78882824d43a2`.
 
 ## Operational Caveats
 
@@ -106,4 +102,4 @@ Pending. Push to `origin/main` will be performed after this doc is committed.
 
 ## Final Status
 
-End-to-end live demo workflow proof completed. Commit ready for push. Live demo remains running.
+End-to-end live demo workflow proof completed and pushed. Original tunnel died after session ended; runtime restored and re-launched by Prompt 44D. See `docs/handoffs/prompt-44d-status.md` for the current live demo state.
