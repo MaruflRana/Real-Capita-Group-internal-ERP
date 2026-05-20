@@ -1,5 +1,3 @@
-console.warn('\n⚠️  DEPRECATION WARNING: `seed:demo` is deprecated. Use `seed:realistic:uat` instead.\n     The realistic UAT seed produces a production-mature dataset with no Demo/UAT contamination.\n');
-
 import { runSeedRealisticCommand } from './lib/realistic-data/index.mjs';
 
 void runSeedRealisticCommand().catch((error) => {

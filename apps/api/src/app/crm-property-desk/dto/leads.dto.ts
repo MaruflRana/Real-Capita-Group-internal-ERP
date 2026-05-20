@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   MaxLength,
 } from 'class-validator';
 
@@ -59,6 +60,9 @@ export class CreateLeadDto {
   @IsOptional()
   @IsString()
   @MaxLength(32)
+  @Matches(/^\+?\d*$/, {
+    message: 'Phone must contain only digits and an optional leading +.',
+  })
   phone?: string | null;
 
   @ApiPropertyOptional({
@@ -119,6 +123,9 @@ export class UpdateLeadDto {
   @IsOptional()
   @IsString()
   @MaxLength(32)
+  @Matches(/^\+?\d*$/, {
+    message: 'Phone must contain only digits and an optional leading +.',
+  })
   phone?: string | null;
 
   @ApiPropertyOptional({

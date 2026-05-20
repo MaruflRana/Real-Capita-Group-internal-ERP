@@ -14,8 +14,8 @@ For manual local-only demo preparation:
 - Confirm migrations have run with `corepack pnpm docker:migrate`.
 - Confirm a company admin exists through `corepack pnpm docker:bootstrap -- --company-name ...` when needed.
 - Confirm `corepack pnpm docker:smoke` passes.
-- For a populated supervisor demo, run `corepack pnpm seed:demo` and `corepack pnpm seed:demo:verify` against the intended local/UAT database.
-- Use `corepack pnpm seed:demo` as the authoritative Demo/UAT refresh for `real-capita-demo-uat`; it now rebuilds the reserved demo company before reseeding.
+- For a populated supervisor demo, run `corepack pnpm seed:realistic:uat` and `corepack pnpm seed:realistic:verify` against the intended local/UAT database.
+- Use `corepack pnpm seed:realistic:uat` as the authoritative UAT refresh for `real-capita-group`; it rebuilds the Real Capita Group company before reseeding.
 - Use the browser URL `http://localhost:3000`.
 - Confirm the demo account, password, company, and role labels are known.
 - Confirm `S3_PUBLIC_ENDPOINT` is browser-resolvable before demonstrating attachments.

@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 import {
   Bar,
@@ -160,8 +160,8 @@ const DEFAULT_TONES: ChartTone[] = [
   'neutral',
 ];
 
-const numberFormatter = new Intl.NumberFormat('en-US');
-const compactNumberFormatter = new Intl.NumberFormat('en-US', {
+const numberFormatter = new Intl.NumberFormat('en-IN');
+const compactNumberFormatter = new Intl.NumberFormat('en-IN', {
   maximumFractionDigits: 1,
   notation: 'compact',
 });
@@ -296,7 +296,23 @@ export const formatCount = (value: number | string | null | undefined) =>
 
 export const formatCompactCurrency = (
   value: number | string | null | undefined,
-) => compactNumberFormatter.format(toFiniteNumber(value));
+) => {
+  const amount = toFiniteNumber(value);
+
+  if (amount >= 10_000_000) {
+    return `৳${(amount / 10_000_000).toFixed(1)}C`;
+  }
+
+  if (amount >= 100_000) {
+    return `৳${(amount / 100_000).toFixed(1)}L`;
+  }
+
+  if (amount >= 1_000) {
+    return `৳${(amount / 1_000).toFixed(1)}K`;
+  }
+
+  return `৳${amount.toFixed(0)}`;
+};
 
 export const formatPercentValue = (value: number | string | null | undefined) =>
   percentFormatter.format(toFiniteNumber(value));
@@ -493,7 +509,7 @@ export const AnalyticsEmptyState = ({
   showDemoHint?: boolean;
 }) => {
   const resolvedDescription = showDemoHint
-    ? `${description} Demo workspace indicators appear when presentation data is available.`
+    ? `${description} Presentation data indicators appear when seeded data is available.`
     : description;
 
   return <ChartEmptyState description={resolvedDescription} title={title} />;
@@ -636,6 +652,8 @@ export const ExecutiveTrendChart = ({
   emptyDescription: string;
   format?: AnalyticsValueFormat;
 }) => {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const decoratedSeries = decorateSeries(series);
   const barSeries = decoratedSeries.filter(
     (item) => (item.type ?? 'bar') === 'bar',
@@ -717,10 +735,32 @@ export const ExecutiveTrendChart = ({
   const formatTick = (value: number) =>
     formatAnalyticsValue(value, tickFormat);
 
+  if (!mounted) {
+    return (
+      <div className="min-w-0 max-w-full space-y-4" role="img">
+        <div className="rounded-lg border border-border bg-card shadow-sm">
+          <div className="h-[280px] px-2 py-2 sm:h-[320px] flex items-center justify-center">
+            <div className="animate-pulse rounded-lg bg-border/30 h-48 w-3/4" />
+          </div>
+        </div>
+        <ChartLegend
+          format={format}
+          items={decoratedSeries.map((item, index) => ({
+            key: item.key,
+            label: item.label,
+            marker: item.style.marker,
+            tone: item.tone,
+            value: totals[index] ?? 0,
+          }))}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-w-0 max-w-full space-y-4" role="img">
       <div className="rounded-lg border border-border bg-card shadow-sm">
-        <div className="min-h-[280px] px-2 py-2 sm:min-h-[320px]">
+        <div className="h-[280px] px-2 py-2 sm:h-[320px]">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart
               data={rechartsData}

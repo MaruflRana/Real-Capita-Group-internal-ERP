@@ -33,6 +33,43 @@ export const formatDateInputValue = (value: Date): string => {
   return `${year}-${month}-${day}`;
 };
 
+export const formatBDT = (
+  value: number | string | null | undefined,
+  options?: { compact?: boolean },
+  emptyLabel = '0.00',
+) => {
+  if (value === null || value === undefined || value === '') {
+    return emptyLabel;
+  }
+
+  const amount = typeof value === 'number' ? value : Number(value);
+
+  if (Number.isNaN(amount)) {
+    return emptyLabel;
+  }
+
+  if (options?.compact) {
+    if (amount >= 10_000_000) {
+      const crores = amount / 10_000_000;
+      return `৳${crores.toFixed(1)}C`;
+    }
+    if (amount >= 100_000) {
+      const lakhs = amount / 100_000;
+      return `৳${lakhs.toFixed(1)}L`;
+    }
+    if (amount >= 1_000) {
+      const thousands = amount / 1_000;
+      return `৳${thousands.toFixed(1)}K`;
+    }
+    return `৳${amount.toFixed(0)}`;
+  }
+
+  return `৳${new Intl.NumberFormat('en-IN', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount)}`;
+};
+
 export const formatAccountingAmount = (
   value: number | string | null | undefined,
   emptyLabel = '0.00',
@@ -47,10 +84,10 @@ export const formatAccountingAmount = (
     return emptyLabel;
   }
 
-  return new Intl.NumberFormat('en-US', {
+  return `৳${new Intl.NumberFormat('en-IN', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(amount);
+  }).format(amount)}`;
 };
 
 export const formatName = (

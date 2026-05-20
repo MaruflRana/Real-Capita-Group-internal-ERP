@@ -1410,3 +1410,54 @@ Backend foundations through Prompt 11 remain intact. Prompt 12 established the a
   - Business Overview verified: title, KPI hierarchy, collection efficiency, outstanding receivables, insight strip, flagship chart, period table totals/loss flags, calculation notes, period type grouping
   - Customer 360 verified: identity, metrics, commercial tables, transaction history, timeline, receipt link
   - no blockers found; workstream is ready for checkpoint commit/push
+
+- Prompt 51C completed the Realistic UAT Seed Framework Replacement:
+  - replaced the old `scripts/lib/demo-data.mjs` monolithic synthetic demo seed with a modular realistic data architecture under `scripts/lib/realistic-data/`
+  - new canonical seed commands: `seed:realistic:uat`, `seed:realistic:verify`, `seed:realistic:uat:reset`
+  - old `seed:demo`, `seed:demo:reset`, `seed:demo:verify` preserved as deprecated aliases with warning
+  - company workspace changed from `real-capita-demo-uat` to `real-capita-group`
+  - walkthrough users changed from `demo.realcapita.test` domain to `realcapita.com.bd` domain
+  - UAT password changed from `change-me-demo-uat-password` to `rcg-uat-2026-password`
+  - seeded dataset is Bangladesh-facing, BDT/৳-based, with 4+ years of operational history (2022–2026)
+  - zero "Demo", "UAT", "Synthetic", "Test", "Sample", "Mock" contamination in any business-facing text field
+  - volume targets met: 600 customers, 400 leads, 350 bookings, 250 sale contracts, 2,597 installment schedule rows, 2,585 collections, 4,620 vouchers (all 27 module volume checks pass)
+  - posted voucher balance verified: debits = credits exactly
+  - 250 full-chain customers (booking → contract → installment → collection → receipt voucher)
+  - 46 payroll month coverage (Jul 2022–Apr 2026)
+  - contamination scan: zero hits across all business-facing text fields
+  - frontend BDT/৳ formatting: `formatBDT()` helper added to `apps/web/src/lib/format.ts`; analytics formatters updated to `en-IN`; Demo/UAT workspace banner removed; AnalyticsEmptyState wording neutralized
+  - payroll posting voucher balance bug fixed (removed extra debit line for deduction expense)
+  - reset order bug fixed (bookings/sale contracts/collections deleted before units)
+  - lint, typecheck, build passed in prior session; seed and verify pass in current session
+
+- Prompt 51D completed the Full Realistic Seed Quality Verification + Total Old Demo Data Cleanup:
+  - realistic verification baseline: all 27 checks pass, contamination zero, debits = credits balanced (৳6,894,031,627.87)
+  - old `real-capita-demo-uat` company: already removed (confirmed zero rows in DB)
+  - bootstrap "Real Capita" company (slug: real-capita) with 6 @example.com users: fully removed
+  - final DB state: only "Real Capita Group" (slug: real-capita-group) exists; zero old demo residue
+  - `scripts/lib/demo-data.mjs`: confirmed deleted from disk with no active runtime dependency
+  - deprecated `seed:demo*` aliases: still present, delegating to realistic commands with warnings
+  - BDT/৳ formatting: `formatAccountingAmount` now prepends ৳; `formatAnalyticsValue('currency')` no longer double-wraps
+  - login placeholder: updated from `admin@example.com` to `admin@realcapita.com.bd`
+  - 2027 date constraint: installment-linked collections now capped at 2026-04-30; zero 2027 vouchers/collections
+  - customer email/phone uniqueness: zero duplicates verified
+  - browser QA: dashboard shows realistic data with ৳ prefix, Bangladesh names, no demo residue
+  - lint, typecheck, build all pass; Docker web container rebuilt and verified
+
+- Prompt 51D-S fixed the realistic seed profitability balance and restored the Business Overview trend chart:
+  - financial loss root cause: seed-data tuning problem — 50/50 revenue/advances credit split under-represented revenue, large expense ranges over-represented expenses
+  - financial tuning: changed installment collection receipt credit split to 80/20 (revenue/advances); added booking fee revenue recognition journals (250 contracts); removed full contract-level revenue recognition (initially added, then removed as it produced unrealistic 70% profit margin); moderated expense ranges (land max ৳15M, contractor max ৳4M, materials max ৳1.5M; frequencies reduced)
+  - after retuning: Revenue ≈ ৳3.14B, Expenses ≈ ৳1.95B, Net Profit ≈ ৳1.19B (positive overall); 12 out of 52 months show realistic loss; yearly breakdown shows all years profitable with 2025 near break-even
+  - Business Overview chart blank root cause: overview mode default date range only covered current year (5 months for 2026), missing 4 years of realistic data
+  - chart fix: extended overview mode default date range to span 4+ years (matching yearly mode pattern)
+  - seed/verify: all 27 checks pass, contamination zero, debits = credits = ৳6,122,848,621.98, timeline 2022-01-01 to 2026-04-30
+  - lint, typecheck, build all pass
+
+- Prompt 51D-T diagnosed and fixed the blank Business Overview financial trend chart at browser runtime:
+  - true root cause: Recharts `ResponsiveContainer` with `height="100%"` could not resolve its height from a parent that only had CSS `min-height` (Tailwind `min-h-[280px]`); `height: 100%` requires an explicit `height` containing block, not just `min-height`
+  - browser-runtime evidence: `ResponsiveContainer` inner div rendered with `style="width: 0px; height: 0px"`; Recharts warning `The width(-1) and height(-1) of chart should be greater than 0`
+  - primary fix: changed chart container from `min-h-[280px]` / `sm:min-h-[320px]` to `h-[280px]` / `sm:h-[320px]` (explicit height instead of min-height)
+  - hydration fix: added `mounted` state + `useEffect` guard in `ExecutiveTrendChart` to prevent Recharts from measuring -1/-1 during SSR/hydration; renders loading skeleton before mount, then actual chart after mount
+  - prior 51D-S date-range explanation was incomplete: the date-range fix was correct but did not address the actual CSS rendering failure
+  - browser proof: 104 bar rectangles (52 revenue + 52 expenses) and 1 net result line now render at 1440px, 1366px, and 1024px; summary totals intact; dashboard unaffected
+  - lint, typecheck, build all pass

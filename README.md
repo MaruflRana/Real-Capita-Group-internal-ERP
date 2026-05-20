@@ -4,7 +4,7 @@ Production-minded internal ERP for Real Capita Group, built as an Nx + pnpm mono
 
 ## Project Overview
 
-Real Capita Group Internal ERP is a company-scoped operations platform for authenticated Real Capita users. It supports role-aware access across finance, property, CRM, HR, payroll, audit, document, and demo/UAT workflows while preserving a strict REST boundary: the web app consumes the NestJS API, and the API remains the only backend source of truth for ERP business operations.
+Real Capita Group Internal ERP is a company-scoped operations platform for authenticated Real Capita users. It supports role-aware access across finance, property, CRM, HR, payroll, audit, document, and realistic UAT workflows while preserving a strict REST boundary: the web app consumes the NestJS API, and the API remains the only backend source of truth for ERP business operations.
 
 ## Current Implemented Scope
 
@@ -25,7 +25,7 @@ Real Capita Group Internal ERP is a company-scoped operations platform for authe
 - Printable CRM customer collection receipt at `/crm-property-desk/collections/[collectionId]/receipt`.
 - Customer 360 Profile + Transaction History at `/crm-property-desk/customers/[customerId]`, backed by `GET /companies/:companyId/customers/:customerId/profile`.
 - Polished Real Capita branded login screen using the official logo asset.
-- Synthetic Demo/UAT data workflow with explicit seed, verify, and reset commands.
+- Realistic UAT data workflow with explicit seed, verify, and reset commands (`seed:realistic:uat`, `seed:realistic:verify`, `seed:realistic:uat:reset`).
 - Verified supervisor/office-desktop live-demo workflow using `scripts/update-and-start-live-demo.ps1`.
 
 ## Architecture Boundaries
@@ -67,7 +67,7 @@ packages/
 prisma/
   schema.prisma     Database schema and migrations
 scripts/
-  *.mjs             Docker, backup/restore, demo seed, smoke, env helpers
+  *.mjs             Docker, backup/restore, realistic seed, smoke, env helpers
   *.ps1             Windows live-demo start/stop/update scripts
 docs/
   architecture/     Architecture baseline and design references
@@ -97,8 +97,8 @@ Copy-Item .env.example .env
 corepack pnpm install
 docker compose up -d --build
 corepack pnpm docker:migrate
-corepack pnpm seed:demo
-corepack pnpm seed:demo:verify
+corepack pnpm seed:realistic:uat
+corepack pnpm seed:realistic:verify
 corepack pnpm docker:smoke
 ```
 
@@ -115,7 +115,7 @@ Environment notes:
 - `S3_PUBLIC_ENDPOINT` must stay browser-resolvable for presigned document upload/download flows; local Docker defaults use `http://localhost:9000`.
 - Do not commit `.env` or local tunnel/env backup files.
 
-If you need a blank company instead of the synthetic Demo/UAT company, bootstrap an admin explicitly:
+If you need a blank company instead of the realistic UAT company, bootstrap an admin explicitly:
 
 ```powershell
 corepack pnpm docker:bootstrap -- --company-name "Real Capita" --company-slug "real-capita" --admin-email "admin@example.com" --admin-password "change-me-secure-admin-password"
@@ -144,50 +144,70 @@ git pull --ff-only origin main
 corepack pnpm install
 docker compose up -d --build
 corepack pnpm docker:migrate
-corepack pnpm seed:demo:verify
+corepack pnpm seed:realistic:verify
 corepack pnpm docker:smoke
 ```
 
-If Demo/UAT verification fails and the database is intended to be refreshed, reseed explicitly:
+If UAT verification fails and the database is intended to be refreshed, reseed explicitly:
 
 ```powershell
-corepack pnpm seed:demo
-corepack pnpm seed:demo:verify
+corepack pnpm seed:realistic:uat
+corepack pnpm seed:realistic:verify
 ```
 
-## Demo/UAT Data And Login
+## Realistic UAT Data And Login
 
-The repository includes an explicit, resettable synthetic Demo/UAT seed for the reserved company:
+The repository includes an explicit, resettable realistic UAT seed for the Real Capita Group company:
 
 ```text
-Real Capita Demo / UAT
-real-capita-demo-uat
+Real Capita Group
+real-capita-group
 ```
 
-Demo users:
+Walkthrough users:
 
 ```text
-demo.admin@demo.realcapita.test
-demo.accountant@demo.realcapita.test
-demo.hr@demo.realcapita.test
-demo.payroll@demo.realcapita.test
-demo.sales@demo.realcapita.test
-demo.member@demo.realcapita.test
+admin@realcapita.com.bd
+accountant@realcapita.com.bd
+hr@realcapita.com.bd
+payroll@realcapita.com.bd
+sales@realcapita.com.bd
+member@realcapita.com.bd
 ```
 
-Local demo password:
+Local UAT password (also set via `UAT_PASSWORD` in `.env`):
 
 ```text
-change-me-demo-uat-password
+rcg-uat-2026-password
 ```
 
-Demo data rules:
+> Use this password only in controlled local/UAT environments. Never in production.
 
-- Demo data is never seeded automatically during app startup, Docker startup, migrations, or admin bootstrap.
-- `corepack pnpm seed:demo:verify` is the default safety check before demos.
-- `corepack pnpm seed:demo` refreshes the reserved Demo/UAT company and should be run only when that refresh is intentional.
-- `corepack pnpm seed:demo:reset` is guarded and should not be used against non-demo company data.
-- The Customer 360 and receipt demo path uses `DEMO Customer Nadia Synthetic` and collection `DEMO-COL-2026-001`.
+Realistic UAT data rules:
+
+- Realistic UAT data is never seeded automatically during app startup, Docker startup, migrations, or admin bootstrap.
+- `corepack pnpm seed:realistic:verify` is the default safety check before demos.
+- `corepack pnpm seed:realistic:uat` refreshes the Real Capita Group company and should be run only when that refresh is intentional.
+- `corepack pnpm seed:realistic:uat:reset` is guarded and should not be used against non-UAT company data.
+- All seeded data uses Bangladesh-facing names, BDT/৳ currency, and realistic operational history spanning 2022–2026.
+- No "Demo", "UAT", "Synthetic", "Test", "Sample", or "Mock" strings appear in any business-facing seeded field.
+
+### Realistic Dataset Summary
+
+The realistic UAT seed produces a large, coherent multi-year operational dataset:
+
+- 890 units across 13 RCG projects, 600 customers, 400 leads, 350 bookings, 250 sale contracts, 2,597 installment schedule rows, 2,142 collections.
+- 4,177 vouchers (receipt, payment, journal, contra) with balanced posted books, 95 employees, 46 payroll runs, 24,000 attendance logs, 500 leave requests, 500 audit events.
+- Operational history spans 2022–2026 with realistic Bangladesh names, BDT/৳ amounts, and monthly variation including occasional loss periods.
+- Supports meaningful Business Overview trend charts, Customer 360 profiles, financial reports, and dashboard KPIs.
+
+### Deprecated Seed Aliases
+
+`seed:demo`, `seed:demo:reset`, and `seed:demo:verify` still exist as compatibility aliases that delegate to the realistic seed commands with a deprecation warning. They are not the primary documented path. Use `seed:realistic:uat`, `seed:realistic:verify`, and `seed:realistic:uat:reset` instead.
+
+### Reseeding Note
+
+Realistic reseeding rebuilds the full multi-year dataset and may take several minutes. It is intended for deliberate refresh/reset workflows, not for routine local startup. Run `seed:realistic:verify` to confirm data health without reseeding.
 
 ## Supervisor Desktop Live Demo
 
@@ -206,18 +226,18 @@ The wrapper:
 - repairs stale tunnel URL values in `.env` when needed,
 - rebuilds and recreates the Docker runtime,
 - verifies API health,
-- verifies Demo/UAT data by default,
-- verifies local demo login,
+- verifies realistic UAT data by default,
+- verifies local UAT login,
 - launches a Cloudflare Quick Tunnel,
-- verifies the public login page and public demo login before printing the final URL.
+- verifies the public login page and public UAT login before printing the final URL.
 
-To intentionally refresh Demo/UAT data before launching the public link:
+To intentionally refresh realistic UAT data before launching the public link:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\update-and-start-live-demo.ps1 -RefreshDemoData
 ```
 
-This workflow is for temporary demo/UAT link generation only. Cloudflare Quick Tunnel URLs change on every fresh start and are not permanent hosting.
+This workflow is for temporary UAT link generation only. Cloudflare Quick Tunnel URLs change on every fresh start and are not permanent hosting.
 
 ## Stop Or Restore Live Demo
 
@@ -268,18 +288,18 @@ Docker/runtime validation:
 ```powershell
 docker compose up -d --build
 corepack pnpm docker:migrate
-corepack pnpm seed:demo:verify
+corepack pnpm seed:realistic:verify
 corepack pnpm docker:smoke
 ```
 
-Demo data:
+Realistic UAT data:
 
 ```powershell
-corepack pnpm seed:demo -- --dry-run
-corepack pnpm seed:demo
-corepack pnpm seed:demo:verify
-corepack pnpm seed:demo:reset -- --dry-run
-corepack pnpm seed:demo:reset
+corepack pnpm seed:realistic:uat -- --dry-run
+corepack pnpm seed:realistic:uat
+corepack pnpm seed:realistic:verify
+corepack pnpm seed:realistic:uat:reset -- --dry-run
+corepack pnpm seed:realistic:uat:reset
 ```
 
 Backup, restore, and environment checks:
@@ -295,7 +315,7 @@ corepack pnpm ops:env-check -- --strict
 
 - Architecture baseline: [docs/architecture/phase-1-architecture-baseline.md](docs/architecture/phase-1-architecture-baseline.md)
 - Route, module, role, and output inventory: [docs/operations/phase-1-route-inventory.md](docs/operations/phase-1-route-inventory.md)
-- Demo/UAT seed data guide: [docs/operations/demo-data.md](docs/operations/demo-data.md)
+- Realistic UAT seed data guide: [docs/operations/demo-data.md](docs/operations/demo-data.md)
 - Temporary live-demo operations: [docs/operations/temporary-live-demo.md](docs/operations/temporary-live-demo.md)
 - Agent handoff protocol: [docs/operations/agent-handoff-protocol.md](docs/operations/agent-handoff-protocol.md)
 - Demo readiness guide: [docs/release/demo-readiness-guide.md](docs/release/demo-readiness-guide.md)
@@ -313,7 +333,7 @@ corepack pnpm ops:env-check -- --strict
 - PostgreSQL backup helpers do not back up MinIO/S3 object bytes.
 - Automated scheduled backups and point-in-time recovery are not implemented in this repository.
 - Password reset, MFA, SSO, invites, public portals, imports, notifications, approval engines, e-signature, OCR, and virus scanning are outside the current scope.
-- Freshly bootstrapped companies can show empty lists and reports until real records or the synthetic Demo/UAT seed are added.
+- Freshly bootstrapped companies can show empty lists and reports until real records or the realistic UAT seed are added.
 - Non-localhost production-style browser sessions require HTTPS-compatible origins and real secrets.
 - Swagger should not be exposed publicly in production unless intentionally enabled.
 - Do not commit `.env`, `.env.tunnel-backup*`, `Caddyfile.tunnel`, `.live-demo/`, `backups/`, database dumps, object-storage backups, `node_modules/`, build outputs, Playwright reports, or `*.tsbuildinfo`.

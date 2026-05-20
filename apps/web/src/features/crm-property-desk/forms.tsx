@@ -44,6 +44,14 @@ import {
 
 const dateRegex = /^\d{4}-\d{2}-\d{2}$/u;
 const amountRegex = /^(?:0|[1-9]\d*)(?:\.\d{1,2})?$/u;
+const phoneRegex = /^\+?\d*$/u;
+const phoneRegexMessage =
+  'Phone must contain only digits and an optional leading +.';
+
+const sanitizePhoneValue = (value: string): string => {
+  const digits = value.replace(/[^\d]/gu, '');
+  return value.startsWith('+') ? '+' + digits : digits;
+};
 const optionalTextSchema = z
   .string()
   .trim()
@@ -78,6 +86,7 @@ export const customerFormSchema = z.object({
     .string()
     .trim()
     .max(32, 'Phone must be 32 characters or fewer.')
+    .regex(phoneRegex, phoneRegexMessage)
     .optional()
     .or(z.literal('')),
   address: z
@@ -102,6 +111,7 @@ export const leadFormSchema = z.object({
     .string()
     .trim()
     .max(32, 'Phone must be 32 characters or fewer.')
+    .regex(phoneRegex, phoneRegexMessage)
     .optional()
     .or(z.literal('')),
   source: optionalShortTextSchema,
@@ -334,7 +344,18 @@ export const CustomerFormPanel = ({
       </div>
       <div className="space-y-2">
         <Label htmlFor="customer-phone">Phone</Label>
-        <Input id="customer-phone" {...form.register('phone')} />
+        <Input
+          id="customer-phone"
+          type="tel"
+          inputMode="tel"
+          {...form.register('phone', {
+            onChange: (event) => {
+              const sanitized = sanitizePhoneValue(event.target.value);
+              event.target.value = sanitized;
+              form.setValue('phone', sanitized, { shouldValidate: true });
+            },
+          })}
+        />
         <FormErrorText message={form.formState.errors.phone?.message} />
       </div>
       <div className="space-y-2">
@@ -442,7 +463,18 @@ export const LeadFormPanel = ({
       </div>
       <div className="space-y-2">
         <Label htmlFor="lead-phone">Phone</Label>
-        <Input id="lead-phone" {...form.register('phone')} />
+        <Input
+          id="lead-phone"
+          type="tel"
+          inputMode="tel"
+          {...form.register('phone', {
+            onChange: (event) => {
+              const sanitized = sanitizePhoneValue(event.target.value);
+              event.target.value = sanitized;
+              form.setValue('phone', sanitized, { shouldValidate: true });
+            },
+          })}
+        />
         <FormErrorText message={form.formState.errors.phone?.message} />
       </div>
       <div className="space-y-2">

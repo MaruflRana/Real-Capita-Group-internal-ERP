@@ -1,5 +1,3 @@
-console.warn('\n⚠️  DEPRECATION WARNING: `seed:demo:reset` is deprecated. Use `seed:realistic:uat:reset` instead.\n     The realistic UAT dataset uses Real Capita Group with no Demo/UAT markers.\n');
-
 import { runResetRealisticCommand } from './lib/realistic-data/index.mjs';
 
 void runResetRealisticCommand().catch((error) => {

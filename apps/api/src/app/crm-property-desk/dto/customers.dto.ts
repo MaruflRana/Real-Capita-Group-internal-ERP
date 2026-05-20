@@ -4,6 +4,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
 } from 'class-validator';
 
@@ -37,6 +38,9 @@ export class CreateCustomerDto {
   @IsOptional()
   @IsString()
   @MaxLength(32)
+  @Matches(/^\+?\d*$/, {
+    message: 'Phone must contain only digits and an optional leading +.',
+  })
   phone?: string | null;
 
   @ApiPropertyOptional({
@@ -83,6 +87,9 @@ export class UpdateCustomerDto {
   @IsOptional()
   @IsString()
   @MaxLength(32)
+  @Matches(/^\+?\d*$/, {
+    message: 'Phone must contain only digits and an optional leading +.',
+  })
   phone?: string | null;
 
   @ApiPropertyOptional({

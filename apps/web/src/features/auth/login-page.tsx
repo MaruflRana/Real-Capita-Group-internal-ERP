@@ -170,7 +170,7 @@ export const LoginPage = ({ nextRoute }: { nextRoute: string }) => {
               <Input
                 autoComplete="email"
                 id="email"
-                placeholder="admin@example.com"
+                placeholder="admin@realcapita.com.bd"
                 {...form.register('email')}
               />
               {form.formState.errors.email ? (

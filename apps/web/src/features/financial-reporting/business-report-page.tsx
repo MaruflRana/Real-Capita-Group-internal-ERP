@@ -167,6 +167,15 @@ const getDefaultBusinessReportRange = (mode: BusinessReportMode) => {
     };
   }
 
+  if (mode === 'overview') {
+    const start = new Date(today.getFullYear() - 4, 0, 1);
+
+    return {
+      dateFrom: formatDateInputValue(start),
+      dateTo: formatDateInputValue(today),
+    };
+  }
+
   return {
     dateFrom: formatDateInputValue(new Date(today.getFullYear(), 0, 1)),
     dateTo: formatDateInputValue(today),
@@ -457,7 +466,6 @@ const BusinessPrintableReport = ({
   );
   const groupingLabel = getBusinessReportGroupingLabel(report.bucket);
   const hasData = hasBusinessReportData(report);
-  const isDemoUatCompany = userCompanySlug === 'real-capita-demo-uat';
   const netProfitLoss = toNumber(report.totals.netProfitLossAmount);
 
   return (
@@ -666,12 +674,6 @@ const BusinessPrintableReport = ({
             {assumption}
           </PrintableReportNote>
         ))}
-        {isDemoUatCompany ? (
-          <PrintableReportNote>
-            The active company is a controlled Demo/UAT workspace. Treat these
-            values as synthetic walkthrough data, not production evidence.
-          </PrintableReportNote>
-        ) : null}
         <PrintableReportNote>
           This printable template intentionally omits screen charts, dashboard
           cards, filters, and navigation chrome. Use browser print settings if

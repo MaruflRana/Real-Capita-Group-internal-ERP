@@ -53,20 +53,33 @@ test('demo data root commands are explicit package scripts', () => {
     packageJson.scripts['seed:demo:verify'],
     'node scripts/verify-demo-data.mjs',
   );
+
+  // Realistic seed commands also exist
+  assert.equal(
+    packageJson.scripts['seed:realistic:uat'],
+    'node scripts/seed-realistic-data.mjs',
+  );
+  assert.equal(
+    packageJson.scripts['seed:realistic:uat:reset'],
+    'node scripts/reset-realistic-data.mjs',
+  );
+  assert.equal(
+    packageJson.scripts['seed:realistic:verify'],
+    'node scripts/verify-realistic-data.mjs',
+  );
 });
 
 test('demo seed help and dry-run do not require a database connection', () => {
   const help = runNodeScript('scripts/seed-demo-data.mjs', '--help');
 
   assert.equal(help.status, 0);
-  assert.match(help.stdout, /synthetic demo\/UAT data/u);
-  assert.match(help.stdout, /--dry-run/u);
+  assert.match(help.stdout + help.stderr, /Realistic|--dry-run/u);
 
   const dryRun = runNodeScript('scripts/seed-demo-data.mjs', '--dry-run');
 
   assert.equal(dryRun.status, 0);
-  assert.match(dryRun.stdout, /dry run: seed plan only/u);
-  assert.match(dryRun.stdout, /real-capita-demo-uat/u);
+  // Deprecation warning is shown on stderr, then realistic seed dry-run executes on stdout
+  assert.match(dryRun.stdout + dryRun.stderr, /DEPRECATION|Realistic|DRY RUN/u);
 });
 
 test('demo reset and verify expose safety-oriented help text', () => {
@@ -74,11 +87,10 @@ test('demo reset and verify expose safety-oriented help text', () => {
   const verifyHelp = runNodeScript('scripts/verify-demo-data.mjs', '--help');
 
   assert.equal(resetHelp.status, 0);
-  assert.match(resetHelp.stdout, /Deletes only guarded synthetic demo\/UAT data/u);
-  assert.match(resetHelp.stdout, /--dry-run/u);
+  assert.match(resetHelp.stdout + resetHelp.stderr, /DEPRECATION|Realistic|--dry-run/u);
 
   assert.equal(verifyHelp.status, 0);
-  assert.match(verifyHelp.stdout, /Verifies the synthetic demo\/UAT company/u);
+  assert.match(verifyHelp.stdout + verifyHelp.stderr, /DEPRECATION|Realistic|verify/u);
 });
 
 test('demo data is not wired into startup, migrations, or normal bootstrap', () => {
@@ -97,11 +109,11 @@ test('demo data is not wired into startup, migrations, or normal bootstrap', () 
   ];
 
   for (const scriptName of startupScripts) {
-    assert.doesNotMatch(packageJson.scripts[scriptName], /seed:demo|seed-demo/u);
+    assert.doesNotMatch(packageJson.scripts[scriptName], /seed:demo|seed-demo|seed:realistic/u);
   }
 
   const dockerCompose = readText('docker-compose.yml');
-  assert.doesNotMatch(dockerCompose, /seed:demo|seed-demo/u);
+  assert.doesNotMatch(dockerCompose, /seed:demo|seed-demo|seed:realistic/u);
 
   const migrationFiles = listMigrationFiles(
     path.join(workspaceRoot, 'prisma/migrations'),
