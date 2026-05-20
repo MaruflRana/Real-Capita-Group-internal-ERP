@@ -10,7 +10,6 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
-import { AccountingAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -107,19 +106,7 @@ export const VouchersPage = () => {
         }
       />
 
-      <AccountingAnalyticsPanel
-        companyId={companyId}
-        companySlug={user.currentCompany.slug}
-        enabled={accountingEnabled}
-        period={
-          dateFrom && dateTo
-            ? {
-                dateFrom,
-                dateTo,
-              }
-            : undefined
-        }
-      />
+
 
       <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-4 rounded-3xl border border-border/70 bg-card/80 p-6">
         <div className="space-y-2">

@@ -8,7 +8,6 @@ import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { SidePanel } from '../../components/ui/side-panel';
-import { ProjectPropertyAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -139,11 +138,7 @@ export const UnitTypesPage = () => {
 
       {actionError ? <ProjectPropertyQueryErrorBanner message={actionError} /> : null}
 
-      <ProjectPropertyAnalyticsPanel
-        companyId={companyId}
-        companySlug={user.currentCompany.slug}
-        enabled={isEnabled}
-      />
+
 
       <ProjectPropertySection
         title="Unit type master list"

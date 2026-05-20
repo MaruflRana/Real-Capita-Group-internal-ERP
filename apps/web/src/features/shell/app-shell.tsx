@@ -9,7 +9,6 @@ import {
   BookOpenText,
   Building2,
   CalendarCheck2,
-  CalendarDays,
   CalendarRange,
   ChevronDown,
   ClipboardList,
@@ -78,26 +77,6 @@ const navigation = [
         href: APP_ROUTES.accountingReportsBusinessOverview,
         label: 'Business Overview',
         icon: BarChart3,
-      },
-      {
-        href: APP_ROUTES.accountingReportsDaily,
-        label: 'Daily Report',
-        icon: CalendarDays,
-      },
-      {
-        href: APP_ROUTES.accountingReportsWeekly,
-        label: 'Weekly Report',
-        icon: CalendarRange,
-      },
-      {
-        href: APP_ROUTES.accountingReportsMonthly,
-        label: 'Monthly Report',
-        icon: CalendarRange,
-      },
-      {
-        href: APP_ROUTES.accountingReportsYearly,
-        label: 'Yearly Report',
-        icon: CalendarRange,
       },
       {
         href: APP_ROUTES.accountingReportsTrialBalance,
@@ -513,20 +492,21 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
       <div className="mx-auto grid min-h-screen w-full max-w-[1840px] lg:grid-cols-[17.5rem_minmax(0,1fr)]">
         <aside
           className={cn(
-            'app-shell-sidebar fixed inset-y-0 left-0 z-50 flex w-[min(20.5rem,calc(100vw-1.5rem))] -translate-x-full flex-col border-r border-slate-950/35 bg-surface-sidebar text-primary-foreground shadow-shell transition-transform duration-200 ease-out lg:sticky lg:inset-auto lg:top-0 lg:z-auto lg:h-screen lg:w-[17.5rem] lg:translate-x-0 lg:shadow-none',
+            'app-shell-sidebar sidebar-gradient-bg sidebar-brand-accent-bar fixed inset-y-0 left-0 z-50 flex w-[min(20.5rem,calc(100vw-1.5rem))] -translate-x-full flex-col border-l-[3px] border-l-transparent border-r border-r-brand-green/25 text-primary-foreground shadow-shell transition-transform duration-200 ease-out lg:sticky lg:inset-auto lg:top-0 lg:z-auto lg:h-screen lg:w-[17.5rem] lg:translate-x-0 lg:shadow-none',
             navigationOpen && 'translate-x-0',
           )}
         >
           <div className="flex min-h-0 flex-1 flex-col">
-            <div className="border-b border-primary-foreground/15 px-4 py-4">
+            <div className="sidebar-top-accent border-b border-brand-green/30 px-4 py-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary-foreground/70">
-                    Real Capita ERP
+                  <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-brand-sky">
+                    Real Capita<span className="text-primary-foreground/60"> ERP</span>
                   </p>
-                  <h1 className="mt-1.5 truncate text-lg font-semibold tracking-normal text-primary-foreground">
+                  <h1 className="mt-1 truncate text-lg font-semibold tracking-normal text-primary-foreground/80">
                     Internal workspace
                   </h1>
+                  <div className="mt-2 h-[3px] w-24 rounded-full sidebar-brand-accent-line" />
                 </div>
                 <Button
                   aria-label="Close navigation"
@@ -538,8 +518,8 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                 </Button>
               </div>
 
-              <div className="mt-4 rounded-lg border border-primary-foreground/15 bg-primary-foreground/[0.07] p-3">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary-foreground/65">
+              <div className="mt-4 rounded-lg border border-brand-blue/45 sidebar-company-card-bg p-3 shadow-[0_1px_4px_rgba(0,111,183,0.12)]">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand-sky/85">
                   Active company
                 </p>
                 <p
@@ -549,7 +529,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                   {user.currentCompany.name}
                 </p>
                 <p
-                  className="mt-1 truncate font-mono text-[11px] uppercase tracking-[0.08em] text-primary-foreground/60"
+                  className="mt-1 truncate font-mono text-[11px] uppercase tracking-[0.08em] text-primary-foreground/65"
                   title={user.currentCompany.slug}
                 >
                   {user.currentCompany.slug}
@@ -557,7 +537,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {getRoleLabels(user.roles).map((role) => (
                     <Badge
-                      className="border-primary-foreground/20 bg-primary-foreground/10 px-2 py-0.5 text-[10px] leading-4 text-primary-foreground"
+                      className="border-brand-green/55 bg-brand-green/20 px-2 py-0.5 text-[10px] leading-4 text-brand-greenSoft"
                       key={role}
                       variant="outline"
                     >
@@ -568,14 +548,14 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
               </div>
             </div>
 
-            <div className="border-b border-primary-foreground/15 px-3 py-3">
+            <div className="border-b border-brand-green/20 px-3 py-3">
               <div className="relative">
                 <label className="sr-only" htmlFor="sidebar-navigation-search">
                   Find navigation page
                 </label>
                 <Search
                   aria-hidden="true"
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-primary-foreground/52"
+                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-sky/70"
                 />
                 <input
                   aria-activedescendant={
@@ -587,7 +567,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                   aria-controls={navigationSearchListId}
                   aria-expanded={hasNavigationSearchQuery}
                   aria-label="Find navigation page"
-                  className="h-10 w-full rounded-lg border border-primary-foreground/15 bg-primary-foreground/[0.07] px-9 text-sm font-medium text-primary-foreground outline-none placeholder:text-primary-foreground/45 focus:border-primary-foreground/45 focus:bg-primary-foreground/[0.1] focus:ring-2 focus:ring-primary-foreground/25"
+                  className="sidebar-search-input-field h-10 w-full rounded-lg border border-brand-sky/30 px-9 text-sm font-medium text-primary-foreground placeholder:text-primary-foreground/55"
                   id="sidebar-navigation-search"
                   onChange={(event) =>
                     setNavigationSearchQuery(event.target.value)
@@ -640,7 +620,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                 {hasNavigationSearchQuery ? (
                   <button
                     aria-label="Clear navigation search"
-                    className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-primary-foreground/64 outline-none transition hover:bg-primary-foreground/12 hover:text-primary-foreground focus-visible:ring-2 focus-visible:ring-primary-foreground/70"
+                    className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-primary-foreground/60 outline-none transition hover:bg-brand-sky/20 hover:text-primary-foreground focus-visible:ring-2 focus-visible:ring-brand-sky/55"
                     onClick={() => {
                       setNavigationSearchQuery('');
                       setNavigationSearchHighlight(0);
@@ -655,7 +635,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
               {hasNavigationSearchQuery ? (
                 <div
                   aria-label="Navigation search results"
-                  className="mt-2 max-h-56 overflow-y-auto rounded-lg border border-primary-foreground/15 bg-slate-950/22 p-1 shadow-sm [scrollbar-gutter:stable]"
+                  className="mt-2 max-h-56 overflow-y-auto rounded-lg border border-brand-sky/35 bg-gradient-to-b from-brand-navy/80 to-brand-green/25 p-1 shadow-sm [scrollbar-gutter:stable]"
                   id={navigationSearchListId}
                   role="listbox"
                 >
@@ -670,8 +650,8 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                           className={cn(
                             'block rounded-md border px-2.5 py-2 text-left outline-none transition focus-visible:ring-2 focus-visible:ring-primary-foreground/70 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-sidebar',
                             isHighlighted
-                              ? 'border-primary-foreground/45 bg-primary-foreground text-slate-950 shadow-sm'
-                              : 'border-transparent text-primary-foreground/82 hover:border-primary-foreground/20 hover:bg-primary-foreground/10 hover:text-primary-foreground',
+                              ? 'border-brand-green/45 bg-primary-foreground text-brand-navy shadow-sm ring-1 ring-brand-sky/45'
+                              : 'border-transparent text-primary-foreground/82 hover:border-brand-sky/25 hover:bg-brand-sky/18 hover:text-primary-foreground',
                           )}
                           href={item.href}
                           id={`sidebar-navigation-search-result-${index}`}
@@ -699,7 +679,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                             className={cn(
                               'mt-1 block truncate text-[11px] font-semibold uppercase tracking-[0.08em]',
                               isHighlighted
-                                ? 'text-slate-700'
+                                ? 'text-brand-navy/75'
                                 : 'text-primary-foreground/52',
                             )}
                           >
@@ -709,7 +689,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                             className={cn(
                               'mt-0.5 block truncate font-mono text-[11px]',
                               isHighlighted
-                                ? 'text-slate-700'
+                                ? 'text-brand-navy/75'
                                 : 'text-primary-foreground/45',
                             )}
                           >
@@ -742,10 +722,10 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                   <div key={section.title}>
                     <p
                       className={cn(
-                        'mb-1.5 px-2 text-[11px] font-semibold uppercase tracking-[0.12em]',
+                        'pb-1 border-b px-2 text-[11px] font-semibold uppercase tracking-[0.12em]',
                         sectionActive
-                          ? 'text-primary-foreground'
-                          : 'text-primary-foreground/52',
+                          ? 'border-brand-green/30 text-brand-sky before:inline-block before:h-[3px] before:w-2.5 before:rounded-full before:bg-gradient-to-r before:from-brand-green/75 before:to-brand-sky/55 before:mr-2 before:align-middle'
+                          : 'border-brand-sky/15 text-primary-foreground/52',
                       )}
                     >
                       {section.title}
@@ -763,8 +743,8 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                             className={cn(
                               'group flex min-w-0 items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-primary-foreground/70 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-sidebar',
                               isActive
-                                ? 'bg-primary-foreground text-slate-950 shadow-sm'
-                                : 'text-primary-foreground/76 hover:bg-primary-foreground/10 hover:text-primary-foreground',
+                                ? 'sidebar-active-nav-bg border-y border-brand-sky/40 border-l-[3px] border-l-brand-green/50 text-primary-foreground shadow-[0_1px_3px_rgba(0,111,183,0.14)]'
+                                : 'text-primary-foreground/76 hover:bg-brand-sky/12 hover:text-primary-foreground',
                             )}
                             href={item.href}
                             key={item.href}
@@ -773,8 +753,8 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                               className={cn(
                                 'flex h-7 w-7 shrink-0 items-center justify-center rounded-md border transition',
                                 isActive
-                                  ? 'border-slate-950/10 bg-slate-950/5 text-primary'
-                                  : 'border-primary-foreground/10 bg-primary-foreground/[0.04] text-primary-foreground/70 group-hover:border-primary-foreground/20 group-hover:text-primary-foreground',
+                                  ? 'sidebar-active-icon-bg border-brand-green/50 text-brand-sky'
+                                  : 'border-brand-blue/15 bg-brand-blue/[0.06] text-primary-foreground/70 group-hover:border-brand-sky/35 group-hover:text-primary-foreground',
                               )}
                             >
                               <Icon className="h-4 w-4" />
@@ -789,11 +769,11 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
               })}
             </nav>
 
-            <div className="border-t border-primary-foreground/15 px-4 py-3 text-xs leading-5 text-primary-foreground/66">
-              <p className="font-semibold text-primary-foreground">
-                Session context
+            <div className="border-t border-brand-green/35 sidebar-footer-bg px-4 py-3 text-xs leading-5 text-primary-foreground/70">
+              <p className="font-semibold">
+                <span className="text-brand-sky/80">Session</span> <span className="text-brand-green/70">context</span>
               </p>
-              <p className="mt-1.5">
+              <p className="mt-1.5 text-primary-foreground/65">
                 Company switching remains in the workspace menu; this session
                 stays anchored to the login company.
               </p>

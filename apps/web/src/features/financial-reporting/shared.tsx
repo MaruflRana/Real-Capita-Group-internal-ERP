@@ -57,7 +57,7 @@ export const FinancialReportingFilterCard = ({
 }: {
   children: ReactNode;
 }) => (
-  <Card>
+  <Card className="border-brand-sky/40 bg-gradient-to-br from-card to-brand-skySoft/80">
     <CardContent className="space-y-4 pt-5 sm:pt-6">{children}</CardContent>
   </Card>
 );
@@ -97,7 +97,7 @@ export const FinancialReportContextStrip = ({
   <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr))]">
     {items.map((item) => (
       <div
-        className="min-w-0 rounded-lg border border-border bg-surface-raised px-3.5 py-3"
+        className="min-w-0 rounded-lg border border-brand-sky/40 bg-gradient-to-br from-card to-brand-skySoft/80 px-3.5 py-3"
         key={item.label}
       >
         <p className="erp-label">{item.label}</p>
@@ -121,14 +121,14 @@ export const FinancialReportingAccessRequiredState = () => (
 );
 
 export const ReportLoadingState = ({ label }: { label: string }) => (
-  <div className="rounded-lg border border-border bg-surface-muted px-4 py-8 text-sm text-muted-foreground">
+  <div className="rounded-lg border border-brand-sky/40 bg-brand-skySoft/85 px-4 py-8 text-sm text-muted-foreground">
     {label}
   </div>
 );
 
 export const ReportRefreshHint = ({ isFetching }: { isFetching: boolean }) =>
   isFetching ? (
-    <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm text-muted-foreground">
+    <div className="rounded-lg border border-brand-sky/40 bg-brand-skySoft/85 px-4 py-3 text-sm text-muted-foreground">
       Refreshing the report with the current filters.
     </div>
   ) : null;
@@ -145,7 +145,7 @@ export const ReportMetricCard = ({
 }: {
   label: string;
   value: ReactNode;
-  description?: string;
+  description?: ReactNode;
   tone?: 'default' | 'success' | 'warning';
 }) => (
   <KpiCard
@@ -204,7 +204,7 @@ export const ReportValueList = ({
   <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr))]">
     {items.map((item) => (
       <div
-        className="min-w-0 rounded-lg border border-border bg-surface-muted px-4 py-3"
+        className="min-w-0 rounded-lg border border-brand-sky/40 bg-brand-skySoft/60 px-4 py-3"
         key={item.label}
       >
         <p className="text-sm font-semibold leading-5 text-muted-foreground">
@@ -270,7 +270,7 @@ export const BalanceStatusBanner = ({
 );
 
 export const ReportAssumptionNote = ({ children }: { children: ReactNode }) => (
-  <DataSourceNote className="rounded-lg border border-border bg-surface-muted px-4 py-3">
+  <DataSourceNote className="rounded-lg border border-brand-sky/40 bg-brand-skySoft/60 px-4 py-3">
     {children}
   </DataSourceNote>
 );

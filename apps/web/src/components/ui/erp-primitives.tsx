@@ -22,10 +22,10 @@ const toneStyles: Record<
   }
 > = {
   default: {
-    border: 'border-border',
-    indicator: 'bg-chart-slate',
-    soft: 'bg-surface-muted',
-    text: 'text-foreground',
+    border: 'border-brand-sky/35',
+    indicator: 'bg-brand-sky',
+    soft: 'bg-brand-skySoft',
+    text: 'text-brand-navy',
   },
   info: {
     border: 'border-status-info/25',
@@ -84,7 +84,7 @@ export const ModulePageHeader = ({
   className?: string | undefined;
 }) => (
   <Card className={cn('min-w-0 overflow-hidden', className)}>
-    <CardHeader className="flex flex-col gap-4 border-b border-border bg-surface-raised px-5 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
+    <CardHeader className="flex flex-col gap-4 border-b border-brand-sky/40 bg-gradient-to-br from-brand-headerGradientStart via-card to-brand-headerGradientEnd/70 px-5 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
       <div className="min-w-0 space-y-3">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
           {eyebrow}
@@ -129,7 +129,7 @@ export const ModuleSection = ({
   contentClassName?: string | undefined;
 }) => (
   <Card className={cn('min-w-0 overflow-hidden', className)}>
-    <CardHeader className="flex flex-col gap-4 border-b border-border bg-surface-raised/80 px-5 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
+    <CardHeader className="flex flex-col gap-4 border-b border-brand-sky/30 bg-gradient-to-r from-brand-headerGradientStart via-surface-raised to-brand-headerGradientEnd/50 px-5 py-5 sm:px-6 lg:flex-row lg:items-start lg:justify-between">
       <div className="min-w-0 space-y-2">
         <CardTitle className="text-lg leading-7">{title}</CardTitle>
         <CardDescription className="max-w-4xl leading-6">
@@ -151,7 +151,7 @@ export const FilterCardShell = ({
   children: ReactNode;
   className?: string | undefined;
 }) => (
-  <Card className="min-w-0">
+  <Card className="min-w-0 border-brand-sky/30 bg-gradient-to-br from-card to-brand-skySoft/40">
     <CardContent
       className={cn(
         'grid gap-3 pt-5 sm:pt-5 md:grid-cols-2 xl:grid-cols-4',
@@ -181,7 +181,7 @@ export const PageSection = ({
   contentClassName?: string | undefined;
 }) => (
   <section className={cn('space-y-4 xl:space-y-5', className)}>
-    <div className="flex flex-col gap-4 border-b border-border pb-3.5 lg:flex-row lg:items-start lg:justify-between">
+    <div className="flex flex-col gap-4 border-b border-brand-sky/30 pb-3.5 lg:flex-row lg:items-start lg:justify-between">
       <div className="min-w-0 space-y-2">
         {eyebrow ? (
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
@@ -401,7 +401,7 @@ export const ChartCardShell = ({
   className?: string | undefined;
 }) => (
   <Card className={cn('h-full min-w-0 overflow-hidden', className)}>
-    <CardHeader className="flex flex-col gap-3 border-b border-border bg-surface-raised lg:flex-row lg:items-start lg:justify-between">
+    <CardHeader className="flex flex-col gap-3 border-b border-brand-sky/30 bg-gradient-to-r from-brand-headerGradientStart via-surface-raised to-brand-headerGradientEnd/50 lg:flex-row lg:items-start lg:justify-between">
       <div className="min-w-0 space-y-1.5">
         <div className="flex min-w-0 flex-wrap items-center gap-2">
           <CardTitle className="text-base leading-6 sm:text-lg">
@@ -448,7 +448,7 @@ export const EmptyStateBlock = ({
 }) => (
   <div
     className={cn(
-      'min-w-0 rounded-lg border border-dashed border-border bg-surface-muted px-4 py-5',
+      'min-w-0 rounded-lg border border-dashed border-brand-sky/35 bg-brand-skySoft/40 px-4 py-5',
       className,
     )}
   >
@@ -485,7 +485,7 @@ export const TableShell = ({
 }: HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      'table-shell max-w-full overflow-x-auto overscroll-x-contain rounded-lg border border-border bg-card shadow-sm',
+      'table-shell max-w-full overflow-x-auto overscroll-x-contain rounded-lg border border-brand-sky/30 bg-card shadow-sm',
       className,
     )}
     {...props}

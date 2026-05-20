@@ -19,6 +19,7 @@ import {
 import { isApiError } from '../../lib/api/client';
 import { buildQueryString } from '../../lib/api/query-string';
 import type {
+  BusinessOverviewReportAmountsRecord,
   BusinessOverviewReportBucketRecord,
   BusinessOverviewReportQueryParams,
   BusinessOverviewReportResponseRecord,
@@ -30,7 +31,7 @@ import {
   formatDateTime,
 } from '../../lib/format';
 import { downloadApiCsv, printCurrentPage } from '../../lib/output';
-import { DistributionChartCard, TrendChartCard } from '../analytics/components';
+import { ExecutiveTrendChartCard } from '../analytics/components';
 import {
   DateRangeFields,
   ReportFilterActions,
@@ -44,12 +45,10 @@ import {
   FinancialReportingPageHeader,
   FinancialReportingPrintContext,
   FinancialReportingQueryErrorBanner,
-  FinancialReportingReadOnlyNotice,
   FinancialReportingSection,
   ReportAssumptionNote,
   ReportLoadingState,
   ReportMetricCard,
-  ReportMetricGrid,
   ReportRefreshHint,
 } from './shared';
 import {
@@ -95,9 +94,9 @@ const MODE_CONFIG: Record<
   }
 > = {
   overview: {
-    title: 'Business Overview Report',
+    title: 'Business Performance Overview',
     description:
-      'Company-scoped sales, collections, revenue, expenses, and profit/loss trends for management review.',
+      'Management-facing financial performance summary for the selected reporting period — combining key result signals, collection progress, and period evidence below.',
     reportSlug: 'business-overview',
     defaultBucket: 'month',
     printOrientation: 'landscape',
@@ -243,47 +242,63 @@ const getPerformanceTrend = (report: BusinessOverviewReportResponseRecord) =>
     },
   }));
 
-const getSalesCollectionsTrend = (
-  report: BusinessOverviewReportResponseRecord,
-) =>
-  report.buckets.map((bucket) => ({
-    key: bucket.bucketKey,
-    label: bucket.bucketLabel,
-    values: {
-      contractedSales: toNumber(bucket.contractedSalesAmount),
-      collectedSales: toNumber(bucket.collectedSalesAmount),
-    },
-  }));
+const formatPercent = (value: number, base: number): string => {
+  if (base === 0) return '0%';
+  const pct = (value / base) * 100;
+  return `${Math.round(pct)}%`;
+};
 
-const getActivityDistribution = (
-  report: BusinessOverviewReportResponseRecord,
-) => [
-  {
-    key: 'bookings',
-    label: 'Bookings',
-    value: report.totals.bookingCount,
-  },
-  {
-    key: 'contracts',
-    label: 'Sale contracts',
-    value: report.totals.saleContractCount,
-  },
-  {
-    key: 'collections',
-    label: 'Collections',
-    value: report.totals.collectionCount,
-  },
-  {
-    key: 'posted-vouchers',
-    label: 'Posted vouchers',
-    value: report.totals.postedVoucherCount,
-  },
-  {
-    key: 'draft-vouchers',
-    label: 'Draft vouchers',
-    value: report.totals.draftVoucherCount,
-  },
-];
+const getCollectionEfficiencyPercent = (collected: number, contracted: number): number => {
+  if (contracted === 0) return 1;
+  return collected / contracted;
+};
+
+const getOutstandingReceivables = (contracted: number, collected: number): number => {
+  const outstanding = contracted - collected;
+  return outstanding < 0 ? 0 : outstanding;
+};
+
+const CollectionProgressCue = ({
+  collected,
+  contracted,
+}: {
+  collected: number;
+  contracted: number;
+}) => {
+  if (contracted === 0) return null;
+  const pct = Math.min(collected / contracted, 1);
+  return (
+    <div className="mt-2 h-2 w-full rounded-full bg-border overflow-hidden">
+      <div
+        className={`h-full rounded-full transition-all ${
+          pct >= 0.5 ? 'bg-status-success' : 'bg-status-warning'
+        }`}
+        style={{ width: `${pct * 100}%` }}
+      />
+    </div>
+  );
+};
+
+const getExecutiveInsight = (report: BusinessOverviewReportResponseRecord): string => {
+  const totals = report.totals;
+  const netResult = toNumber(totals.netProfitLossAmount);
+  const revenue = toNumber(totals.revenueAmount);
+  const expenses = toNumber(totals.expenseAmount);
+  const contracted = toNumber(totals.contractedSalesAmount);
+  const collected = toNumber(totals.collectedSalesAmount);
+  const periodLabel = formatReportDateRangeLabel(report.dateFrom, report.dateTo);
+
+  const resultPhrase = netResult >= 0
+    ? `a profit of ${formatAccountingAmount(totals.profitAmount)}`
+    : `a loss of ${formatAccountingAmount(totals.lossAmount)}`;
+
+  const expenseRatio = revenue > 0 ? formatPercent(expenses, revenue) : 'N/A';
+  const collectionPct = contracted > 0 ? formatPercent(collected, contracted) : 'N/A';
+
+  return `The business recorded ${resultPhrase} over ${periodLabel}, with an expense ratio of ${expenseRatio} and ${collectionPct} of contracted sales collected.`;
+};
+
+
 
 const AmountCell = ({ value }: { value: string }) => (
   <span className="whitespace-nowrap font-mono tabular-nums">
@@ -293,69 +308,133 @@ const AmountCell = ({ value }: { value: string }) => (
 
 const BusinessReportBreakdownTable = ({
   buckets,
+  totals,
 }: {
   buckets: BusinessOverviewReportBucketRecord[];
-}) => (
-  <Table className="min-w-[1160px]">
-    <TableHeader>
-      <TableRow>
-        <TableHead className="normal-case tracking-normal">Period</TableHead>
-        <TableHead className="normal-case tracking-normal">
-          Contracted sales
-        </TableHead>
-        <TableHead className="normal-case tracking-normal">
-          Collected sales
-        </TableHead>
-        <TableHead className="normal-case tracking-normal">Revenue</TableHead>
-        <TableHead className="normal-case tracking-normal">Expenses</TableHead>
-        <TableHead className="normal-case tracking-normal">
-          Net profit/loss
-        </TableHead>
-        <TableHead className="normal-case tracking-normal">Vouchers</TableHead>
-        <TableHead className="normal-case tracking-normal">Bookings</TableHead>
-        <TableHead className="normal-case tracking-normal">Contracts</TableHead>
-        <TableHead className="normal-case tracking-normal">
-          Collections
-        </TableHead>
-      </TableRow>
-    </TableHeader>
-    <TableBody>
-      {buckets.map((bucket) => (
-        <TableRow key={bucket.bucketKey}>
+  totals: BusinessOverviewReportAmountsRecord;
+}) => {
+  const sumNetPL = toNumber(totals.netProfitLossAmount);
+
+  return (
+    <Table className="min-w-[1160px]">
+      <TableHeader>
+        <TableRow>
+          <TableHead className="normal-case tracking-normal">Period</TableHead>
+          <TableHead className="normal-case tracking-normal">Revenue</TableHead>
+          <TableHead className="normal-case tracking-normal">Expenses</TableHead>
+          <TableHead className="normal-case tracking-normal">Net P/L</TableHead>
+          <TableHead className="normal-case tracking-normal">
+            Contracted sales
+          </TableHead>
+          <TableHead className="normal-case tracking-normal">
+            Collected sales
+          </TableHead>
+          <TableHead className="normal-case tracking-normal">Vouchers</TableHead>
+          <TableHead className="normal-case tracking-normal">Bookings</TableHead>
+          <TableHead className="normal-case tracking-normal">Contracts</TableHead>
+          <TableHead className="normal-case tracking-normal">
+            Collections
+          </TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {buckets.map((bucket) => {
+          const bucketNetPL = toNumber(bucket.netProfitLossAmount);
+          const isLossPeriod = bucketNetPL < 0;
+
+          return (
+            <TableRow
+              key={bucket.bucketKey}
+              className={isLossPeriod ? 'bg-rose-50/40' : undefined}
+            >
+              <TableCell>
+                <div className="min-w-36">
+                  <p className="font-medium text-foreground">
+                    {bucket.bucketLabel}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {bucket.bucketStart} to {bucket.bucketEnd}
+                  </p>
+                </div>
+              </TableCell>
+              <TableCell>
+                <AmountCell value={bucket.revenueAmount} />
+              </TableCell>
+              <TableCell>
+                <AmountCell value={bucket.expenseAmount} />
+              </TableCell>
+              <TableCell>
+                <span className={`whitespace-nowrap font-mono tabular-nums ${
+                  isLossPeriod ? 'text-rose-700 font-semibold' : ''
+                }`}>
+                  {isLossPeriod ? (
+                    <>
+                      <span className="mr-1 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold bg-rose-100/80 text-rose-700">
+                        Loss
+                      </span>
+                      {formatAccountingAmount(bucket.netProfitLossAmount)}
+                    </>
+                  ) : (
+                    formatAccountingAmount(bucket.netProfitLossAmount)
+                  )}
+                </span>
+              </TableCell>
+              <TableCell>
+                <AmountCell value={bucket.contractedSalesAmount} />
+              </TableCell>
+              <TableCell>
+                <AmountCell value={bucket.collectedSalesAmount} />
+              </TableCell>
+              <TableCell>{formatCount(bucket.voucherCount)}</TableCell>
+              <TableCell>{formatCount(bucket.bookingCount)}</TableCell>
+              <TableCell>{formatCount(bucket.saleContractCount)}</TableCell>
+              <TableCell>{formatCount(bucket.collectionCount)}</TableCell>
+            </TableRow>
+          );
+        })}
+        {/* Totals row */}
+        <TableRow className="border-t-2 border-brand-sky/40 bg-brand-skySoft/30 font-semibold">
           <TableCell>
             <div className="min-w-36">
-              <p className="font-medium text-foreground">
-                {bucket.bucketLabel}
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {bucket.bucketStart} to {bucket.bucketEnd}
-              </p>
+              <p className="font-bold text-foreground">Total</p>
             </div>
           </TableCell>
           <TableCell>
-            <AmountCell value={bucket.contractedSalesAmount} />
+            <span className="whitespace-nowrap font-mono tabular-nums font-semibold">
+              {formatAccountingAmount(totals.revenueAmount)}
+            </span>
           </TableCell>
           <TableCell>
-            <AmountCell value={bucket.collectedSalesAmount} />
+            <span className="whitespace-nowrap font-mono tabular-nums font-semibold">
+              {formatAccountingAmount(totals.expenseAmount)}
+            </span>
           </TableCell>
           <TableCell>
-            <AmountCell value={bucket.revenueAmount} />
+            <span className={`whitespace-nowrap font-mono tabular-nums font-semibold ${
+              sumNetPL < 0 ? 'text-rose-700' : 'text-emerald-700'
+            }`}>
+              {formatAccountingAmount(totals.netProfitLossAmount)}
+            </span>
           </TableCell>
           <TableCell>
-            <AmountCell value={bucket.expenseAmount} />
+            <span className="whitespace-nowrap font-mono tabular-nums font-semibold">
+              {formatAccountingAmount(totals.contractedSalesAmount)}
+            </span>
           </TableCell>
           <TableCell>
-            <AmountCell value={bucket.netProfitLossAmount} />
+            <span className="whitespace-nowrap font-mono tabular-nums font-semibold">
+              {formatAccountingAmount(totals.collectedSalesAmount)}
+            </span>
           </TableCell>
-          <TableCell>{formatCount(bucket.voucherCount)}</TableCell>
-          <TableCell>{formatCount(bucket.bookingCount)}</TableCell>
-          <TableCell>{formatCount(bucket.saleContractCount)}</TableCell>
-          <TableCell>{formatCount(bucket.collectionCount)}</TableCell>
+          <TableCell className="font-semibold">{formatCount(totals.voucherCount)}</TableCell>
+          <TableCell className="font-semibold">{formatCount(totals.bookingCount)}</TableCell>
+          <TableCell className="font-semibold">{formatCount(totals.saleContractCount)}</TableCell>
+          <TableCell className="font-semibold">{formatCount(totals.collectionCount)}</TableCell>
         </TableRow>
-      ))}
-    </TableBody>
-  </Table>
-);
+      </TableBody>
+    </Table>
+  );
+};
 
 const BusinessPrintableReport = ({
   config,
@@ -379,6 +458,7 @@ const BusinessPrintableReport = ({
   const groupingLabel = getBusinessReportGroupingLabel(report.bucket);
   const hasData = hasBusinessReportData(report);
   const isDemoUatCompany = userCompanySlug === 'real-capita-demo-uat';
+  const netProfitLoss = toNumber(report.totals.netProfitLossAmount);
 
   return (
     <PrintableReportLayout
@@ -399,7 +479,7 @@ const BusinessPrintableReport = ({
         generatedBy={generatedBy}
         outputLabel={`Browser print / A4 ${config.printOrientation}`}
         periodLabel={periodLabel}
-        subtitle="Company-scoped sales, collection, posted revenue, expense, profit/loss, and activity-count summary for finance review."
+        subtitle="Company-scoped sales, collection, posted revenue, expense, profit/loss, and activity-count summary."
         title={config.title}
       />
 
@@ -410,16 +490,13 @@ const BusinessPrintableReport = ({
         <PrintableReportSummaryTable
           rows={[
             {
-              label: 'Contracted sales',
-              value: formatAccountingAmount(
-                report.totals.contractedSalesAmount,
-              ),
-              note: 'Sale contract amount by contract date',
-            },
-            {
-              label: 'Collected sales',
-              value: formatAccountingAmount(report.totals.collectedSalesAmount),
-              note: 'Collection amount by collection date',
+              label: 'Business result',
+              value: netProfitLoss >= 0
+                ? formatAccountingAmount(report.totals.profitAmount)
+                : formatAccountingAmount(report.totals.lossAmount),
+              note: netProfitLoss >= 0
+                ? 'Profit — revenue less expenses from posted vouchers'
+                : 'Loss — revenue less expenses from posted vouchers',
             },
             {
               label: 'Revenue',
@@ -429,15 +506,30 @@ const BusinessPrintableReport = ({
             {
               label: 'Expenses',
               value: formatAccountingAmount(report.totals.expenseAmount),
-              note: 'Posted voucher expense movement',
+              note: `Expense ratio: ${formatPercent(toNumber(report.totals.expenseAmount), toNumber(report.totals.revenueAmount))}`,
             },
             {
-              label: 'Net profit/loss',
-              value: formatAccountingAmount(report.totals.netProfitLossAmount),
-              note: 'Revenue less expenses from posted voucher data',
+              label: 'Collection efficiency',
+              value: formatPercent(toNumber(report.totals.collectedSalesAmount), toNumber(report.totals.contractedSalesAmount)),
+              note: `${formatAccountingAmount(report.totals.collectedSalesAmount)} collected of ${formatAccountingAmount(report.totals.contractedSalesAmount)} contracted`,
             },
             {
-              label: 'Voucher workload',
+              label: 'Contracted sales',
+              value: formatAccountingAmount(
+                report.totals.contractedSalesAmount,
+              ),
+              note: 'Sale contract amount by contract date',
+            },
+            {
+              label: 'Outstanding receivables',
+              value: formatAccountingAmount(getOutstandingReceivables(
+                toNumber(report.totals.contractedSalesAmount),
+                toNumber(report.totals.collectedSalesAmount),
+              )),
+              note: 'Contracted sales minus collected sales',
+            },
+            {
+              label: 'Voucher activity',
               value: formatCount(report.totals.voucherCount),
               note: `${formatCount(report.totals.postedVoucherCount)} posted / ${formatCount(report.totals.draftVoucherCount)} draft`,
             },
@@ -483,22 +575,6 @@ const BusinessPrintableReport = ({
             {
               align: 'right',
               className: 'font-mono',
-              key: 'contractedSales',
-              header: 'Contracted sales',
-              render: (bucket) =>
-                formatAccountingAmount(bucket.contractedSalesAmount),
-            },
-            {
-              align: 'right',
-              className: 'font-mono',
-              key: 'collectedSales',
-              header: 'Collected sales',
-              render: (bucket) =>
-                formatAccountingAmount(bucket.collectedSalesAmount),
-            },
-            {
-              align: 'right',
-              className: 'font-mono',
               key: 'revenue',
               header: 'Revenue',
               render: (bucket) => formatAccountingAmount(bucket.revenueAmount),
@@ -514,9 +590,25 @@ const BusinessPrintableReport = ({
               align: 'right',
               className: 'font-mono',
               key: 'netProfitLoss',
-              header: 'Net profit/loss',
+              header: 'Net P/L',
               render: (bucket) =>
                 formatAccountingAmount(bucket.netProfitLossAmount),
+            },
+            {
+              align: 'right',
+              className: 'font-mono',
+              key: 'contractedSales',
+              header: 'Contracted sales',
+              render: (bucket) =>
+                formatAccountingAmount(bucket.contractedSalesAmount),
+            },
+            {
+              align: 'right',
+              className: 'font-mono',
+              key: 'collectedSales',
+              header: 'Collected sales',
+              render: (bucket) =>
+                formatAccountingAmount(bucket.collectedSalesAmount),
             },
             {
               align: 'right',
@@ -554,15 +646,21 @@ const BusinessPrintableReport = ({
       </PrintableReportSection>
 
       <PrintableReportSection
-        subtitle="Calculation notes are included for review traceability."
+        subtitle="Calculation notes for review traceability."
         title="Notes"
       >
+        <PrintableReportNote>
+          Net result is revenue minus expenses from posted accounting vouchers. Contracted sales and collections come from CRM/property records by contract and collection date respectively. Expense ratio is expenses divided by revenue; collection efficiency is collected sales divided by contracted sales. Outstanding receivables equals contracted sales minus collected sales.
+        </PrintableReportNote>
         {!hasData ? (
           <PrintableReportNote>
             No reportable activity matched this company/date range. Zero values
             are shown for the selected filters.
           </PrintableReportNote>
         ) : null}
+        <PrintableReportNote>
+          Detailed basis:
+        </PrintableReportNote>
         {report.assumptions.map((assumption) => (
           <PrintableReportNote key={assumption}>
             {assumption}
@@ -731,11 +829,6 @@ export const BusinessReportPage = ({ mode }: { mode: BusinessReportMode }) => {
           title={config.title}
         />
 
-        <FinancialReportingReadOnlyNotice
-          description="This report is read-only. Contracted sales and collections come from CRM/property records, while revenue, expenses, and profit/loss come from posted accounting vouchers."
-          title="Company-scoped business reporting"
-        />
-
         <div className="screen-only space-y-6">
           <FinancialReportingFilterCard>
             <ReportFilterGrid>
@@ -819,7 +912,7 @@ export const BusinessReportPage = ({ mode }: { mode: BusinessReportMode }) => {
             />
 
             <FinancialReportingSection
-              description="Finance-grade headline values for the selected company, period, and grouping."
+              description="Headline financial result, key drivers, and collection progress for the selected reporting period."
               title="Executive summary"
             >
               <FinancialReportContextStrip
@@ -836,70 +929,129 @@ export const BusinessReportPage = ({ mode }: { mode: BusinessReportMode }) => {
                     value: getBusinessReportGroupingLabel(report.bucket),
                   },
                   {
-                    label: 'Data source',
-                    value: 'CRM/property + posted vouchers',
-                  },
-                  {
                     label: 'Result',
                     tone: netProfitLoss >= 0 ? 'success' : 'warning',
                     value: netProfitLoss >= 0 ? 'Profit' : 'Loss',
                   },
                 ]}
               />
-              <ReportMetricGrid>
-                <ReportMetricCard
-                  label="Contracted sales"
-                  value={
-                    <span className="font-mono tabular-nums">
-                      {formatAccountingAmount(
-                        report.totals.contractedSalesAmount,
-                      )}
+              <p className="text-xs text-muted-foreground">
+                Sources: posted vouchers and CRM/property records.
+              </p>
+              <div className="space-y-4">
+                {/* Primary result card */}
+                <div
+                  className={`rounded-xl border-2 p-5 shadow-sm ${
+                    netProfitLoss >= 0
+                      ? 'border-emerald-300/70 bg-gradient-to-br from-emerald-50/40 to-brand-skySoft/30'
+                      : 'border-rose-300/70 bg-gradient-to-br from-rose-50/40 to-brand-skySoft/30'
+                  }`}
+                >
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    Business result
+                  </p>
+                  <p className={`mt-3 text-2xl font-bold tabular-nums ${
+                    netProfitLoss >= 0 ? 'text-emerald-700' : 'text-rose-700'
+                  }`}>
+                    <span className="font-mono">
+                      {netProfitLoss >= 0
+                        ? formatAccountingAmount(report.totals.profitAmount)
+                        : formatAccountingAmount(report.totals.lossAmount)}
                     </span>
-                  }
-                />
-                <ReportMetricCard
-                  label="Collected sales"
-                  value={
-                    <span className="font-mono tabular-nums">
-                      {formatAccountingAmount(
-                        report.totals.collectedSalesAmount,
-                      )}
+                  </p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                      netProfitLoss >= 0
+                        ? 'bg-emerald-100/80 text-emerald-700'
+                        : 'bg-rose-100/80 text-rose-700'
+                    }`}>
+                      {netProfitLoss >= 0 ? 'Profit' : 'Loss'}
                     </span>
-                  }
-                />
-                <ReportMetricCard
-                  label="Revenue"
-                  value={
-                    <span className="font-mono tabular-nums">
-                      {formatAccountingAmount(report.totals.revenueAmount)}
+                    <span className="text-xs text-muted-foreground">
+                      Revenue minus expenses from posted vouchers
                     </span>
-                  }
-                />
-                <ReportMetricCard
-                  label="Expenses"
-                  value={
-                    <span className="font-mono tabular-nums">
-                      {formatAccountingAmount(report.totals.expenseAmount)}
-                    </span>
-                  }
-                />
-                <ReportMetricCard
-                  label="Net profit/loss"
-                  tone={netProfitLoss >= 0 ? 'success' : 'warning'}
-                  value={
-                    <span className="font-mono tabular-nums">
-                      {formatAccountingAmount(
-                        report.totals.netProfitLossAmount,
-                      )}
-                    </span>
-                  }
-                />
-                <ReportMetricCard
-                  label="Voucher workload"
-                  value={formatCount(report.totals.voucherCount)}
-                  description={`${formatCount(report.totals.postedVoucherCount)} posted / ${formatCount(report.totals.draftVoucherCount)} draft`}
-                />
-              </ReportMetricGrid>
+                  </div>
+                </div>
+
+                {/* Secondary management metrics */}
+                <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))]">
+                  <ReportMetricCard
+                    label="Revenue"
+                    tone="success"
+                    value={
+                      <span className="font-mono tabular-nums">
+                        {formatAccountingAmount(report.totals.revenueAmount)}
+                      </span>
+                    }
+                    description="Posted voucher revenue for the selected period"
+                  />
+                  <ReportMetricCard
+                    label="Expenses"
+                    tone={toNumber(report.totals.expenseAmount) / toNumber(report.totals.revenueAmount) > 0.5 ? 'warning' : 'default'}
+                    value={
+                      <span className="font-mono tabular-nums">
+                        {formatAccountingAmount(report.totals.expenseAmount)}
+                      </span>
+                    }
+                    description={`Expense ratio: ${formatPercent(toNumber(report.totals.expenseAmount), toNumber(report.totals.revenueAmount))}`}
+                  />
+                  <ReportMetricCard
+                    label="Collection efficiency"
+                    tone={getCollectionEfficiencyPercent(toNumber(report.totals.collectedSalesAmount), toNumber(report.totals.contractedSalesAmount)) < 0.5 ? 'warning' : 'success'}
+                    value={
+                      <span className="font-mono tabular-nums">
+                        {formatPercent(toNumber(report.totals.collectedSalesAmount), toNumber(report.totals.contractedSalesAmount))}
+                      </span>
+                    }
+                    description={
+                      <>
+                        {formatAccountingAmount(report.totals.collectedSalesAmount)} collected of {formatAccountingAmount(report.totals.contractedSalesAmount)} contracted
+                        <CollectionProgressCue
+                          collected={toNumber(report.totals.collectedSalesAmount)}
+                          contracted={toNumber(report.totals.contractedSalesAmount)}
+                        />
+                      </>
+                    }
+                  />
+                </div>
+
+                {/* Supporting detail metrics */}
+                <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))]">
+                  <ReportMetricCard
+                    label="Contracted sales"
+                    value={
+                      <span className="font-mono tabular-nums">
+                        {formatAccountingAmount(
+                          report.totals.contractedSalesAmount,
+                        )}
+                      </span>
+                    }
+                  />
+                  <ReportMetricCard
+                    label="Outstanding receivables"
+                    tone={getOutstandingReceivables(toNumber(report.totals.contractedSalesAmount), toNumber(report.totals.collectedSalesAmount)) > 0 ? 'warning' : 'default'}
+                    value={
+                      <span className="font-mono tabular-nums">
+                        {formatAccountingAmount(getOutstandingReceivables(
+                          toNumber(report.totals.contractedSalesAmount),
+                          toNumber(report.totals.collectedSalesAmount),
+                        ))}
+                      </span>
+                    }
+                    description="Contracted sales minus collected sales"
+                  />
+                  <ReportMetricCard
+                    label="Voucher activity"
+                    value={formatCount(report.totals.voucherCount)}
+                    description={`${formatCount(report.totals.postedVoucherCount)} posted / ${formatCount(report.totals.draftVoucherCount)} draft`}
+                  />
+                  <ReportMetricCard
+                    label="Periods reported"
+                    value={String(report.buckets.length)}
+                    description={getBusinessReportGroupingLabel(report.bucket)}
+                  />
+                </div>
+              </div>
 
               {!hasData ? (
                 <EmptyState
@@ -909,66 +1061,40 @@ export const BusinessReportPage = ({ mode }: { mode: BusinessReportMode }) => {
               ) : null}
             </FinancialReportingSection>
 
+            <div className="screen-only rounded-lg border border-brand-sky/40 bg-brand-skySoft/60 px-4 py-3">
+              <p className="text-sm font-medium leading-6 text-foreground">
+                {getExecutiveInsight(report)}
+              </p>
+            </div>
+
             <FinancialReportingSection
-              description="Trends use the selected period type and separate contracted sales, collected sales, posted revenue, expenses, and net profit/loss."
-              title="Visual analysis"
+              description="Revenue, expenses, and net result over the selected reporting period — how financial performance moved across each bucket."
+              title="Performance trend"
             >
-              <div className="grid gap-5 xl:grid-cols-2">
-                <TrendChartCard
-                  data={getPerformanceTrend(report)}
-                  description="Revenue, expenses, and net profit/loss by selected period."
-                  emptyDescription="Posted revenue and expense voucher lines are required before this trend can render."
-                  emptyTitle="No posted accounting movement"
-                  format="currency"
-                  insight="Profit/loss is shown beside revenue and expenses so the period result is not inferred from color alone."
-                  series={[
-                    { key: 'revenue', label: 'Revenue', tone: 'revenue' },
-                    { key: 'expenses', label: 'Expenses', tone: 'expense' },
-                    {
-                      key: 'profitLoss',
-                      label: 'Net profit/loss',
-                      tone: 'balance',
-                    },
-                  ]}
-                  title="Revenue, expense, and result trend"
-                />
-                <TrendChartCard
-                  data={getSalesCollectionsTrend(report)}
-                  description="Contracted sales and collected sales by selected period."
-                  emptyDescription="Sale contracts or collection rows are required before this trend can render."
-                  emptyTitle="No sales or collection movement"
-                  format="currency"
-                  insight="Contracted sales and collections stay separated because they come from different CRM/property source dates."
-                  series={[
-                    {
-                      key: 'contractedSales',
-                      label: 'Contracted sales',
-                      tone: 'sales',
-                    },
-                    {
-                      key: 'collectedSales',
-                      label: 'Collected sales',
-                      tone: 'collection',
-                    },
-                  ]}
-                  title="Contracted sales vs collections"
-                />
-              </div>
-              <div className="max-w-3xl">
-                <DistributionChartCard
-                  data={getActivityDistribution(report)}
-                  description="Summary counts reflect the selected reporting period."
-                  emptyDescription="Bookings, sale contracts, collections, or vouchers are required before the operating mix can render."
-                  emptyTitle="No operating counts"
-                  insight="Voucher, booking, contract, and collection counts remain visible as text."
-                  title="Activity count mix"
-                />
-              </div>
+              <ExecutiveTrendChartCard
+                data={getPerformanceTrend(report)}
+                description="Revenue and expenses from posted vouchers per period; the net result line shows whether each period was profitable."
+                emptyDescription="Posted voucher lines are required before this trend can render."
+                emptyTitle="No reportable financial movement"
+                format="currency"
+                insight="Revenue bars and expense bars show financial magnitude per period; the net result line reveals whether the business was profitable in each period — above zero is profit, below zero is loss."
+                series={[
+                  { key: 'revenue', label: 'Revenue', tone: 'revenue', type: 'bar' },
+                  { key: 'expenses', label: 'Expenses', tone: 'expense', type: 'bar' },
+                  {
+                    key: 'profitLoss',
+                    label: 'Net result',
+                    tone: 'balance',
+                    type: 'line',
+                  },
+                ]}
+                title="Financial performance trend"
+              />
             </FinancialReportingSection>
 
             <FinancialReportingSection
-              description="Period rows preserve the same company and date grouping used by the charts."
-              title="Detailed period table"
+              description="Detailed period-by-period figures that support the executive summary and trend charts above."
+              title="Period breakdown"
             >
               {report.buckets.length === 0 ? (
                 <EmptyState
@@ -976,21 +1102,29 @@ export const BusinessReportPage = ({ mode }: { mode: BusinessReportMode }) => {
                   title="No report buckets"
                 />
               ) : (
-                <BusinessReportBreakdownTable buckets={report.buckets} />
+                <BusinessReportBreakdownTable buckets={report.buckets} totals={report.totals} />
               )}
             </FinancialReportingSection>
 
             <FinancialReportingSection
-              description="Calculation rules help reviewers trace what each metric means."
-              title="Assumptions and calculation notes"
+              description="How each figure is derived and what data sources apply."
+              title="Calculation notes"
             >
-              <div className="grid gap-3">
-                {report.assumptions.map((assumption) => (
-                  <ReportAssumptionNote key={assumption}>
-                    {assumption}
-                  </ReportAssumptionNote>
-                ))}
-              </div>
+              <p className="text-sm leading-6 text-muted-foreground">
+                Net result is revenue minus expenses from posted accounting vouchers. Contracted sales and collections come from CRM/property records by contract and collection date respectively. Expense ratio is expenses divided by revenue; collection efficiency is collected sales divided by contracted sales. Outstanding receivables equals contracted sales minus collected sales.
+              </p>
+              <details className="mt-3 group">
+                <summary className="cursor-pointer text-sm font-medium text-brand-sky hover:text-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-sky/50">
+                  Show detailed calculation basis
+                </summary>
+                <div className="mt-3 grid gap-3">
+                  {report.assumptions.map((assumption) => (
+                    <ReportAssumptionNote key={assumption}>
+                      {assumption}
+                    </ReportAssumptionNote>
+                  ))}
+                </div>
+              </details>
             </FinancialReportingSection>
           </>
         ) : null}

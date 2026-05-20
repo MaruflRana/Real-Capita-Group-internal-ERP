@@ -18,7 +18,6 @@ import {
 import { Badge } from '../../components/ui/badge';
 import { EmptyState } from '../../components/ui/empty-state';
 import {
-  KpiCard,
   PageSection,
   StatusChip,
 } from '../../components/ui/erp-primitives';
@@ -77,50 +76,6 @@ export const DashboardIssueBanner = ({
   );
 };
 
-export const DashboardSummaryPanel = ({
-  title,
-  description,
-  href,
-  items,
-}: {
-  title: string;
-  description: string;
-  href: string;
-  items: Array<{
-    label: string;
-    value: string;
-    hint: string;
-  }>;
-}) => (
-  <Card className="h-full min-w-0 overflow-hidden">
-    <CardHeader className="border-b border-border bg-surface-raised">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 space-y-2">
-          <CardTitle>{title}</CardTitle>
-          <CardDescription className="leading-6">{description}</CardDescription>
-        </div>
-        <Link
-          className={cn(buttonVariants({ variant: 'outline' }), 'gap-2')}
-          href={href}
-        >
-          Open
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-      </div>
-    </CardHeader>
-    <CardContent className="grid gap-3 pt-5 [grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr))] sm:pt-6">
-      {items.map((item) => (
-        <KpiCard
-          helper={item.hint}
-          key={`${title}-${item.label}`}
-          label={item.label}
-          value={item.value}
-        />
-      ))}
-    </CardContent>
-  </Card>
-);
-
 export const DashboardTimelinePanel = ({
   title,
   description,
@@ -143,8 +98,8 @@ export const DashboardTimelinePanel = ({
   emptyTitle: string;
   emptyDescription: string;
 }) => (
-  <Card className="h-full min-w-0 overflow-hidden">
-    <CardHeader className="border-b border-border bg-surface-raised">
+  <Card className="h-full min-w-0 overflow-hidden border-brand-sky/40">
+    <CardHeader className="border-b border-brand-sky/40 bg-gradient-to-br from-brand-headerGradientStart via-card to-brand-headerGradientEnd/70">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-2">
           <CardTitle>{title}</CardTitle>
@@ -169,7 +124,7 @@ export const DashboardTimelinePanel = ({
         <div className="space-y-3">
           {items.map((item) => {
             const body = (
-              <div className="rounded-lg border border-border bg-surface-muted px-4 py-4 transition hover:border-primary/30 hover:bg-accent/60">
+              <div className="rounded-lg border border-brand-sky/35 bg-card px-4 py-4 transition hover:border-brand-green/50 hover:bg-brand-skySoft/80">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <Badge variant="outline">{item.typeLabel}</Badge>
                   <p className="text-xs text-muted-foreground">
@@ -182,7 +137,7 @@ export const DashboardTimelinePanel = ({
                 <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
                   {item.details.map((detail) => (
                     <span
-                      className="rounded-full border border-border bg-card px-2 py-1"
+                      className="rounded-full border border-brand-sky/35 bg-brand-skySoft/80 px-2 py-1 text-brand-navy"
                       key={`${item.id}-${detail}`}
                     >
                       {detail}
@@ -220,7 +175,7 @@ export const DashboardAttentionCard = ({
   href: string;
 }) => (
   <Link href={href}>
-    <Card className="h-full transition hover:border-primary/30 hover:shadow-card">
+    <Card className="h-full border-brand-sky/35 transition hover:border-brand-green/40 hover:shadow-card">
       <CardContent className="flex h-full flex-col justify-between gap-5 pt-6">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 space-y-2">
@@ -234,7 +189,7 @@ export const DashboardAttentionCard = ({
           </StatusChip>
         </div>
         <div className="flex items-end justify-between gap-4">
-          <p className="text-3xl font-semibold tracking-tight text-foreground">
+          <p className="text-3xl font-semibold tracking-tight text-primary">
             {count}
           </p>
           <span className="text-sm font-medium text-primary">Open</span>
@@ -258,9 +213,9 @@ export const DashboardQuickActionTile = ({
   }>;
 }) => (
   <Link href={href}>
-    <div className="rounded-lg border border-border bg-surface-muted px-4 py-4 transition hover:border-primary/30 hover:bg-accent/60">
+    <div className="rounded-lg border border-brand-sky/35 bg-gradient-to-br from-card to-brand-skySoft/80 px-4 py-4 transition hover:border-brand-green/50 hover:bg-brand-greenSoft">
       <div className="flex items-start gap-3">
-        <div className="rounded-lg border border-border bg-card p-2">
+        <div className="rounded-lg border border-brand-sky/40 bg-brand-skySoft p-2">
           <Icon className="h-4 w-4 text-primary" />
         </div>
         <div className="min-w-0 space-y-2">

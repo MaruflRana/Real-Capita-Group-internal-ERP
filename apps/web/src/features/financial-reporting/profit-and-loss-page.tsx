@@ -41,7 +41,6 @@ import {
   getStatementSectionCountLabel,
   isDateRangeInvalid,
 } from './utils';
-import { ProfitAndLossVisualSummary } from './analytics';
 
 const buildProfitAndLossFilters = ({
   dateFrom,
@@ -319,12 +318,6 @@ export const ProfitAndLossPage = () => {
               </ReportMetricGrid>
             </FinancialReportingSection>
 
-            <FinancialReportingSection
-              description="Revenue and expenses are compared with the net result and section totals as text, so the meaning does not rely on color alone."
-              title="Visual analysis"
-            >
-              <ProfitAndLossVisualSummary report={reportQuery.data} />
-            </FinancialReportingSection>
 
             <FinancialReportingSection
               description="Sections, groups, ledgers, and posting accounts follow the statement hierarchy."

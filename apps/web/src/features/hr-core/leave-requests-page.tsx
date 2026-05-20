@@ -12,7 +12,6 @@ import { OutputActionGroup } from '../../components/ui/output-actions';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
-import { HrAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -296,19 +295,7 @@ export const LeaveRequestsPage = () => {
       {actionError ? <HrCoreQueryErrorBanner message={actionError} /> : null}
       {exportError ? <HrCoreQueryErrorBanner message={exportError} /> : null}
 
-      <HrAnalyticsPanel
-        companyId={companyId}
-        companySlug={user.currentCompany.slug}
-        enabled={isEnabled}
-        period={
-          dateFrom && dateTo
-            ? {
-                dateFrom,
-                dateTo,
-              }
-            : undefined
-        }
-      />
+
 
       <HrCoreSection
         title="Leave request list"

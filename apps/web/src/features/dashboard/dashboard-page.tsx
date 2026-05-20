@@ -6,7 +6,6 @@ import Link from 'next/link';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
   buttonVariants,
@@ -18,7 +17,6 @@ import { Badge } from '../../components/ui/badge';
 import { EmptyState } from '../../components/ui/empty-state';
 import { AppPage } from '../../components/ui/erp-primitives';
 import { getRoleLabels } from '../../lib/access';
-import { DashboardAnalyticsPanel } from '../analytics/module-panels';
 import {
   formatAttachmentStatusLabel,
   formatAuditEventCategoryLabel,
@@ -37,7 +35,6 @@ import {
   DashboardLoadingGrid,
   DashboardQuickActionTile,
   DashboardSection,
-  DashboardSummaryPanel,
   DashboardTimelinePanel,
 } from './shared';
 import { HealthStatusCard } from './health-status-card';
@@ -118,222 +115,92 @@ export const DashboardPage = () => {
   const workspaceLabels = getAccessibleWorkspaceLabels(access);
   const quickActions = getDashboardQuickActions(access);
 
-  const summaryPanels = useMemo(() => {
-    const panels: Array<{
-      key: string;
-      title: string;
-      description: string;
-      href: string;
-      items: Array<{
-        label: string;
-        value: string;
-        hint: string;
-      }>;
-    }> = [];
+  const executiveKpis = useMemo(() => {
     const summary = summaryQuery.data;
 
     if (!summary) {
-      return panels;
+      return [];
     }
 
+    const kpis: Array<{
+      label: string;
+      value: string;
+      hint: string;
+      tone?: 'success' | 'warning' | 'neutral';
+    }> = [];
+
     if (summary.financial && access.financialReports) {
-      panels.push({
-        key: 'financial',
-        title: 'Financial summary',
-        description:
-          'Key financial indicators for the active company and selected reporting window.',
-        href: APP_ROUTES.accountingReportsBusinessOverview,
-        items: [
-          {
-            label: 'Net profit / loss',
-            value: formatAccountingAmount(summary.financial.netProfitLoss),
-            hint: `Reporting window: ${summary.period.label}`,
-          },
-          {
-            label: 'Total assets',
-            value: formatAccountingAmount(summary.financial.totalAssets),
-            hint: `Balance sheet as of ${formatDate(summary.financial.asOfDate)}`,
-          },
-          {
-            label: 'Liabilities + equity',
-            value: formatAccountingAmount(
-              summary.financial.totalLiabilitiesAndEquity,
-            ),
-            hint: summary.financial.isBalanced
-              ? 'Balance sheet remains in balance.'
-              : 'Balance sheet needs review.',
-          },
-          {
-            label: 'Trial balance',
-            value: `${formatAccountingAmount(summary.financial.closingDebit)} / ${formatAccountingAmount(summary.financial.closingCredit)}`,
-            hint: 'Closing debit and credit totals from the current reporting window.',
-          },
-        ],
+      const netProfitLossNum = Number(summary.financial.netProfitLoss);
+      kpis.push({
+        label: 'Net profit / loss',
+        value: formatAccountingAmount(summary.financial.netProfitLoss),
+        hint: netProfitLossNum >= 0 ? 'Profit' : 'Loss',
+        tone: netProfitLossNum >= 0 ? 'success' : 'warning',
+      });
+      kpis.push({
+        label: 'Total assets',
+        value: formatAccountingAmount(summary.financial.totalAssets),
+        hint: 'Balance sheet total.',
       });
     }
 
     if (summary.accounting && access.accounting) {
-      panels.push({
-        key: 'accounting',
-        title: 'Accounting operations',
-        description:
-          'Current voucher workload pulled directly from the accounting module.',
-        href: APP_ROUTES.accountingVouchers,
-        items: [
-          {
-            label: 'Draft vouchers',
-            value: String(summary.accounting.draftVoucherCount),
-            hint: 'Editable vouchers awaiting explicit posting.',
-          },
-          {
-            label: 'Posted vouchers',
-            value: String(summary.accounting.postedVoucherCount),
-            hint: 'Posted vouchers currently available for review.',
-          },
-        ],
+      kpis.push({
+        label: 'Draft vouchers',
+        value: String(summary.accounting.draftVoucherCount),
+        hint: 'Awaiting posting.',
+      });
+      kpis.push({
+        label: 'Posted vouchers',
+        value: String(summary.accounting.postedVoucherCount),
+        hint: 'Currently available for review.',
       });
     }
 
-    if ((summary.property || summary.crm) && (access.projectProperty || access.crm)) {
-      panels.push({
-        key: 'property-sales',
-        title: 'Property and sales',
-        description:
-          'Current inventory and commercial activity across the master and CRM slices.',
-        href: access.projectProperty
-          ? APP_ROUTES.projectPropertyUnits
-          : APP_ROUTES.crmPropertyDeskBookings,
-        items: [
-          ...(summary.property
-            ? [
-                {
-                  label: 'Total units',
-                  value: String(summary.property.totalUnitCount),
-                  hint: 'All units currently tracked in the active company.',
-                },
-                {
-                  label: 'Available units',
-                  value: String(summary.property.availableUnitCount),
-                  hint: 'Units currently ready for booking.',
-                },
-                {
-                  label: 'Booked units',
-                  value: String(summary.property.bookedUnitCount),
-                  hint: 'Units presently reserved in the sales pipeline.',
-                },
-                {
-                  label: 'Sold units',
-                  value: String(summary.property.soldUnitCount),
-                  hint: 'Units fully converted into sales.',
-                },
-              ]
-            : []),
-          ...(summary.crm
-            ? [
-                {
-                  label: 'Active bookings',
-                  value: String(summary.crm.activeBookingCount),
-                  hint: 'Bookings still operating in the BOOKED state.',
-                },
-                {
-                  label: 'Sale contracts',
-                  value: String(summary.crm.saleContractCount),
-                  hint: 'Contracts recorded in the CRM workspace.',
-                },
-                {
-                  label: 'Recent collections',
-                  value: String(summary.crm.recentCollectionCount),
-                  hint: `Collections recorded during ${summary.period.label.toLowerCase()}.`,
-                },
-              ]
-            : []),
-        ],
+    if (summary.property && access.projectProperty) {
+      kpis.push({
+        label: 'Available units',
+        value: String(summary.property.availableUnitCount),
+        hint: 'Ready for booking.',
       });
     }
 
-    if (summary.people && (access.hr || access.payroll)) {
-      panels.push({
-        key: 'people',
-        title: 'People operations',
-        description:
-          'Headcount, leave-review workload, and payroll run status for the current company.',
-        href: access.payroll ? APP_ROUTES.payrollRuns : APP_ROUTES.hrLeaveRequests,
-        items: [
-          ...(summary.people.employeeCount !== undefined
-            ? [
-                {
-                  label: 'Employees',
-                  value: String(summary.people.employeeCount),
-                  hint: 'Employee records available to the current HR scope.',
-                },
-              ]
-            : []),
-          ...(summary.people.pendingLeaveRequestCount !== undefined
-            ? [
-                {
-                  label: 'Pending leave requests',
-                  value: String(summary.people.pendingLeaveRequestCount),
-                  hint: 'Leave requests currently in SUBMITTED state.',
-                },
-              ]
-            : []),
-          ...(summary.people.openPayrollRunCount !== undefined
-            ? [
-                {
-                  label: 'Open payroll runs',
-                  value: String(summary.people.openPayrollRunCount),
-                  hint: 'Draft and finalized payroll runs that still need follow-up.',
-                },
-              ]
-            : []),
-        ],
+    if (summary.crm && access.crm) {
+      kpis.push({
+        label: 'Active bookings',
+        value: String(summary.crm.activeBookingCount),
+        hint: 'Operating in BOOKED state.',
       });
     }
 
-    if (summary.documents && (access.documents || access.auditEvents)) {
-      panels.push({
-        key: 'documents',
-        title: 'Documents and audit',
-        description:
-          'Recent file activity and audit visibility for the active company.',
-        href: access.documents
-          ? APP_ROUTES.auditDocumentsAttachments
-          : APP_ROUTES.auditDocumentsAuditEvents,
-        items: [
-          ...(summary.documents.recentAttachmentCount !== undefined
-            ? [
-                {
-                  label: 'Recent attachments',
-                  value: String(summary.documents.recentAttachmentCount),
-                  hint: `Attachments created during ${summary.period.label.toLowerCase()}.`,
-                },
-              ]
-            : []),
-          ...(summary.documents.recentAuditEventCount !== undefined
-            ? [
-                {
-                  label: 'Recent audit events',
-                  value: String(summary.documents.recentAuditEventCount),
-                  hint: `Audit events created during ${summary.period.label.toLowerCase()}.`,
-                },
-              ]
-            : []),
-        ],
-      });
+    if (summary.people) {
+      if (summary.people.pendingLeaveRequestCount !== undefined && access.hr) {
+        kpis.push({
+          label: 'Pending leave requests',
+          value: String(summary.people.pendingLeaveRequestCount),
+          hint: 'Awaiting HR action.',
+        });
+      }
+      if (summary.people.openPayrollRunCount !== undefined && access.payroll) {
+        kpis.push({
+          label: 'Open payroll runs',
+          value: String(summary.people.openPayrollRunCount),
+          hint: 'Draft and finalized runs needing follow-up.',
+        });
+      }
     }
 
-    return panels.filter((panel) => panel.items.length > 0);
+    return kpis;
   }, [
     access.accounting,
-    access.auditEvents,
     access.crm,
-    access.documents,
     access.financialReports,
     access.hr,
     access.payroll,
     access.projectProperty,
     summaryQuery.data,
   ]);
+
   const recentActivityPanels = useMemo(() => {
     const activity = activityQuery.data;
 
@@ -552,6 +419,7 @@ export const DashboardPage = () => {
     access.hr,
     access.payroll,
   ]);
+
   const attentionItems = useMemo(() => {
     const summary = summaryQuery.data;
 
@@ -635,84 +503,49 @@ export const DashboardPage = () => {
 
   return (
     <AppPage>
-      <section className="grid gap-6 2xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-        <Card className="min-w-0 overflow-hidden" data-testid="dashboard-context">
-          <CardHeader className="border-b border-border bg-surface-raised">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
-              Operational home
-            </p>
-            <CardTitle className="text-2xl leading-8">
-              {user.currentCompany.name}
-            </CardTitle>
-            <CardDescription className="max-w-4xl leading-6">
-              Real-time operational snapshot for the active company session,
-              aligned with the modules available to this role.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 pt-6">
-            <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(180px,240px)]">
-              <div className="min-w-0 rounded-lg border border-border bg-surface-muted p-4">
-                <p className="text-sm font-medium text-muted-foreground">
-                  Current company
+      <section className="grid gap-5 2xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
+        <Card
+          className="min-w-0 overflow-hidden border-brand-sky/40"
+          data-testid="dashboard-context"
+        >
+          <CardHeader className="border-b border-brand-sky/40 bg-gradient-to-br from-brand-headerGradientStart via-card to-brand-headerGradientEnd/70">
+            <div className="flex items-center gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+                  Operational home
                 </p>
-                <p className="mt-2 truncate font-mono text-sm font-semibold text-foreground">
-                  {user.currentCompany.slug}
-                </p>
+                <CardTitle className="mt-1 text-2xl leading-8">
+                  {user.currentCompany.name}
+                </CardTitle>
               </div>
-              <div className="min-w-0 rounded-lg border border-border bg-surface-muted p-4">
-                <p className="text-sm font-medium text-muted-foreground">
-                  Last login
-                </p>
-                <p className="mt-2 whitespace-nowrap text-sm font-semibold leading-6 text-foreground">
-                  {formatDateTime(user.lastLoginAt)}
-                </p>
+              <div className="hidden sm:flex items-center gap-2 ml-auto shrink-0">
+                <Badge className="px-3 py-1.5 text-[11px] font-mono" variant="outline">
+                  {user.currentCompany.slug}
+                </Badge>
+                <div className="flex flex-wrap gap-1.5">
+                  {getRoleLabels(user.roles).map((role) => (
+                    <Badge key={role} variant="outline" className="text-[11px]">
+                      {role}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
-
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,22rem),1fr))] gap-4">
-              <div className="min-w-0 rounded-lg border border-border bg-surface-muted p-4">
-                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Accessible workspaces
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {workspaceLabels.length} available
-                  </p>
-                </div>
-                <div
-                  className="mt-3 flex min-w-0 flex-wrap gap-2"
-                  data-testid="dashboard-workspace-chips"
-                >
-                  {workspaceLabels.length > 0 ? (
-                    workspaceLabels.map((label) => (
-                      <Badge
-                        className="max-w-full whitespace-nowrap px-3 py-1.5 text-[11px]"
-                        key={label}
-                        variant="outline"
-                      >
-                        <span className="truncate">{label}</span>
-                      </Badge>
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      No module access is attached to this session yet.
-                    </p>
-                  )}
-                </div>
-              </div>
-
+          </CardHeader>
+          <CardContent className="space-y-3 pt-5">
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(160px,0.5fr)_minmax(160px,0.5fr)]">
               <div
-                className="min-w-0 rounded-lg border border-border bg-surface-muted p-4"
+                className="min-w-0 rounded-lg border border-brand-green/40 bg-gradient-to-br from-card to-brand-greenSoft/90 p-3"
                 data-testid="dashboard-period-card"
               >
                 <label
-                  className="text-sm font-medium text-muted-foreground"
+                  className="text-xs font-semibold uppercase tracking-[0.10em] text-muted-foreground"
                   htmlFor="dashboard-period"
                 >
-                  Dashboard period
+                  Reporting period
                 </label>
                 <select
-                  className="mt-3 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm text-foreground"
+                  className="mt-2 w-full rounded-lg border border-input bg-card px-3 py-1.5 text-sm text-foreground"
                   id="dashboard-period"
                   onChange={(event) =>
                     setPeriodPreset(event.target.value as DashboardPeriodPresetId)
@@ -729,12 +562,36 @@ export const DashboardPage = () => {
                     );
                   })}
                 </select>
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                  Financial metrics and recent-count widgets follow{' '}
-                  <span className="font-medium text-foreground">{period.label}</span>.
-                  Recent activity panels always show the latest available records.
+                <p className="mt-2 text-xs text-muted-foreground">
+                  KPIs follow <span className="font-medium text-foreground">{period.label}</span>. Recent activity always shows latest records.
                 </p>
               </div>
+
+              <div className="min-w-0 rounded-lg border border-brand-sky/40 bg-brand-skySoft/85 p-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.10em] text-muted-foreground">
+                  Last login
+                </p>
+                <p className="mt-2 text-sm font-semibold text-foreground">
+                  {formatDateTime(user.lastLoginAt)}
+                </p>
+              </div>
+
+              <div className="min-w-0 rounded-lg border border-brand-sky/40 bg-brand-skySoft/60 p-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.10em] text-muted-foreground">
+                  Workspaces
+                </p>
+                <p className="mt-2 text-sm font-semibold text-foreground">
+                  {workspaceLabels.length} modules available
+                </p>
+              </div>
+            </div>
+
+            <div className="flex sm:hidden flex-wrap gap-2">
+              {getRoleLabels(user.roles).map((role) => (
+                <Badge key={role} variant="outline" className="text-[11px]">
+                  {role}
+                </Badge>
+              ))}
             </div>
           </CardContent>
         </Card>
@@ -753,51 +610,117 @@ export const DashboardPage = () => {
             </Link>
           ) : undefined
         }
-        description="Executive summary panels across finance, accounting, property, sales, HR, payroll, documents, and audit."
+        description="Core executive indicators derived from the active company and reporting window."
         eyebrow="Summary"
-        title="Company snapshot"
+        title="Executive KPIs"
       >
         <DashboardIssueBanner issues={summaryQuery.data?.issues ?? []} />
 
         {summaryQuery.isPending ? (
           <DashboardLoadingGrid count={4} />
-        ) : summaryPanels.length === 0 ? (
+        ) : executiveKpis.length === 0 ? (
           <EmptyState
-            description="No dashboard summaries are available for the current role set in this company."
-            title="No accessible summary panels"
+            description="No dashboard KPIs are available for the current role set in this company."
+            title="No accessible KPIs"
           />
         ) : (
-          <div className="grid gap-4 xl:grid-cols-2">
-            {summaryPanels.map((panel) => (
-              <DashboardSummaryPanel
-                description={panel.description}
-                href={panel.href}
-                items={panel.items}
-                key={panel.key}
-                title={panel.title}
-              />
-            ))}
+          <div className="space-y-4">
+            {(() => {
+              const financialKpis = executiveKpis.filter((kpi) =>
+                kpi.label === 'Net profit / loss' || kpi.label === 'Total assets',
+              );
+              const operationalKpis = executiveKpis.filter((kpi) =>
+                kpi.label !== 'Net profit / loss' && kpi.label !== 'Total assets',
+              );
+              const netPlKpi = financialKpis.find((kpi) => kpi.label === 'Net profit / loss');
+              const assetsKpi = financialKpis.find((kpi) => kpi.label === 'Total assets');
+
+              return (
+                <>
+                  {financialKpis.length > 0 ? (
+                    <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.6fr)]">
+                      {netPlKpi ? (
+                        <div
+                          className={`rounded-xl border-2 p-5 shadow-sm ${
+                            netPlKpi.tone === 'success'
+                              ? 'border-emerald-300/70 bg-gradient-to-br from-emerald-50/40 to-brand-skySoft/30'
+                              : netPlKpi.tone === 'warning'
+                                ? 'border-rose-300/70 bg-gradient-to-br from-rose-50/40 to-brand-skySoft/30'
+                                : 'border-brand-sky/50 bg-gradient-to-br from-brand-skySoft/60 to-card'
+                          }`}
+                        >
+                          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                            Net profit / loss
+                          </p>
+                          <p className={`mt-3 text-2xl font-bold tabular-nums ${
+                            netPlKpi.tone === 'success'
+                              ? 'text-emerald-700'
+                              : netPlKpi.tone === 'warning'
+                                ? 'text-rose-700'
+                                : 'text-foreground'
+                          }`}>
+                            {netPlKpi.value}
+                          </p>
+                          <div className="mt-3 flex items-center gap-2">
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                              netPlKpi.tone === 'success'
+                                ? 'bg-emerald-100/80 text-emerald-700'
+                                : netPlKpi.tone === 'warning'
+                                  ? 'bg-rose-100/80 text-rose-700'
+                                  : 'bg-brand-skySoft text-brand-navy'
+                            }`}>
+                              {netPlKpi.hint}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              for {period.label}
+                            </span>
+                          </div>
+                        </div>
+                      ) : null}
+                      {assetsKpi ? (
+                        <div className="rounded-xl border border-brand-sky/40 bg-brand-skySoft/50 p-5 shadow-sm">
+                          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                            Total assets
+                          </p>
+                          <p className="mt-3 text-xl font-bold tabular-nums text-foreground">
+                            {assetsKpi.value}
+                          </p>
+                          <p className="mt-2 text-xs text-muted-foreground">{assetsKpi.hint}</p>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {operationalKpis.length > 0 ? (
+                    <div className="grid gap-3 grid-cols-[repeat(auto-fit,minmax(min(100%,11rem),1fr))]">
+                      {operationalKpis.map((kpi) => (
+                        <div
+                          className={`rounded-lg border p-3.5 ${
+                            kpi.tone === 'success'
+                              ? 'border-emerald-200/60 bg-emerald-50/30'
+                              : kpi.tone === 'warning'
+                                ? 'border-rose-200/60 bg-rose-50/30'
+                                : 'border-brand-sky/35 bg-brand-skySoft/40'
+                          }`}
+                          key={kpi.label}
+                        >
+                          <p className="text-xs font-medium text-muted-foreground">{kpi.label}</p>
+                          <p className="mt-1 text-lg font-semibold text-foreground tabular-nums">{kpi.value}</p>
+                          <p className="mt-1 text-xs text-muted-foreground">{kpi.hint}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </>
+              );
+            })()}
           </div>
         )}
       </DashboardSection>
 
       <DashboardSection
-        description="Visual summaries for the active company and role set."
-        eyebrow="Analytics"
-        title="Operational analytics"
-      >
-        <DashboardAnalyticsPanel
-          access={access}
-          companyId={user.currentCompany.id}
-          companySlug={user.currentCompany.slug}
-          period={period}
-        />
-      </DashboardSection>
-
-      <DashboardSection
-        description="Latest operational records across the modules this session can access."
-        eyebrow="Recent Activity"
-        title="Latest records"
+        description="Latest operational records across accessible modules."
+        eyebrow="Activity"
+        title="Recent records"
       >
         <DashboardIssueBanner issues={activityQuery.data?.issues ?? []} />
 
@@ -825,10 +748,10 @@ export const DashboardPage = () => {
         )}
       </DashboardSection>
 
-      <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+      <section className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
         <DashboardSection
-          description="Current work queues and operational items that still need follow-up."
-          eyebrow="Needs Attention"
+          description="Work queues and items that still need follow-up."
+          eyebrow="Attention"
           title="Pending work"
         >
           {summaryQuery.isPending ? (
@@ -854,9 +777,9 @@ export const DashboardPage = () => {
         </DashboardSection>
 
         <DashboardSection
-          description="Direct links into the workspaces available to this role."
-          eyebrow="Quick Actions"
-          title="Jump to work"
+          description="Direct links into accessible workspaces."
+          eyebrow="Navigation"
+          title="Quick actions"
         >
           {quickActions.length === 0 ? (
             <EmptyState
@@ -877,84 +800,6 @@ export const DashboardPage = () => {
             </div>
           )}
         </DashboardSection>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-        <Card>
-          <CardHeader>
-            <p className="text-xs font-semibold text-primary">
-              Session context
-            </p>
-            <CardTitle>Active roles</CardTitle>
-            <CardDescription>
-              The dashboard remains company-aware and keeps the active role set
-              visible in the landing experience.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap gap-2">
-              {getRoleLabels(user.roles).map((role) => (
-                <Badge key={role} variant="outline">
-                  {role}
-                </Badge>
-              ))}
-            </div>
-            <div className="rounded-3xl border border-border/70 bg-background/80 p-4 text-sm text-muted-foreground">
-              Other company memberships remain available in the shell session
-              menu. The operational home stays anchored to the active company
-              selected for this login.
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <p className="text-xs font-semibold text-primary">
-              Company memberships
-            </p>
-            <CardTitle>Available company scopes</CardTitle>
-            <CardDescription>
-              Multi-company assignments remain visible from the operational home
-              without changing the existing auth/session model.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {user.assignments.length === 0 ? (
-              <EmptyState
-                description="No company assignments are attached to this identity."
-                title="No assignments found"
-              />
-            ) : (
-              user.assignments.map((assignment) => (
-                <div
-                  className="rounded-3xl border border-border/70 bg-background/80 p-4"
-                  key={assignment.company.id}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">
-                        {assignment.company.name}
-                      </p>
-                      <p className="mt-1 truncate font-mono text-xs text-muted-foreground">
-                        {assignment.company.slug}
-                      </p>
-                    </div>
-                    {assignment.company.id === user.currentCompany.id ? (
-                      <Badge variant="success">Active session</Badge>
-                    ) : null}
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {getRoleLabels(assignment.roles).map((role) => (
-                      <Badge key={`${assignment.company.id}-${role}`} variant="outline">
-                        {role}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
       </section>
     </AppPage>
   );

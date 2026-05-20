@@ -57,7 +57,7 @@ export const ProjectPropertyQueryErrorBanner = ({
 }: {
   message: string;
 }) => (
-  <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+  <div className="rounded-lg border border-status-danger/25 bg-status-dangerSoft px-4 py-3 text-sm text-status-danger">
     {message}
   </div>
 );
@@ -90,7 +90,7 @@ export const ProjectPropertyReadOnlyNotice = ({
   title: string;
   description: string;
 }) => (
-  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+  <div className="rounded-lg border border-status-warning/30 bg-status-warningSoft px-4 py-3 text-sm text-status-warning">
     <p className="font-semibold">{title}</p>
     <p className="mt-1">{description}</p>
   </div>
@@ -146,7 +146,7 @@ export const FormErrorText = ({
 }: {
   message: string | undefined;
 }) =>
-  message ? <p className="text-sm text-rose-700">{message}</p> : null;
+  message ? <p className="text-sm text-status-danger">{message}</p> : null;
 
 export const HierarchyBadgeRow = ({
   items,

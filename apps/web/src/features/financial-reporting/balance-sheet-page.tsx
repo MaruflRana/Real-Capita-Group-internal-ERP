@@ -44,7 +44,6 @@ import {
 import { StatementHierarchyTable } from './tables';
 import { BalanceSheetPrintableReport } from './statement-printable';
 import { buildFinancialReportCsvFileName, getDefaultAsOfDate } from './utils';
-import { BalanceSheetVisualSummary } from './analytics';
 
 const buildBalanceSheetFilters = ({
   asOfDate,
@@ -313,12 +312,6 @@ export const BalanceSheetPage = () => {
               </ReportMetricGrid>
             </FinancialReportingSection>
 
-            <FinancialReportingSection
-              description="Assets and liabilities plus equity are compared using the same totals as the statement."
-              title="Visual analysis"
-            >
-              <BalanceSheetVisualSummary report={reportQuery.data} />
-            </FinancialReportingSection>
 
             <FinancialReportingSection
               description="Assets, liabilities, and equity sections follow the company reporting hierarchy."

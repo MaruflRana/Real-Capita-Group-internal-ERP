@@ -2,6 +2,17 @@
 
 import type { ReactNode } from 'react';
 
+import {
+  Bar,
+  CartesianGrid,
+  ComposedChart,
+  Line,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+
 import { cn } from '@real-capita/ui';
 
 import {
@@ -9,9 +20,8 @@ import {
   ChartCardShell,
   EmptyStateBlock,
   MetricCard,
-  TableShell,
 } from '../../components/ui/erp-primitives';
-import { formatAccountingAmount, formatDate } from '../../lib/format';
+import { formatAccountingAmount } from '../../lib/format';
 import type {
   AnalyticsDataPoint,
   AnalyticsIssue,
@@ -25,31 +35,14 @@ export type AnalyticsValueFormat =
   | 'compactCurrency'
   | 'percent';
 type AnalyticsGridColumns = 'two' | 'three';
-export type ChartTone =
-  | 'revenue'
-  | 'success'
-  | 'positive'
-  | 'expense'
-  | 'danger'
-  | 'negative'
-  | 'info'
-  | 'neutral'
-  | 'balance'
-  | 'warning'
-  | 'pending'
-  | 'sales'
-  | 'collection'
-  | 'property'
-  | 'hr'
-  | 'payroll'
-  | 'audit'
-  | 'documents';
+
+type ChartSeriesType = 'bar' | 'line';
 
 type ChartSeries = {
   key: string;
   label: string;
   tone?: ChartTone;
-  marker?: string;
+  type?: ChartSeriesType;
 };
 
 type ChartLegendItem = {
@@ -60,24 +53,20 @@ type ChartLegendItem = {
   marker?: string;
 };
 
-const DEFAULT_TONES: ChartTone[] = [
-  'balance',
-  'revenue',
-  'expense',
-  'warning',
-  'sales',
-  'collection',
-  'property',
-  'hr',
-  'payroll',
-  'audit',
-  'documents',
-  'neutral',
-];
+export type ChartTone =
+  | 'revenue'
+  | 'expense'
+  | 'balance'
+  | 'warning'
+  | 'sales'
+  | 'collection'
+  | 'info'
+  | 'neutral';
 
 const CHART_TONE_STYLES: Record<
   ChartTone,
   {
+    color: string;
     bar: string;
     border: string;
     soft: string;
@@ -87,6 +76,7 @@ const CHART_TONE_STYLES: Record<
   }
 > = {
   revenue: {
+    color: '#11AA38',
     bar: 'bg-chart-revenue',
     border: 'border-chart-revenue/25',
     soft: 'bg-status-successSoft',
@@ -94,23 +84,8 @@ const CHART_TONE_STYLES: Record<
     marker: 'Rev',
     primitiveTone: 'success',
   },
-  success: {
-    bar: 'bg-chart-revenue',
-    border: 'border-chart-revenue/25',
-    soft: 'bg-status-successSoft',
-    text: 'text-status-success',
-    marker: 'OK',
-    primitiveTone: 'success',
-  },
-  positive: {
-    bar: 'bg-chart-revenue',
-    border: 'border-chart-revenue/25',
-    soft: 'bg-status-successSoft',
-    text: 'text-status-success',
-    marker: '+',
-    primitiveTone: 'success',
-  },
   expense: {
+    color: '#D64047',
     bar: 'bg-chart-expense',
     border: 'border-chart-expense/25',
     soft: 'bg-status-dangerSoft',
@@ -118,39 +93,8 @@ const CHART_TONE_STYLES: Record<
     marker: 'Cost',
     primitiveTone: 'danger',
   },
-  danger: {
-    bar: 'bg-chart-expense',
-    border: 'border-chart-expense/25',
-    soft: 'bg-status-dangerSoft',
-    text: 'text-status-danger',
-    marker: 'Risk',
-    primitiveTone: 'danger',
-  },
-  negative: {
-    bar: 'bg-chart-expense',
-    border: 'border-chart-expense/25',
-    soft: 'bg-status-dangerSoft',
-    text: 'text-status-danger',
-    marker: 'Loss',
-    primitiveTone: 'danger',
-  },
-  info: {
-    bar: 'bg-chart-balance',
-    border: 'border-chart-balance/25',
-    soft: 'bg-status-infoSoft',
-    text: 'text-status-info',
-    marker: 'Info',
-    primitiveTone: 'info',
-  },
-  neutral: {
-    bar: 'bg-chart-slate',
-    border: 'border-chart-slate/25',
-    soft: 'bg-surface-muted',
-    text: 'text-muted-foreground',
-    marker: 'Other',
-    primitiveTone: 'default',
-  },
   balance: {
+    color: '#006FB7',
     bar: 'bg-chart-balance',
     border: 'border-chart-balance/25',
     soft: 'bg-status-infoSoft',
@@ -159,6 +103,7 @@ const CHART_TONE_STYLES: Record<
     primitiveTone: 'info',
   },
   warning: {
+    color: '#D97706',
     bar: 'bg-chart-warning',
     border: 'border-chart-warning/30',
     soft: 'bg-status-warningSoft',
@@ -166,15 +111,8 @@ const CHART_TONE_STYLES: Record<
     marker: 'Due',
     primitiveTone: 'warning',
   },
-  pending: {
-    bar: 'bg-chart-warning',
-    border: 'border-chart-warning/30',
-    soft: 'bg-status-warningSoft',
-    text: 'text-status-warning',
-    marker: 'Pend',
-    primitiveTone: 'warning',
-  },
   sales: {
+    color: '#2888C8',
     bar: 'bg-chart-sales',
     border: 'border-chart-sales/25',
     soft: 'bg-status-infoSoft',
@@ -183,6 +121,7 @@ const CHART_TONE_STYLES: Record<
     primitiveTone: 'info',
   },
   collection: {
+    color: '#304898',
     bar: 'bg-chart-collection',
     border: 'border-chart-collection/25',
     soft: 'bg-status-infoSoft',
@@ -190,47 +129,36 @@ const CHART_TONE_STYLES: Record<
     marker: 'Coll',
     primitiveTone: 'info',
   },
-  property: {
-    bar: 'bg-chart-property',
-    border: 'border-chart-property/25',
-    soft: 'bg-surface-muted',
-    text: 'text-foreground',
-    marker: 'Units',
-    primitiveTone: 'default',
-  },
-  hr: {
-    bar: 'bg-chart-hr',
-    border: 'border-chart-hr/25',
-    soft: 'bg-surface-muted',
-    text: 'text-foreground',
-    marker: 'HR',
-    primitiveTone: 'default',
-  },
-  payroll: {
-    bar: 'bg-chart-payroll',
-    border: 'border-chart-payroll/25',
-    soft: 'bg-status-warningSoft',
-    text: 'text-status-warning',
-    marker: 'Pay',
-    primitiveTone: 'warning',
-  },
-  audit: {
-    bar: 'bg-chart-audit',
-    border: 'border-chart-audit/25',
-    soft: 'bg-surface-muted',
-    text: 'text-foreground',
-    marker: 'Audit',
-    primitiveTone: 'default',
-  },
-  documents: {
-    bar: 'bg-chart-documents',
-    border: 'border-chart-documents/25',
+  info: {
+    color: '#006FB7',
+    bar: 'bg-chart-balance',
+    border: 'border-chart-balance/25',
     soft: 'bg-status-infoSoft',
     text: 'text-status-info',
-    marker: 'Doc',
+    marker: 'Info',
     primitiveTone: 'info',
   },
+  neutral: {
+    color: '#475569',
+    bar: 'bg-chart-slate',
+    border: 'border-chart-slate/25',
+    soft: 'bg-surface-muted',
+    text: 'text-muted-foreground',
+    marker: 'Other',
+    primitiveTone: 'default',
+  },
 };
+
+const DEFAULT_TONES: ChartTone[] = [
+  'balance',
+  'revenue',
+  'expense',
+  'sales',
+  'collection',
+  'warning',
+  'info',
+  'neutral',
+];
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 const compactNumberFormatter = new Intl.NumberFormat('en-US', {
@@ -271,7 +199,7 @@ const inferChartTone = (
     value.includes('overdue') ||
     value.includes('loss')
   ) {
-    return 'danger';
+    return 'expense';
   }
 
   if (
@@ -280,7 +208,6 @@ const inferChartTone = (
     value.includes('submitted') ||
     value.includes('awaiting') ||
     value.includes('due') ||
-    value.includes('ready to post') ||
     value.includes('needs attention')
   ) {
     return 'warning';
@@ -290,31 +217,9 @@ const inferChartTone = (
     value.includes('posted') ||
     value.includes('approved') ||
     value.includes('available') ||
-    value.includes('finalized upload') ||
-    value.includes('available files')
-  ) {
-    return 'success';
-  }
-
-  if (
-    value.includes('booked') ||
-    value.includes('active') ||
-    value.includes('contacted') ||
-    value.includes('contracted') ||
     value.includes('finalized')
   ) {
-    return 'info';
-  }
-
-  if (
-    value.includes('unknown') ||
-    value.includes('transferred') ||
-    value.includes('other') ||
-    value.includes('unassigned') ||
-    value.includes('unspecified') ||
-    value.includes('company-wide')
-  ) {
-    return 'neutral';
+    return 'revenue';
   }
 
   if (
@@ -326,8 +231,7 @@ const inferChartTone = (
 
   if (
     value.includes('expense') ||
-    value.includes('deduction') ||
-    value.includes('deductions')
+    value.includes('deduction')
   ) {
     return 'expense';
   }
@@ -343,53 +247,9 @@ const inferChartTone = (
     value.includes('contract') ||
     value.includes('sale') ||
     value.includes('booking') ||
-    value.includes('lead') ||
-    value.includes('customer')
+    value.includes('lead')
   ) {
     return 'sales';
-  }
-
-  if (
-    value.includes('unit') ||
-    value.includes('project') ||
-    value.includes('sold') ||
-    value.includes('allotted')
-  ) {
-    return 'property';
-  }
-
-  if (
-    value.includes('employee') ||
-    value.includes('attendance') ||
-    value.includes('leave') ||
-    value === 'in in' ||
-    value === 'out out'
-  ) {
-    return 'hr';
-  }
-
-  if (value === 'net net' || value.includes('net pay')) {
-    return 'success';
-  }
-
-  if (
-    value.includes('payroll') ||
-    value.includes('gross') ||
-    value.includes('net')
-  ) {
-    return 'payroll';
-  }
-
-  if (value.includes('audit') || value.includes('event')) {
-    return 'audit';
-  }
-
-  if (
-    value.includes('attachment') ||
-    value.includes('document') ||
-    value.includes('upload')
-  ) {
-    return 'documents';
   }
 
   if (
@@ -413,7 +273,6 @@ const decorateSeries = (series: ChartSeries[]) =>
 
     return {
       ...item,
-      marker: item.marker ?? style.marker,
       tone,
       style,
     };
@@ -431,17 +290,6 @@ const formatNodeValue = (
 };
 
 const buildLabel = (label: string) => formatTechnicalLabel(label);
-
-const getPositiveItems = (data: AnalyticsDataPoint[]) =>
-  data.filter((item) => Math.abs(toFiniteNumber(item.value)) > 0);
-
-const getSeriesTotals = (data: AnalyticsTrendPoint[], series: ChartSeries[]) =>
-  series.map((item) =>
-    data.reduce(
-      (sum, point) => sum + toFiniteNumber(point.values[item.key]),
-      0,
-    ),
-  );
 
 export const formatCount = (value: number | string | null | undefined) =>
   numberFormatter.format(toFiniteNumber(value));
@@ -506,10 +354,6 @@ export const formatDateBucketLabel = (
       month: 'short',
       year: 'numeric',
     }).format(new Date(`${value}-01T00:00:00`));
-  }
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    return formatDate(value);
   }
 
   return value;
@@ -765,250 +609,21 @@ export const MetricCardGrid = ({
   </div>
 );
 
-export const ComparisonBarChart = ({
-  data,
-  emptyTitle,
-  emptyDescription,
-  format = 'number',
-  maxItems,
+export const SampleScopeNote = ({
+  sample,
+  noun,
 }: {
-  data: AnalyticsDataPoint[];
-  emptyTitle: string;
-  emptyDescription: string;
-  format?: AnalyticsValueFormat;
-  maxItems?: number;
-}) => {
-  const visible = getPositiveItems(data).slice(0, maxItems);
-  const maxValue = visible.reduce(
-    (max, item) => Math.max(max, Math.abs(item.value)),
-    0,
-  );
-  const total = visible.reduce((sum, item) => sum + Math.abs(item.value), 0);
-
-  if (visible.length === 0 || total <= 0 || maxValue <= 0) {
-    return (
-      <AnalyticsEmptyState description={emptyDescription} title={emptyTitle} />
-    );
-  }
-
-  return (
-    <div
-      aria-label={visible
-        .map(
-          (item) =>
-            `${buildLabel(item.label)} ${formatAnalyticsFullValue(item.value, format)}`,
-        )
-        .join(', ')}
-      className="min-w-0 space-y-3"
-      role="img"
-    >
-      {visible.map((item, index) => {
-        const tone = inferChartTone(item.key, item.label, index);
-        const style = getToneStyle(tone);
-        const percentOfMax =
-          maxValue > 0 ? (Math.abs(item.value) / maxValue) * 100 : 0;
-        const percentOfTotal = total > 0 ? Math.abs(item.value) / total : 0;
-        const displayLabel = buildLabel(item.label);
-        const displayValue = formatAnalyticsFullValue(item.value, format);
-
-        return (
-          <div
-            className="min-w-0 rounded-lg border border-border bg-card px-3 py-3 shadow-sm"
-            key={item.key}
-          >
-            <div className="flex min-w-0 items-start justify-between gap-3">
-              <span className="flex min-w-0 items-center gap-2">
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    'inline-flex h-5 min-w-8 shrink-0 items-center justify-center rounded px-1.5 text-[10px] font-bold leading-none text-white shadow-sm ring-1 ring-inset ring-black/10',
-                    style.bar,
-                  )}
-                >
-                  {style.marker}
-                </span>
-                <span
-                  aria-label={displayLabel}
-                  className="truncate text-sm font-semibold leading-5 text-foreground"
-                  title={displayLabel}
-                >
-                  {displayLabel}
-                </span>
-              </span>
-              <span className="shrink-0 whitespace-nowrap text-right font-mono text-sm tabular-nums text-foreground">
-                {displayValue}
-              </span>
-            </div>
-            <div className="mt-3 grid grid-cols-[minmax(0,1fr)_3.25rem] items-center gap-3">
-              <div
-                aria-hidden="true"
-                className="h-3 overflow-hidden rounded-full bg-surface-muted"
-              >
-                <div
-                  className={cn(
-                    'h-full rounded-full shadow-sm ring-1 ring-inset ring-black/10',
-                    style.bar,
-                  )}
-                  style={{ width: `${Math.max(percentOfMax, 2)}%` }}
-                />
-              </div>
-              <span className="whitespace-nowrap text-right font-mono text-xs tabular-nums text-muted-foreground">
-                {formatPercentValue(percentOfTotal)}
-              </span>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
-
-export const DistributionChart = ({
-  data,
-  emptyTitle,
-  emptyDescription,
-  format = 'number',
-  maxItems,
-}: {
-  data: AnalyticsDataPoint[];
-  emptyTitle: string;
-  emptyDescription: string;
-  format?: AnalyticsValueFormat;
-  maxItems?: number;
-}) => {
-  const visible = getPositiveItems(data).slice(0, maxItems);
-  const total = visible.reduce((sum, item) => sum + Math.abs(item.value), 0);
-
-  if (visible.length === 0 || total <= 0) {
-    return (
-      <AnalyticsEmptyState description={emptyDescription} title={emptyTitle} />
-    );
-  }
-
-  return (
-    <div
-      aria-label={visible
-        .map(
-          (item) =>
-            `${buildLabel(item.label)} ${formatAnalyticsFullValue(item.value, format)}`,
-        )
-        .join(', ')}
-      className="min-w-0 divide-y divide-border overflow-hidden rounded-lg border border-border bg-card shadow-sm"
-      role="img"
-    >
-      {visible.map((item, index) => {
-        const tone = inferChartTone(item.key, item.label, index);
-        const style = getToneStyle(tone);
-        const width = total > 0 ? (Math.abs(item.value) / total) * 100 : 0;
-        const label = buildLabel(item.label);
-        const value = formatAnalyticsFullValue(item.value, format);
-        const share = formatPercentValue(width / 100);
-
-        return (
-          <div
-            className="min-w-0 px-3 py-3"
-            key={item.key}
-            title={`${label}: ${value} (${share} of total)`}
-          >
-            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div className="flex min-w-0 items-start gap-2">
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    'inline-flex h-5 min-w-8 shrink-0 items-center justify-center rounded px-1.5 text-[10px] font-bold leading-none text-white shadow-sm ring-1 ring-inset ring-black/10',
-                    style.bar,
-                  )}
-                >
-                  {style.marker}
-                </span>
-                <div className="min-w-0">
-                  <p
-                    className="truncate text-sm font-semibold leading-5 text-foreground"
-                    title={label}
-                  >
-                    {label}
-                  </p>
-                  <p className="mt-0.5 text-xs leading-4 text-muted-foreground">
-                    Share of total: {share}
-                  </p>
-                </div>
-              </div>
-              <span className="shrink-0 whitespace-nowrap font-mono text-sm tabular-nums text-foreground">
-                {value}
-              </span>
-            </div>
-            <div className="mt-3 h-3 overflow-hidden rounded-full bg-surface-muted">
-              <div
-                aria-hidden="true"
-                className={cn(
-                  'relative h-full rounded-full shadow-sm ring-1 ring-inset ring-black/10',
-                  style.bar,
-                )}
-                style={{ width: `${Math.max(width, 2)}%` }}
-              >
-                {index % 2 === 1 ? (
-                  <span
-                    aria-hidden="true"
-                    className="absolute inset-0 opacity-60"
-                    style={{
-                      backgroundImage:
-                        'repeating-linear-gradient(135deg, rgba(255,255,255,0.45) 0, rgba(255,255,255,0.45) 2px, transparent 2px, transparent 5px)',
-                    }}
-                  />
-                ) : null}
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
-
-export const DistributionBarList = ({
-  data,
-  emptyTitle,
-  emptyDescription,
-  format = 'number',
-}: {
-  data: AnalyticsDataPoint[];
-  emptyTitle: string;
-  emptyDescription: string;
-  format?: AnalyticsValueFormat;
+  sample: AnalyticsSampleMeta;
+  noun: string;
 }) => (
-  <DistributionChart
-    data={data}
-    emptyDescription={emptyDescription}
-    emptyTitle={emptyTitle}
-    format={format}
-  />
+  <span>
+    {sample.isTruncated
+      ? `Trend reflects the latest ${sample.sampleSize} of ${sample.total} available ${noun}.`
+      : `Trend reflects ${sample.sampleSize} available ${noun}.`}
+  </span>
 );
 
-export const DistributionLegend = ({
-  data,
-  format = 'number',
-}: {
-  data: AnalyticsDataPoint[];
-  format?: AnalyticsValueFormat;
-}) => (
-  <ChartLegend
-    format={format}
-    items={data.map((item, index) => {
-      const tone = inferChartTone(item.key, item.label, index);
-      const style = getToneStyle(tone);
-
-      return {
-        key: item.key,
-        label: item.label,
-        marker: style.marker,
-        tone,
-        value: item.value,
-      };
-    })}
-  />
-);
-
-export const TrendBarChart = ({
+export const ExecutiveTrendChart = ({
   data,
   series,
   emptyTitle,
@@ -1022,6 +637,11 @@ export const TrendBarChart = ({
   format?: AnalyticsValueFormat;
 }) => {
   const decoratedSeries = decorateSeries(series);
+  const barSeries = decoratedSeries.filter(
+    (item) => (item.type ?? 'bar') === 'bar',
+  );
+  const lineSeries = decoratedSeries.filter((item) => item.type === 'line');
+
   const firstValueIndex = data.findIndex((point) =>
     decoratedSeries.some(
       (item) => Math.abs(toFiniteNumber(point.values[item.key])) > 0,
@@ -1049,133 +669,131 @@ export const TrendBarChart = ({
           Math.min(data.length, lastValueIndex + 2),
         )
       : data;
-  const maxValue = chartData.reduce(
-    (max, point) =>
-      Math.max(
-        max,
-        ...decoratedSeries.map((item) =>
-          Math.abs(toFiniteNumber(point.values[item.key])),
-        ),
-      ),
-    0,
-  );
 
-  if (chartData.length === 0 || maxValue <= 0) {
+  if (chartData.length === 0) {
     return (
       <AnalyticsEmptyState description={emptyDescription} title={emptyTitle} />
     );
   }
 
-  const totals = getSeriesTotals(data, decoratedSeries);
-  const requiresScroll = chartData.length > 6 || decoratedSeries.length > 3;
-  const compactFormat = format === 'currency' ? 'compactCurrency' : format;
+  const hasAnyValue = chartData.some((point) =>
+    decoratedSeries.some(
+      (item) => Math.abs(toFiniteNumber(point.values[item.key])) > 0,
+    ),
+  );
+
+  if (!hasAnyValue) {
+    return (
+      <AnalyticsEmptyState description={emptyDescription} title={emptyTitle} />
+    );
+  }
+
+  const totals = decoratedSeries.map((item) =>
+    data.reduce(
+      (sum, point) => sum + toFiniteNumber(point.values[item.key]),
+      0,
+    ),
+  );
+
+  const rechartsData = chartData.map((point) => {
+    const entry: Record<string, number | string> = {
+      label: formatDateBucketLabel(point.label),
+    };
+
+    decoratedSeries.forEach((item) => {
+      entry[item.key] = toFiniteNumber(point.values[item.key]);
+    });
+
+    return entry;
+  });
+
+  const tickFormat: AnalyticsValueFormat =
+    format === 'currency'
+      ? 'compactCurrency'
+      : format === 'compactCurrency'
+        ? 'compactCurrency'
+        : format;
+
+  const formatTick = (value: number) =>
+    formatAnalyticsValue(value, tickFormat);
 
   return (
-    <div
-      aria-label={decoratedSeries
-        .map(
-          (item, index) =>
-            `${item.label} total ${formatAnalyticsFullValue(totals[index] ?? 0, format)}`,
-        )
-        .join(', ')}
-      className="min-w-0 max-w-full space-y-4"
-      role="img"
-    >
-      <div className="max-w-full rounded-lg border border-border bg-card shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-surface-raised px-4 py-3 text-xs font-semibold text-muted-foreground">
-          <span>Trend scale</span>
-          <span className="whitespace-nowrap font-mono tabular-nums">
-            Max {formatAnalyticsValue(maxValue, compactFormat)}
-          </span>
-        </div>
-        <div className="grid grid-cols-[3.75rem_minmax(0,1fr)] gap-3 px-3 py-4 sm:px-4">
-          <div className="flex h-48 flex-col justify-between pr-1 text-right font-mono text-[11px] tabular-nums text-muted-foreground">
-            <span>{formatAnalyticsValue(maxValue, compactFormat)}</span>
-            <span>{formatAnalyticsValue(maxValue / 2, compactFormat)}</span>
-            <span>0</span>
-          </div>
-          <div className={cn('min-w-0', requiresScroll && 'overflow-x-auto')}>
-            <div
-              className={cn(
-                'flex h-full min-h-56 gap-4',
-                requiresScroll ? 'min-w-max' : 'min-w-0',
-              )}
+    <div className="min-w-0 max-w-full space-y-4" role="img">
+      <div className="rounded-lg border border-border bg-card shadow-sm">
+        <div className="min-h-[280px] px-2 py-2 sm:min-h-[320px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart
+              data={rechartsData}
+              margin={{ top: 8, right: 8, left: 8, bottom: 4 }}
             >
-              {chartData.map((point) => {
-                const label = formatDateBucketLabel(point.label);
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="var(--border)"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
+                tickLine={false}
+                axisLine={{ stroke: 'var(--border)' }}
+              />
+              <YAxis
+                tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
+                tickFormatter={formatTick}
+                tickLine={false}
+                axisLine={false}
+                width={tickFormat === 'compactCurrency' ? 60 : 40}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'var(--card)',
+                  borderColor: 'var(--border)',
+                  borderRadius: 8,
+                  fontSize: 12,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                }}
+                formatter={(value: unknown, name: unknown) => {
+                  const numValue = typeof value === 'number' ? value : 0;
+                  const strName = typeof name === 'string' ? name : '';
 
-                return (
-                  <div
-                    className={cn(
-                      'flex min-w-0 flex-1 flex-col justify-end',
-                      requiresScroll && 'min-w-24',
-                    )}
-                    key={point.key}
-                  >
-                    <div className="relative flex h-48 items-end justify-center gap-1.5 overflow-hidden rounded-t-lg border-b border-l border-border bg-surface-muted px-2 pb-0">
-                      <div
-                        aria-hidden="true"
-                        className="absolute inset-x-0 bottom-1/2 border-t border-border/70"
-                      />
-                      <div
-                        aria-hidden="true"
-                        className="absolute inset-x-0 top-0 border-t border-border/70"
-                      />
-                      {decoratedSeries.map((item, seriesIndex) => {
-                        const value = toFiniteNumber(point.values[item.key]);
-                        const height =
-                          maxValue > 0 ? (Math.abs(value) / maxValue) * 100 : 0;
-                        const isNegative = value < 0;
-                        const style = isNegative
-                          ? getToneStyle('negative')
-                          : item.style;
+                  const seriesItem = decoratedSeries.find(
+                    (item) => item.key === strName,
+                  );
 
-                        return (
-                          <div
-                            aria-label={`${label} ${item.label}: ${formatAnalyticsFullValue(value, format)}`}
-                            className={cn(
-                              'relative z-10 w-4 max-w-6 overflow-hidden rounded-t-sm shadow-sm ring-1 ring-inset ring-black/10 transition-colors',
-                              style.bar,
-                            )}
-                            key={`${point.key}-${item.key}`}
-                            role="img"
-                            style={{
-                              height: `${value === 0 ? 0 : Math.max(height, 4)}%`,
-                            }}
-                            title={`${label} ${item.label}: ${formatAnalyticsFullValue(value, format)}`}
-                          >
-                            {seriesIndex % 2 === 1 ? (
-                              <span
-                                aria-hidden="true"
-                                className="absolute inset-0 opacity-55"
-                                style={{
-                                  backgroundImage:
-                                    'repeating-linear-gradient(135deg, rgba(255,255,255,0.5) 0, rgba(255,255,255,0.5) 2px, transparent 2px, transparent 5px)',
-                                }}
-                              />
-                            ) : null}
-                            {seriesIndex % 3 === 2 ? (
-                              <span
-                                aria-hidden="true"
-                                className="absolute inset-x-0 top-0 h-1 bg-white/70"
-                              />
-                            ) : null}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <p
-                      aria-label={label}
-                      className="mt-2 truncate whitespace-nowrap text-center text-xs leading-4 text-muted-foreground"
-                      title={label}
-                    >
-                      {label}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+                  return [
+                    formatAnalyticsFullValue(numValue, format),
+                    seriesItem?.label ?? strName,
+                  ];
+                }}
+                labelStyle={{
+                  fontWeight: 600,
+                  color: 'var(--foreground)',
+                }}
+              />
+              {barSeries.map((item) => (
+                <Bar
+                  dataKey={item.key}
+                  fill={item.style.color}
+                  key={item.key}
+                  name={item.key}
+                  radius={[3, 3, 0, 0]}
+                  maxBarSize={32}
+                />
+              ))}
+              {lineSeries.map((item) => (
+                <Line
+                  dataKey={item.key}
+                  key={item.key}
+                  name={item.key}
+                  stroke={item.style.color}
+                  strokeWidth={2.5}
+                  dot={{ r: 3, fill: item.style.color, strokeWidth: 0 }}
+                  activeDot={{ r: 5, fill: item.style.color, strokeWidth: 2, stroke: 'var(--card)' }}
+                  type="monotone"
+                />
+              ))}
+            </ComposedChart>
+          </ResponsiveContainer>
         </div>
       </div>
       <ChartLegend
@@ -1183,7 +801,7 @@ export const TrendBarChart = ({
         items={decoratedSeries.map((item, index) => ({
           key: item.key,
           label: item.label,
-          marker: item.marker,
+          marker: item.style.marker,
           tone: item.tone,
           value: totals[index] ?? 0,
         }))}
@@ -1192,7 +810,7 @@ export const TrendBarChart = ({
   );
 };
 
-export const TrendChartCard = ({
+export const ExecutiveTrendChartCard = ({
   title,
   insight,
   description,
@@ -1222,7 +840,7 @@ export const TrendChartCard = ({
     metaLabel={metaLabel}
     title={title}
   >
-    <TrendBarChart
+    <ExecutiveTrendChart
       data={data}
       emptyDescription={emptyDescription}
       emptyTitle={emptyTitle}
@@ -1230,233 +848,4 @@ export const TrendChartCard = ({
       series={series}
     />
   </ChartCardShell>
-);
-
-export const ComparisonBarChartCard = ({
-  title,
-  insight,
-  description,
-  metaLabel,
-  footer,
-  data,
-  emptyTitle,
-  emptyDescription,
-  format = 'number',
-}: {
-  title: string;
-  insight?: ReactNode;
-  description?: string;
-  metaLabel?: ReactNode;
-  footer?: ReactNode;
-  data: AnalyticsDataPoint[];
-  emptyTitle: string;
-  emptyDescription: string;
-  format?: AnalyticsValueFormat;
-}) => (
-  <ChartCardShell
-    description={description}
-    footer={footer}
-    insight={insight}
-    metaLabel={metaLabel}
-    title={title}
-  >
-    <ComparisonBarChart
-      data={data}
-      emptyDescription={emptyDescription}
-      emptyTitle={emptyTitle}
-      format={format}
-    />
-  </ChartCardShell>
-);
-
-export const DistributionChartCard = ({
-  title,
-  insight,
-  description,
-  metaLabel,
-  footer,
-  data,
-  emptyTitle,
-  emptyDescription,
-  format = 'number',
-}: {
-  title: string;
-  insight?: ReactNode;
-  description?: string;
-  metaLabel?: ReactNode;
-  footer?: ReactNode;
-  data: AnalyticsDataPoint[];
-  emptyTitle: string;
-  emptyDescription: string;
-  format?: AnalyticsValueFormat;
-}) => (
-  <ChartCardShell
-    description={description}
-    footer={footer}
-    insight={insight}
-    metaLabel={metaLabel}
-    title={title}
-  >
-    <DistributionChart
-      data={data}
-      emptyDescription={emptyDescription}
-      emptyTitle={emptyTitle}
-      format={format}
-    />
-  </ChartCardShell>
-);
-
-export const StackedStatusCard = DistributionChartCard;
-
-export const KpiTrendCard = ({
-  title,
-  insight,
-  description,
-  metaLabel,
-  footer,
-  metrics,
-  data,
-  series,
-  emptyTitle,
-  emptyDescription,
-  format = 'number',
-  metricFormat = format,
-}: {
-  title: string;
-  insight?: ReactNode;
-  description?: string;
-  metaLabel?: ReactNode;
-  footer?: ReactNode;
-  metrics: AnalyticsDataPoint[];
-  data: AnalyticsTrendPoint[];
-  series: ChartSeries[];
-  emptyTitle: string;
-  emptyDescription: string;
-  format?: AnalyticsValueFormat;
-  metricFormat?: AnalyticsValueFormat;
-}) => (
-  <ChartCardShell
-    description={description}
-    footer={footer}
-    insight={insight}
-    metaLabel={metaLabel}
-    title={title}
-  >
-    <MetricCardGrid format={metricFormat} items={metrics} />
-    <TrendBarChart
-      data={data}
-      emptyDescription={emptyDescription}
-      emptyTitle={emptyTitle}
-      format={format}
-      series={series}
-    />
-  </ChartCardShell>
-);
-
-export const MiniReportTableCard = ({
-  title,
-  insight,
-  description,
-  metaLabel,
-  footer,
-  rows,
-  format = 'number',
-  emptyTitle = 'No report rows',
-  emptyDescription = 'Report values will appear when the selected filters return activity.',
-}: {
-  title: string;
-  insight?: ReactNode;
-  description?: string;
-  metaLabel?: ReactNode;
-  footer?: ReactNode;
-  rows: Array<{
-    key: string;
-    label: string;
-    value: number;
-    detail?: ReactNode;
-    tone?: ChartTone;
-  }>;
-  format?: AnalyticsValueFormat;
-  emptyTitle?: string;
-  emptyDescription?: string;
-}) => {
-  const visibleRows = rows;
-
-  return (
-    <ChartCardShell
-      description={description}
-      footer={footer}
-      insight={insight}
-      metaLabel={metaLabel}
-      title={title}
-    >
-      {visibleRows.length === 0 ? (
-        <AnalyticsEmptyState
-          description={emptyDescription}
-          title={emptyTitle}
-        />
-      ) : (
-        <TableShell>
-          <table className="min-w-full text-sm">
-            <tbody>
-              {visibleRows.map((row, index) => {
-                const tone =
-                  row.tone ?? inferChartTone(row.key, row.label, index);
-                const style = getToneStyle(tone);
-
-                return (
-                  <tr
-                    className="border-b border-border last:border-b-0"
-                    key={row.key}
-                  >
-                    <td className="min-w-0 px-4 py-3">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <span
-                          aria-hidden="true"
-                          className={cn(
-                            'h-2.5 w-2.5 shrink-0 rounded-full',
-                            style.bar,
-                          )}
-                        />
-                        <div className="min-w-0">
-                          <p
-                            className="truncate font-semibold text-foreground"
-                            title={buildLabel(row.label)}
-                          >
-                            {buildLabel(row.label)}
-                          </p>
-                          {row.detail ? (
-                            <div className="mt-1 text-xs leading-5 text-muted-foreground">
-                              {row.detail}
-                            </div>
-                          ) : null}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right font-mono tabular-nums text-foreground">
-                      {formatAnalyticsFullValue(row.value, format)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </TableShell>
-      )}
-    </ChartCardShell>
-  );
-};
-
-export const SampleScopeNote = ({
-  sample,
-  noun,
-}: {
-  sample: AnalyticsSampleMeta;
-  noun: string;
-}) => (
-  <span>
-    {sample.isTruncated
-      ? `Trend reflects the latest ${sample.sampleSize} of ${sample.total} available ${noun}.`
-      : `Trend reflects ${sample.sampleSize} available ${noun}.`}
-  </span>
 );

@@ -14,7 +14,6 @@ import { EmptyState } from '../../components/ui/empty-state';
 import { Label } from '../../components/ui/label';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { SidePanel } from '../../components/ui/side-panel';
-import { AccountingAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -408,11 +407,7 @@ export const ChartOfAccountsPage = () => {
 
       {actionError ? <AccountingQueryErrorBanner message={actionError} /> : null}
 
-      <AccountingAnalyticsPanel
-        companyId={companyId}
-        companySlug={user.currentCompany.slug}
-        enabled={accountingEnabled}
-      />
+
 
       <AccountingSection
         title="Account class anchors"

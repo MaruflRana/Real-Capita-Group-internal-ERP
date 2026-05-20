@@ -20,6 +20,22 @@ const config: Config = {
         shell: '0 22px 56px -34px rgba(15, 23, 42, 0.72)',
       },
       colors: {
+        brand: {
+          blue: 'hsl(var(--brand-blue) / <alpha-value>)',
+          sky: 'hsl(var(--brand-sky) / <alpha-value>)',
+          green: 'hsl(var(--brand-green) / <alpha-value>)',
+          navy: 'hsl(var(--brand-navy) / <alpha-value>)',
+          indigo: 'hsl(var(--brand-indigo) / <alpha-value>)',
+          skySoft: 'hsl(var(--brand-sky-soft) / <alpha-value>)',
+          greenSoft: 'hsl(var(--brand-green-soft) / <alpha-value>)',
+          neutral: 'hsl(var(--brand-neutral) / <alpha-value>)',
+          headerGradientStart: 'hsl(var(--brand-header-gradient-start) / <alpha-value>)',
+          headerGradientEnd: 'hsl(var(--brand-header-gradient-end) / <alpha-value>)',
+          sidebarGradientStart: 'hsl(var(--sidebar-gradient-start) / <alpha-value>)',
+          sidebarGradientMid: 'hsl(var(--sidebar-gradient-mid) / <alpha-value>)',
+          sidebarGradientEnd: 'hsl(var(--sidebar-gradient-end) / <alpha-value>)',
+          sidebarGreenDepth: 'hsl(var(--sidebar-green-depth) / <alpha-value>)',
+        },
         canvas: {
           DEFAULT: 'hsl(var(--app-canvas))',
           strong: 'hsl(var(--app-canvas-strong))',
@@ -71,7 +87,9 @@ const config: Config = {
         },
         chart: {
           blue: 'hsl(var(--chart-blue))',
-          teal: 'hsl(var(--chart-teal))',
+          sky: 'hsl(var(--chart-sky))',
+          green: 'hsl(var(--chart-green))',
+          navy: 'hsl(var(--chart-navy))',
           amber: 'hsl(var(--chart-amber))',
           rose: 'hsl(var(--chart-rose))',
           indigo: 'hsl(var(--chart-indigo))',

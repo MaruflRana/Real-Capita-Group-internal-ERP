@@ -11,7 +11,6 @@ import { OutputActionGroup } from '../../components/ui/output-actions';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
-import { ProjectPropertyAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -434,21 +433,17 @@ export const UnitsPage = () => {
       {actionError ? <ProjectPropertyQueryErrorBanner message={actionError} /> : null}
       {exportError ? <ProjectPropertyQueryErrorBanner message={exportError} /> : null}
 
-      <ProjectPropertyAnalyticsPanel
-        companyId={companyId}
-        companySlug={user.currentCompany.slug}
-        enabled={isEnabled}
-      />
+
 
       <ProjectPropertySection
         title="Unit management"
         description="Use the hierarchy filters to narrow the working set, then open the side panel for create or edit. Editing a unit keeps the original project anchor visible."
       >
-        <div className="grid gap-4 rounded-3xl border border-border/70 bg-card/80 p-6 xl:grid-cols-4">
+        <div className="grid gap-4 rounded-lg border border-brand-sky/35 bg-gradient-to-br from-card via-brand-skySoft/65 to-brand-greenSoft/55 p-6 xl:grid-cols-4">
           <div className="space-y-2 xl:col-span-2">
             <Label htmlFor="unit-search">Search</Label>
             <input
-              className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm ring-offset-background"
+              className="flex h-10 w-full rounded-lg border border-input bg-card px-3.5 py-2 text-sm text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
               id="unit-search"
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search unit code, name, or description"

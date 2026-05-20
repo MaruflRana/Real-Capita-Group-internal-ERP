@@ -11,7 +11,6 @@ import { Label } from '../../components/ui/label';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
-import { HrAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -219,19 +218,7 @@ export const AttendanceLogsPage = () => {
         </div>
       ) : null}
 
-      <HrAnalyticsPanel
-        companyId={companyId}
-        companySlug={user.currentCompany.slug}
-        enabled={isEnabled}
-        period={
-          dateFrom && dateTo
-            ? {
-                dateFrom,
-                dateTo,
-              }
-            : undefined
-        }
-      />
+
 
       <HrCoreSection
         title="Attendance log list"

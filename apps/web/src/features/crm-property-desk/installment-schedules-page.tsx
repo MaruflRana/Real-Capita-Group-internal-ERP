@@ -11,7 +11,6 @@ import { Label } from '../../components/ui/label';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
-import { CrmAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -173,11 +172,7 @@ export const InstallmentSchedulesPage = () => {
 
       {actionError ? <CrmPropertyDeskQueryErrorBanner message={actionError} /> : null}
 
-      <CrmAnalyticsPanel
-        companyId={companyId}
-        companySlug={user.currentCompany.slug}
-        enabled={isEnabled}
-      />
+
 
       <CrmPropertyDeskSection
         title="Schedule register"

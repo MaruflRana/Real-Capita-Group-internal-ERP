@@ -20,8 +20,8 @@ export const HealthStatusCard = () => {
   });
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="h-full min-w-0 overflow-hidden border-brand-sky/40">
+      <CardHeader className="border-b border-brand-sky/40 bg-gradient-to-br from-brand-headerGradientStart via-card to-brand-headerGradientEnd/70">
         <p className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
           System status
         </p>
@@ -32,7 +32,7 @@ export const HealthStatusCard = () => {
       </CardHeader>
       <CardContent className="space-y-4 text-sm leading-6 text-muted-foreground">
         {healthQuery.data ? (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
+          <div className="rounded-lg border border-status-success/25 bg-status-successSoft p-4 text-status-success">
             <p className="font-semibold">
               Service {healthQuery.data.status} on version {healthQuery.data.version}
             </p>
@@ -42,12 +42,12 @@ export const HealthStatusCard = () => {
           </div>
         ) : null}
         {healthQuery.isPending ? (
-          <div className="rounded-2xl border border-border/70 bg-background/70 p-4">
+          <div className="rounded-lg border border-brand-sky/35 bg-brand-skySoft/60 p-4">
             Checking application health.
           </div>
         ) : null}
         {healthQuery.isError ? (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-800">
+          <div className="rounded-lg border border-status-danger/25 bg-status-dangerSoft p-4 text-status-danger">
             Unable to confirm application health.
           </div>
         ) : null}

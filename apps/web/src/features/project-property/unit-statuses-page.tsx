@@ -5,7 +5,6 @@ import { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../components/providers/auth-provider';
 import { EmptyState } from '../../components/ui/empty-state';
 import { PaginationControls } from '../../components/ui/pagination-controls';
-import { ProjectPropertyAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -76,11 +75,7 @@ export const UnitStatusesPage = () => {
         scopeSlug={user.currentCompany.slug}
       />
 
-      <ProjectPropertyAnalyticsPanel
-        companyId={companyId}
-        companySlug={user.currentCompany.slug}
-        enabled={isEnabled}
-      />
+
 
       <ProjectPropertySection
         title="Fixed status catalog"

@@ -14,7 +14,6 @@ import { OutputActionGroup } from '../../components/ui/output-actions';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
-import { CrmAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -214,11 +213,7 @@ export const CustomersPage = () => {
         <CrmPropertyDeskQueryErrorBanner message={exportError} />
       ) : null}
 
-      <CrmAnalyticsPanel
-        companyId={companyId}
-        companySlug={user.currentCompany.slug}
-        enabled={isEnabled}
-      />
+
 
       <CrmPropertyDeskSection
         title="Customer master list"

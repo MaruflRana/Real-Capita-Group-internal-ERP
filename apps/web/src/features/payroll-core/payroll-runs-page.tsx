@@ -14,7 +14,6 @@ import { OutputActionGroup } from '../../components/ui/output-actions';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
-import { PayrollAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -265,11 +264,7 @@ export const PayrollRunsPage = () => {
       {actionError ? <PayrollCoreQueryErrorBanner message={actionError} /> : null}
       {exportError ? <PayrollCoreQueryErrorBanner message={exportError} /> : null}
 
-      <PayrollAnalyticsPanel
-        companyId={companyId}
-        companySlug={user.currentCompany.slug}
-        enabled={isEnabled}
-      />
+
 
       <PayrollCoreSection
         title="Payroll run list"

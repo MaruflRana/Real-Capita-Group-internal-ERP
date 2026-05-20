@@ -49,7 +49,7 @@ import {
   getDefaultReportDateRange,
   isDateRangeInvalid,
 } from './utils';
-import { TrialBalanceVisualSummary } from './analytics';
+
 
 const buildTrialBalanceFilters = ({
   dateFrom,
@@ -350,12 +350,6 @@ export const TrialBalancePage = () => {
               </ReportMetricGrid>
             </FinancialReportingSection>
 
-            <FinancialReportingSection
-              description="Opening, period movement, and closing balances are compared for the selected filters."
-              title="Visual analysis"
-            >
-              <TrialBalanceVisualSummary report={report} />
-            </FinancialReportingSection>
 
             <FinancialReportingSection
               description="The hierarchy follows account class, account group, ledger account, and posting account where available."

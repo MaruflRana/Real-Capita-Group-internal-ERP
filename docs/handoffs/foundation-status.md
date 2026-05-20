@@ -259,6 +259,14 @@
   - responsive QA passed at 1440px, 1366px, and 1024px with table overflow contained inside table shells
   - a targeted UI polish replaced a raw linked-booking UUID in the sale-contract table with a readable booking-date/link label
   - full validation passed: Docker smoke, focused CRM checks, lint, typecheck, build, and test
+- Prompt 48D-R completed the Business Overview flagship financial trend visual:
+  - `ExecutiveTrendChart` upgraded from `BarChart` to `ComposedChart` supporting mixed bar+line rendering
+  - Business Overview trend chart reduced from 5 series to 3 core financial series (Revenue bar, Expenses bar, Net result line)
+  - Contracted and collected sales removed from chart (preserved in KPI cards)
+  - chart title updated from "Financial performance and commercial activity" to "Financial performance"
+  - Net P/L rendered as a Recharts line overlay on revenue/expenses bars for executive readability
+  - validated: lint, typecheck, build, Docker rebuild, visual QA at 1440px/1366px/1024px
+  - no backend, API, schema, auth, routing, or workflow changes
 
 ## Frontend Routes
 
@@ -1286,3 +1294,119 @@ Backend foundations through Prompt 11 remain intact. Prompt 12 established the a
 - Prompt 44A diagnosed the localhost demo login failure as a CORS/env mismatch (API container retained stale tunnel CORS values while host .env had local-dev values), audited the live-demo scripts, and scoped the implementation direction for a reliable supervisor-desktop workflow
 - Prompt 44B implemented the supervisor-desktop live demo workflow: created `scripts/update-and-start-live-demo.ps1` wrapper (git pull, env normalization, Docker rebuild, demo data verify, local login verify, tunnel delegation), enhanced `start-live-demo.ps1` with `-SkipInitialBuild`, stale env restore protection, and public login verification, repaired `stop-live-demo.ps1` stale restore backup handling, and updated operational documentation
 - Prompt 44C completed end-to-end live demo proof: fixed PowerShell 5.1 compatibility issues (bracket parse errors, nested quote parse errors, em dash Unicode, .Count on scalar/null, invalid pnpm command, CRLF line endings), ran the full wrapper from clean tracked state, verified Cloudflare Quick Tunnel public access, verified public demo login (HTTP 201), committed the checkpoint, and left the live demo running
+- Prompt 44D restored the runtime after the prior quick tunnel ended, re-launched a fresh Cloudflare Quick Tunnel, verified the public login flow, and corrected the Prompt 44C handoff documentation without changing application code
+- Prompt 45 refreshed `README.md` and the runbook so setup, update, demo/UAT, live-demo, validation, and operational caveats match the current Real Capita ERP state; checkpoint `403b67713 docs: refresh ERP README and runbook`
+- Prompt 46A completed the color-identity analysis/planning pass for MD sir's feedback item and approved a logo-derived Real Capita blue/green/sky candidate palette for controlled implementation testing
+- Prompt 46B implemented the frontend-only Global Real Capita Brand Token Refresh:
+  - `apps/web/src/app/global.css` now defines explicit Real Capita brand token aliases and maps semantic canvas, primary, ring, accent, sidebar, info, and success tokens to the approved candidate palette
+  - `apps/web/tailwind.config.ts` exposes a named `brand` color family while preserving existing semantic token keys
+  - `apps/web/src/features/shell/app-shell.tsx` received minimal sidebar/nav class refinements for deep-blue shell depth plus sky/green active-state emphasis
+  - warning, danger, chart, print, receipt, and report-template styling were intentionally left unchanged
+  - no backend, API, Prisma schema, migration, seed data, route, auth, access-role, Docker, or script changes were made
+- Prompt 46C completed the frontend-only High-Visibility Product Surface Polish:
+  - dashboard context, summary, health, quick-action, attention, and timeline surfaces now use restrained Real Capita sky/green support treatments over the Prompt 46B brand tokens
+  - financial reporting screen-only filter, context-strip, loading, refresh, value-list, and assumption-note surfaces now align to the brand token system without changing report calculations, chart palettes, print output, or report templates
+  - CRM Customer 360 identity, profile facts, summary metrics, loading state, internal notes, and activity timeline surfaces now use brand-aligned sky/green surfaces while preserving receipt links and printable receipt templates
+  - CRM and Project/Property shared query/read-only/error helpers now use semantic status tokens instead of hardcoded rose/amber treatments
+  - Project/Property Units filter/search shell received a focused brand-aligned polish as the additional representative business-record surface
+  - no backend, API, Prisma schema, migration, seed data, chart-series palette, print template, receipt template, login layout, Docker, or script changes were made
+- Prompt 46D completed the frontend-only Chart/Data Visualization Brand Palette:
+  - chart CSS variables in `apps/web/src/app/global.css` were remapped to the Real Capita brand family: blue, sky, green, navy, and indigo form the core chart palette; amber and rose remain reserved for semantic warning and danger; slate remains for neutral/de-emphasis comparison
+  - `apps/web/tailwind.config.ts` chart token exposure was refreshed: `chart.teal` was replaced with `chart.sky`, `chart.green`, and `chart.navy` to match the new CSS variable names
+  - `apps/web/src/features/analytics/components.tsx` chart tone style mapping received targeted refinements: HR tone soft/text/primitiveTone shifted from muted/default to successSoft/success/success to align with the green family; Payroll tone shifted from warningSoft/warning/warning to infoSoft/info/info to align with the blue family
+  - the DEFAULT_TONES cycling order was adjusted to lead with balance and sales (brand blue and sky) before revenue and expense for stronger brand hierarchy
+  - semantic expense/danger/negative rose, warning/pending amber, and revenue/success/positive green meanings remain intact
+  - no layout redesign, dashboard card redesign, broader page recolor, backend, API, Prisma schema, migration, seed data, print template, receipt template, auth, routing, or Docker changes were made
+- Prompt 46E completed the final technical QA and checkpoint-readiness review for the full Prompt 46B + 46C + 46D brand-refresh stack:
+  - the full brand-refresh diff was audited and classified into three coherent layers (token/system, product-surface, chart) with consistent palette direction and no accidental route/business-logic changes
+  - lint, typecheck, build, seed:demo:verify, and git diff --check all passed
+  - Docker runtime remained healthy (api, web, postgres, minio all Up and healthy)
+  - browser visual QA was successfully completed through Playwright MCP for `/dashboard`, `/accounting/reports/business-overview`, and `/crm-property-desk/customers/[customerId]` at 1440px, 1366px, and 1024px with no horizontal overflow detected at any width
+  - brand identity is visually coherent across shell, surfaces, and charts; chart series remain distinguishable; legends/labels remain readable; warning/error semantic colors remain meaningful; no broken cards, charts, panels, or shells observed
+  - no code changes, commits, pushes, or staging were made; the work is ready for supervisor visual approval before final checkpointing
+- Prompt 46E-R clarified that the Docker web container was already serving the brand-refresh changes at `http://localhost:3000` (CSS variable inspection confirmed `--brand-blue`, `--brand-sky`, `--brand-green`, `--brand-navy`, `--chart-sky`, `--chart-green`, `--chart-navy` with brand-derived values and `--chart-teal` was empty as expected from Prompt 46D); the earlier claim that Docker ran pre-46B code was corrected
+- Prompt 46F implemented a stronger whole-software Real Capita brand redesign after the supervisor judged the earlier Prompt 46B/46C/46D pass was too subtle for MD sir's feedback:
+  - global CSS token values were strengthened: `--brand-sky-soft` from `197 75% 95%` to `204 67% 92%`, `--brand-green-soft` from `147 53% 97%` to `135 82% 94%`, `--brand-neutral` from `210 40% 98%` to `210 40% 97%`, `--surface-raised` from `197 75% 97%` to `204 52% 95%`, `--surface-muted` from `var(--brand-sky-soft)` to `204 45% 93%`, `--secondary` from `197 54% 91%` to `204 50% 88%`, `--accent` from `var(--brand-sky-soft)` to `204 67% 90%`
+  - new `--brand-header-gradient-start` (`204 67% 88%`) and `--brand-header-gradient-end` (`135 75% 91%`) tokens were added for branded header gradients
+  - `apps/web/tailwind.config.ts` now exposes `brand.headerGradientStart` and `brand.headerGradientEnd` classes
+  - shared ERP primitives in `apps/web/src/components/ui/erp-primitives.tsx` were redesigned: `ModulePageHeader`, `ModuleSection`, and `ChartCardShell` now use branded header gradients (`from-brand-headerGradientStart via-card to-brand-headerGradientEnd`) instead of generic `bg-surface-raised`; `FilterCardShell` now uses `border-brand-sky/30 bg-gradient-to-br from-card to-brand-skySoft/40`; default tone styles for KPICard/MetricCard/StatusChip changed from generic `border-border bg-surface-muted text-foreground bg-chart-slate` to branded `border-brand-sky/35 bg-brand-skySoft text-brand-navy bg-brand-sky`; `PageSection` dividers use `border-brand-sky/30`; `TableShell` uses `border-brand-sky/30`; `EmptyStateBlock` uses `border-dashed border-brand-sky/35 bg-brand-skySoft/40`
+  - sidebar accent opacity was strengthened from 10-25% to 15-40% throughout `app-shell.tsx`
+  - all dashboard, financial-reporting, CRM/Customer 360, and project/property surface borders/backgrounds were strengthened from 20-25% opacity to 35-40% opacity and from 60-80% backgrounds to 80-90% backgrounds
+  - lint, typecheck, build, and git diff --check all passed; Docker rebuild confirmed healthy; CSS variable inspection confirmed all strengthened tokens are served; no overflow detected at 1440px, 1366px, or 1024px on dashboard, business-overview, or customer-360
+  - the redesign is materially more visible than the earlier Prompt 46B/46C/46D pass: default KPI/metric/status chips now carry Real Capita identity, page headers are the strongest branded carriers, card borders are clearly visible, and the overall app reads as branded Real Capita ERP rather than generic admin template
+- Prompt 46G completed the full Real Capita sidebar/navigation color redesign:
+  - sidebar background changed from flat navy slab to vertical gradient from navy through blue-influenced mid-tone to brand-indigo depth
+  - left accent bar, top identity block, company card, search shell, section labels, navigation rows, icon tiles, search dropdown, and footer all received brand-integrated color treatments
+  - active nav row changed from disconnected white card to brand-sky tinted background with brand-sky/45 border
+  - lint, typecheck, build, and docker health all passed; no overflow at any viewport width
+- Prompt 46H completed the sidebar blue-green-sky balance refinement:
+  - dual sky+green accent bar, mixed brand label colors, green left accent stripes on active rows, green dot markers on section labels, mixed footer title
+  - lint, typecheck, build, and docker health all passed
+- Prompt 46I completed the from-scratch sidebar color system redesign:
+  - sidebar gradient transitions from navy through blue to dark green depth — green is structurally present in the background
+  - active nav items use sky→green→navy gradient backgrounds with 3px green left accents
+  - active icon tiles use blue→sky→green gradient
+  - company card uses blue→green→navy gradient at equal strength
+  - section dividers use brand-green/30 borders
+  - footer gradient anchored by green
+  - `<alpha-value>` placeholder added to all brand color definitions in tailwind.config.ts for proper opacity modifier support
+  - lint, typecheck, build, and docker health all passed; no overflow at any viewport width
+- Prompt 47A completed the Financial Reports sidebar navigation cleanup:
+  - Daily, Weekly, Monthly, Yearly Report entries removed from visible sidebar navigation
+  - underlying route files and page components preserved and still reachable by direct URL
+  - Business Overview, Trial Balance, General Ledger, Profit & Loss, Balance Sheet remain visible
+  - lint, typecheck, build, and docker health all passed
+- Prompt 48A completed the ERP-wide visual analytics audit and redundancy blueprint (documentation only, no code changes)
+- Prompt 48B removed and consolidated redundant visuals:
+  - removed 7 full module analytics panels from 28 module list pages
+  - removed dashboard analytics section (DashboardAnalyticsPanel)
+  - consolidated dashboard summary panels into compact 8-KPI executive row
+  - removed financial statement visual summary sections from TB, GL, P&L, BS
+  - removed Business Overview distribution chart
+  - removed obsolete aliases (StackedStatusCard, DistributionLegend)
+  - net diff: 435 insertions, 768 deletions (333-line reduction)
+  - lint, typecheck, build, docker health all passed
+- Prompt 48C rebuilt the retained visual system and removed dead analytics infrastructure:
+  - deleted module-panels.tsx (874 lines), hooks.ts (169 lines), financial-reporting/analytics.tsx (288 lines)
+  - removed 6 dead exports from components.tsx (ComparisonBarChart, ComparisonBarChartCard, MiniReportTableCard, KpiTrendCard, DistributionBarList, DistributionChartCard)
+  - removed DashboardSummaryPanel from dashboard shared.tsx
+  - introduced Recharts: ExecutiveTrendChart/ExecutiveTrendChartCard with ResponsiveContainer, CartesianGrid, XAxis, YAxis, Tooltip
+  - simplified tone system from 18 to 8 core tones (revenue, expense, balance, warning, sales, collection, info, neutral)
+  - added `recharts` dependency to apps/web/package.json and pnpm-lock.yaml
+  - net diff: 885 insertions, 2910 deletions (2025-line reduction)
+  - lint, typecheck, build, docker health all passed
+- Prompt 48D redesigned retained high-value visual pages:
+  - dashboard KPI section now has primary Net P/L emphasized card with secondary Total Assets alongside, plus compact 6 operational KPIs below
+  - dashboard operational home card is more compact with 3-column layout
+  - Business Overview executive summary redesigned with primary Net P/L + voucher workload secondary row + supporting 4 metrics
+  - Customer 360 minor label polish ("Posted-voucher confirmed" clearer label)
+  - net diff: 331 insertions, 491 deletions (160-line reduction)
+  - lint, typecheck, build, docker health all passed
+- Prompt 48D-R finalized the Business Overview flagship financial trend visual:
+  - ExecutiveTrendChart upgraded from BarChart to ComposedChart supporting mixed bar+line rendering
+  - reduced from 5 series to 3 core financial series (Revenue bar, Expenses bar, Net result line)
+  - title updated from "Financial performance and commercial activity" to "Financial performance"
+  - net diff: ~30 insertions, ~40 deletions
+  - lint, typecheck, build, docker health all passed; visual QA at all viewport widths confirmed no overflow
+- Prompt 49A completed the Business Overview content/UX audit and redesign blueprint (documentation only, no code changes)
+- Prompt 49B implemented the Business Overview content/UX redesign:
+  - title renamed from "Business Overview Report" to "Business Performance Overview"
+  - KPI hierarchy reorganized: primary Business result (using profitAmount/lossAmount), secondary Revenue/Expenses(with ratio)/Collection efficiency(with %), supporting Contracted/Outstanding receivables/Voucher activity/Periods reported
+  - collection efficiency shows percentage + amounts + progress bar cue
+  - outstanding receivables shows contracted minus collected with warning tone
+  - executive insight strip bridges KPIs to chart with one-sentence interpretation
+  - period table reordered financial-first, added totals row, loss periods flagged with rose styling and "Loss" badge
+  - calculation notes condensed to management-facing summary with collapsible detailed basis
+  - read-only notice folded into context strip as subtle source note
+  - ReportMetricCard.description prop type changed from string to ReactNode
+  - lint, typecheck, build, docker health all passed; visual QA at all viewport widths confirmed no overflow
+- Prompt 49C completed the final QA and checkpoint-readiness assessment for the full Prompt 46–49B frontend workstream:
+  - all source-of-truth docs read and cross-checked
+  - dirty worktree classified: 47 tracked modified/deleted files, 2 dependency files, 1 handoff doc, 25 new untracked handoff docs
+  - temporary artifacts identified for exclusion: 8 root-level PNG screenshots, `.tmp/` directory
+  - lint passed (0 errors, pre-existing warnings only), typecheck passed, build passed (51 routes), seed:demo:verify passed, diff --check passed (CRLF warnings only)
+  - Docker runtime healthy (4 services)
+  - browser visual QA completed for 9 priority routes at 1440px, 1366px, 1024px with no overflow
+  - Business Overview verified: title, KPI hierarchy, collection efficiency, outstanding receivables, insight strip, flagship chart, period table totals/loss flags, calculation notes, period type grouping
+  - Customer 360 verified: identity, metrics, commercial tables, transaction history, timeline, receipt link
+  - no blockers found; workstream is ready for checkpoint commit/push

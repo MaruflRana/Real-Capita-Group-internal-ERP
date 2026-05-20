@@ -13,7 +13,6 @@ import { OutputActionGroup } from '../../components/ui/output-actions';
 import { PaginationControls } from '../../components/ui/pagination-controls';
 import { Select } from '../../components/ui/select';
 import { SidePanel } from '../../components/ui/side-panel';
-import { AuditDocumentAnalyticsPanel } from '../analytics/module-panels';
 import {
   Table,
   TableBody,
@@ -244,19 +243,7 @@ export const AuditEventsPage = () => {
       {uploadersError ? <AuditDocumentsQueryErrorBanner message={uploadersError} /> : null}
       {exportError ? <AuditDocumentsQueryErrorBanner message={exportError} /> : null}
 
-      <AuditDocumentAnalyticsPanel
-        companyId={companyId}
-        companySlug={user.currentCompany.slug}
-        enabled={isEnabled}
-        period={
-          dateFrom && dateTo
-            ? {
-                dateFrom,
-                dateTo,
-              }
-            : undefined
-        }
-      />
+
 
       <AuditDocumentsSection
         title="Audit event list"

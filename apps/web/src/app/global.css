@@ -4,55 +4,71 @@
 
 @layer base {
   :root {
-    --app-canvas: 214 29% 89%;
-    --app-canvas-strong: 216 24% 82%;
+    --brand-blue: 204 100% 36%;
+    --brand-sky: 204 67% 47%;
+    --brand-green: 135 82% 37%;
+    --brand-navy: 209 62% 24%;
+    --brand-indigo: 226 52% 39%;
+    --brand-sky-soft: 204 67% 92%;
+    --brand-green-soft: 135 82% 94%;
+    --brand-neutral: 210 40% 97%;
+    --brand-header-gradient-start: 204 67% 88%;
+    --brand-header-gradient-end: 135 75% 91%;
+    --sidebar-gradient-start: 209 62% 24%;
+    --sidebar-gradient-mid: 204 48% 28%;
+    --sidebar-gradient-end: 135 42% 20%;
+    --sidebar-green-depth: 135 42% 20%;
+    --app-canvas: var(--brand-neutral);
+    --app-canvas-strong: var(--brand-sky-soft);
     --surface: 0 0% 100%;
-    --surface-raised: 210 29% 96%;
-    --surface-muted: 214 24% 92%;
-    --surface-sidebar: 218 34% 13%;
-    --background: 214 29% 89%;
+    --surface-raised: 204 52% 95%;
+    --surface-muted: 204 45% 93%;
+    --surface-sidebar: var(--brand-navy);
+    --background: var(--brand-neutral);
     --foreground: 222 43% 10%;
     --card: 0 0% 100%;
     --card-foreground: 222 43% 10%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 43% 10%;
-    --primary: 204 83% 31%;
+    --primary: var(--brand-blue);
     --primary-foreground: 210 40% 98%;
-    --secondary: 214 22% 86%;
+    --secondary: 204 50% 88%;
     --secondary-foreground: 222 43% 10%;
-    --muted: 214 22% 88%;
+    --muted: 210 24% 91%;
     --muted-foreground: 215 18% 31%;
-    --accent: 196 70% 90%;
-    --accent-foreground: 221 48% 13%;
-    --border: 215 24% 74%;
-    --input: 215 24% 70%;
-    --ring: 204 83% 31%;
+    --accent: 204 67% 90%;
+    --accent-foreground: var(--brand-navy);
+    --border: 204 32% 78%;
+    --input: 204 34% 70%;
+    --ring: var(--brand-sky);
     --radius: 0.5rem;
-    --status-success: 158 76% 25%;
-    --status-success-soft: 151 55% 91%;
+    --status-success: var(--brand-green);
+    --status-success-soft: var(--brand-green-soft);
     --status-warning: 35 92% 31%;
     --status-warning-soft: 42 100% 90%;
     --status-danger: 352 73% 40%;
     --status-danger-soft: 355 85% 94%;
-    --status-info: 204 83% 31%;
-    --status-info-soft: 201 82% 92%;
-    --chart-blue: 211 86% 42%;
-    --chart-teal: 184 82% 28%;
+    --status-info: var(--brand-blue);
+    --status-info-soft: var(--brand-sky-soft);
+    --chart-blue: var(--brand-blue);
+    --chart-sky: var(--brand-sky);
+    --chart-green: var(--brand-green);
+    --chart-navy: var(--brand-navy);
+    --chart-indigo: var(--brand-indigo);
     --chart-amber: 36 94% 40%;
-    --chart-rose: 350 72% 43%;
-    --chart-indigo: 255 60% 48%;
-    --chart-slate: 215 24% 36%;
-    --chart-revenue: 145 65% 30%;
-    --chart-expense: 350 72% 43%;
-    --chart-balance: 211 86% 42%;
+    --chart-rose: 352 73% 40%;
+    --chart-slate: 215 20% 36%;
+    --chart-revenue: var(--brand-green);
+    --chart-expense: 352 73% 40%;
+    --chart-balance: var(--brand-blue);
     --chart-warning: 36 94% 40%;
-    --chart-sales: 226 65% 44%;
-    --chart-collection: 184 82% 28%;
-    --chart-property: 255 60% 48%;
-    --chart-hr: 326 55% 42%;
-    --chart-payroll: 24 82% 39%;
-    --chart-audit: 215 24% 32%;
-    --chart-documents: 196 82% 34%;
+    --chart-sales: var(--brand-sky);
+    --chart-collection: var(--brand-indigo);
+    --chart-property: 195 82% 36%;
+    --chart-hr: 152 68% 32%;
+    --chart-payroll: 204 55% 34%;
+    --chart-audit: var(--brand-navy);
+    --chart-documents: 204 67% 52%;
   }
 
   * {
@@ -67,36 +83,28 @@
   body {
     @apply min-h-screen bg-background text-foreground antialiased;
     background:
-      radial-gradient(
-        circle at 12% 0%,
-        rgba(14, 116, 144, 0.12),
-        transparent 28rem
-      ),
       linear-gradient(
         135deg,
         hsl(var(--app-canvas)) 0%,
-        hsl(var(--app-canvas-strong)) 100%
+        hsl(var(--app-canvas-strong)) 68%,
+        hsl(var(--brand-green-soft)) 100%
       );
     overflow-x: hidden;
   }
 
   ::selection {
-    background: rgba(6, 182, 212, 0.22);
+    background: hsl(var(--brand-sky) / 0.22);
   }
 }
 
 @layer utilities {
   .bg-admin-canvas {
     background:
-      radial-gradient(
-        circle at 12% 0%,
-        rgba(14, 116, 144, 0.1),
-        transparent 28rem
-      ),
       linear-gradient(
         135deg,
         hsl(var(--app-canvas)) 0%,
-        hsl(var(--app-canvas-strong)) 100%
+        hsl(var(--app-canvas-strong)) 68%,
+        hsl(var(--brand-green-soft)) 100%
       );
   }
 
@@ -120,6 +128,99 @@
     border: 3px solid transparent;
     border-radius: 999px;
     background-clip: padding-box;
+  }
+
+  .sidebar-gradient-bg {
+    background: linear-gradient(
+      180deg,
+      hsl(var(--sidebar-gradient-start)) 0%,
+      hsl(var(--sidebar-gradient-mid)) 40%,
+      hsl(var(--sidebar-gradient-end)) 100%
+    );
+  }
+
+  .sidebar-top-accent {
+    background: linear-gradient(
+      135deg,
+      hsl(var(--brand-sky) / 0.16) 0%,
+      hsl(var(--brand-blue) / 0.14) 15%,
+      hsl(var(--brand-green) / 0.18) 35%,
+      hsl(var(--brand-navy) / 0.95) 60%,
+      hsl(var(--brand-indigo) / 0.20) 100%
+    );
+  }
+
+  .sidebar-brand-accent-bar {
+    border-image: linear-gradient(
+      to bottom,
+      hsl(var(--brand-sky) / 0.65) 0%,
+      hsl(var(--brand-blue) / 0.50) 25%,
+      hsl(var(--brand-green) / 0.60) 55%,
+      hsl(var(--brand-green) / 0.45) 100%
+    ) 1;
+  }
+
+  .sidebar-active-nav-bg {
+    background: linear-gradient(
+      to right,
+      hsl(var(--brand-sky) / 0.20) 0%,
+      hsl(var(--brand-green) / 0.15) 50%,
+      hsl(var(--brand-navy) / 0.10) 100%
+    );
+  }
+
+  .sidebar-active-icon-bg {
+    background: linear-gradient(
+      to bottom right,
+      hsl(var(--brand-blue) / 0.25) 0%,
+      hsl(var(--brand-sky) / 0.20) 50%,
+      hsl(var(--brand-green) / 0.15) 100%
+    );
+  }
+
+  .sidebar-brand-accent-line {
+    background: linear-gradient(
+      to right,
+      hsl(var(--brand-blue) / 0.85) 0%,
+      hsl(var(--brand-green) / 0.75) 50%,
+      hsl(var(--brand-sky) / 0.60) 100%
+    );
+  }
+
+  .sidebar-company-card-bg {
+    background: linear-gradient(
+      to bottom right,
+      hsl(var(--brand-blue) / 0.20) 0%,
+      hsl(var(--brand-green) / 0.20) 50%,
+      hsl(var(--brand-navy) / 0.35) 100%
+    );
+  }
+
+  .sidebar-footer-bg {
+    background: linear-gradient(
+      to right,
+      hsl(var(--brand-green) / 0.15) 0%,
+      hsl(var(--brand-blue) / 0.10) 50%,
+      hsl(var(--brand-navy) / 0.25) 100%
+    );
+  }
+
+  .sidebar-search-input-field {
+    background: hsl(var(--brand-blue) / 0.22);
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .sidebar-search-input-field:focus {
+    background: hsl(var(--brand-blue) / 0.30);
+    border-color: hsl(var(--brand-sky) / 0.60);
+    outline: none;
+    box-shadow: 0 0 0 2px hsl(var(--brand-sky) / 0.45);
+  }
+
+  input[type="search"]::-webkit-search-cancel-button,
+  input[type="search"]::-webkit-search-decoration {
+    -webkit-appearance: none;
   }
 
   :where(a, button, input, select, textarea, [tabindex]):focus-visible {

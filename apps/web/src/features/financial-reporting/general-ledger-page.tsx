@@ -53,7 +53,6 @@ import {
   getDefaultReportDateRange,
   isDateRangeInvalid,
 } from './utils';
-import { GeneralLedgerVisualSummary } from './analytics';
 
 const buildGeneralLedgerFilters = ({
   particularAccountId,
@@ -423,12 +422,6 @@ export const GeneralLedgerPage = () => {
               </ReportMetricGrid>
             </FinancialReportingSection>
 
-            <FinancialReportingSection
-              description="Debit and credit movement is shown across opening, period, closing, and voucher-date activity."
-              title="Visual analysis"
-            >
-              <GeneralLedgerVisualSummary report={report} />
-            </FinancialReportingSection>
 
             <FinancialReportingSection
               description="Voucher references, voucher IDs, descriptions, and running balances for the selected ledger account."

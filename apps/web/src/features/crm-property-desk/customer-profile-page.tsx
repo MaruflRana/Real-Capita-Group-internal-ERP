@@ -74,13 +74,13 @@ const getUnitLabel = ({
     .join(' - ') || 'No unit context';
 
 const SectionLoadingState = ({ label }: { label: string }) => (
-  <div className="rounded-lg border border-border bg-card px-4 py-8 text-sm text-muted-foreground">
+  <div className="rounded-lg border border-brand-sky/40 bg-brand-skySoft/85 px-4 py-8 text-sm text-muted-foreground">
     Loading {label}.
   </div>
 );
 
 const ProfileFact = ({ label, value }: { label: string; value: ReactNode }) => (
-  <div className="min-w-0 rounded-lg border border-border bg-card px-4 py-3">
+  <div className="min-w-0 rounded-lg border border-brand-sky/40 bg-card/90 px-4 py-3">
     <p className="erp-label">{label}</p>
     <div className="mt-2 break-words text-sm leading-6 text-foreground [overflow-wrap:anywhere]">
       {value}
@@ -98,7 +98,7 @@ const CustomerIdentitySection = ({
     title="Customer Overview"
   >
     <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(18rem,0.6fr)]">
-      <div className="min-w-0 rounded-lg border border-border bg-card px-5 py-5 shadow-sm">
+      <div className="min-w-0 rounded-lg border border-brand-sky/35 bg-gradient-to-br from-brand-headerGradientStart via-card to-brand-headerGradientEnd/70 px-5 py-5 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <h2 className="break-words text-2xl font-semibold leading-8 text-foreground [overflow-wrap:anywhere]">
@@ -106,7 +106,7 @@ const CustomerIdentitySection = ({
             </h2>
             <div className="mt-3 flex flex-wrap gap-2">
               <EntityStatusBadge isActive={profile.customer.isActive} />
-              <span className="inline-flex rounded-full border border-border bg-surface-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+              <span className="inline-flex rounded-full border border-brand-sky/35 bg-brand-skySoft px-2.5 py-1 text-xs font-semibold text-brand-navy">
                 Created {formatDate(profile.customer.createdAt)}
               </span>
             </div>
@@ -131,7 +131,7 @@ const CustomerIdentitySection = ({
           />
         </div>
       </div>
-      <div className="min-w-0 rounded-lg border border-border bg-surface-muted px-5 py-5">
+      <div className="min-w-0 rounded-lg border border-brand-green/20 bg-brand-greenSoft/90 px-5 py-5">
         <p className="erp-label">Internal notes</p>
         <p className="mt-3 break-words text-sm leading-6 text-foreground [overflow-wrap:anywhere]">
           {optionalText(profile.customer.notes, 'No customer notes recorded.')}
@@ -144,22 +144,25 @@ const CustomerIdentitySection = ({
 const SummarySection = ({ profile }: { profile: CustomerProfileRecord }) => (
   <PageSection
     description="Safe customer-level metrics only. Outstanding, remaining, and overdue claims are intentionally not presented here."
-    title="Customer Records Summary"
+    title="Customer records summary"
   >
     <ReportGrid>
       <MetricCard
         helper={`${formatCount(profile.summary.activeBookingCount)} active booking records`}
         label="Bookings"
+        tone="info"
         value={formatCount(profile.summary.totalBookings)}
       />
       <MetricCard
         helper={`${formatAccountingAmount(profile.summary.totalContractAmount)} total contract amount`}
         label="Sale contracts"
+        tone="info"
         value={formatCount(profile.summary.saleContractCount)}
       />
       <MetricCard
         helper={`${formatCount(profile.summary.installmentScheduleCount)} scheduled rows`}
         label="Scheduled installment amount"
+        tone="default"
         value={formatAccountingAmount(
           profile.summary.totalScheduledInstallmentAmount,
         )}
@@ -172,14 +175,16 @@ const SummarySection = ({ profile }: { profile: CustomerProfileRecord }) => (
       />
       <MetricCard
         label="Latest collection date"
+        tone="info"
         value={formatDate(
           profile.summary.latestCollectionDate,
           'No collections',
         )}
       />
       <MetricCard
-        helper="Collections backed by a posted voucher status."
-        label="Posted voucher-backed collected"
+        helper="Voucher-confirmed portion of total collections."
+        label="Posted-voucher confirmed"
+        tone="success"
         value={formatAccountingAmount(
           profile.summary.postedVoucherBackedCollectionAmount,
         )}
@@ -488,14 +493,14 @@ const TimelineSection = ({
         title="No timeline events"
       />
     ) : (
-      <ol className="relative space-y-4 border-l border-border pl-5">
+      <ol className="relative space-y-4 border-l border-brand-sky/40 pl-5">
         {timeline.map((event) => (
           <li className="relative min-w-0" key={event.id}>
             <span
               aria-hidden="true"
               className="absolute -left-[1.84rem] top-1 h-3 w-3 rounded-full border-2 border-background bg-primary"
             />
-            <div className="rounded-lg border border-border bg-card px-4 py-3">
+            <div className="rounded-lg border border-brand-sky/40 bg-gradient-to-br from-card to-brand-skySoft/80 px-4 py-3">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
                   <p className="font-semibold text-foreground">{event.title}</p>
