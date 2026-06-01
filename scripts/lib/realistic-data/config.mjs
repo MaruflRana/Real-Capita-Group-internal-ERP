@@ -6,6 +6,7 @@ import { dateOnly } from './shared.mjs';
 
 export const COMPANY_NAME = 'Real Capita Group';
 export const COMPANY_SLUG = 'real-capita-group';
+export const getUatPassword = () => process.env.UAT_PASSWORD || 'CHANGE_ME_SET_IN_ENV';
 export const UAT_PASSWORD = process.env.UAT_PASSWORD || 'CHANGE_ME_SET_IN_ENV';
 
 export const SEED_TIMESTAMP = '2026-01-15T10:00:00.000Z';

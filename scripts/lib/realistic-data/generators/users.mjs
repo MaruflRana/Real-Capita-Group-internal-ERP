@@ -1,10 +1,10 @@
 // ── Users generator: walkthrough users with password hashing ──────────
 
 import argon2 from 'argon2';
-import { WALKTHROUGH_USERS, UAT_PASSWORD } from '../config.mjs';
+import { WALKTHROUGH_USERS, getUatPassword } from '../config.mjs';
 
 export const seedUsers = async (tx, companyId, refs, roles) => {
-  const passwordHash = await argon2.hash(UAT_PASSWORD);
+  const passwordHash = await argon2.hash(getUatPassword());
   const users = {};
 
   for (const userSpec of WALKTHROUGH_USERS) {
