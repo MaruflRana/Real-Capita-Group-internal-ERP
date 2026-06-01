@@ -46,6 +46,7 @@ export interface DefenseTraceEntry {
   label: string;
   category: DefenseTraceCategory;
   routePatterns: readonly string[];
+  apiPatterns?: readonly string[];
   uiTexts: readonly string[];
   frontendRouteFiles: readonly DefenseTraceFileReference[];
   frontendFeatureFiles: readonly DefenseTraceFileReference[];
@@ -75,4 +76,18 @@ export interface DefenseTraceResolvedFileTarget {
   vscodeUri: string;
   vscodeCliCommand: string;
   ripgrepCommand: string;
+}
+
+export interface DefenseTraceApiActivity {
+  id: string;
+  method: string;
+  path: string;
+  queryKeys: readonly string[];
+  statusCode?: number;
+  durationMs: number;
+  timestampIso: string;
+  failed: boolean;
+  matchedTraceEntryId?: string;
+  matchedTraceEntryLabel?: string;
+  matchedApiPattern?: string;
 }

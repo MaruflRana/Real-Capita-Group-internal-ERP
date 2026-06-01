@@ -42,6 +42,7 @@ export const defenseTraceRegistry = [
     label: 'Dashboard',
     category: 'dashboard',
     routePatterns: ['/dashboard'],
+    apiPatterns: ['dashboard', 'summary', 'activity'],
     uiTexts: [
       'Dashboard',
       'Business result',
@@ -122,6 +123,7 @@ export const defenseTraceRegistry = [
     label: 'Login/Auth',
     category: 'auth',
     routePatterns: ['/login'],
+    apiPatterns: ['auth/login', 'auth/me', 'auth/refresh', 'auth/logout'],
     uiTexts: ['Real Capita Group', 'Checking session', 'Select the company workspace'],
     frontendRouteFiles: [
       fileRef('apps/web/src/app/(public)/login/page.tsx'),
@@ -195,6 +197,7 @@ export const defenseTraceRegistry = [
       '/audit-documents/*',
       '/org-security/*',
     ],
+    apiPatterns: ['auth/me', 'roles', 'users/:userId/roles', 'access'],
     uiTexts: ['Company Administrator', 'Company Accountant', 'Company HR'],
     frontendRouteFiles: [
       fileRef('apps/web/src/app/unauthorized/page.tsx'),
@@ -338,6 +341,12 @@ export const defenseTraceRegistry = [
       '/accounting/vouchers/new',
       '/accounting/vouchers/[voucherId]',
     ],
+    apiPatterns: [
+      'accounting/vouchers',
+      'accounting/vouchers/:voucherId',
+      'accounting/vouchers/:voucherId/lines',
+      'accounting/vouchers/:voucherId/post',
+    ],
     uiTexts: ['Vouchers', 'New voucher', 'Post voucher', 'Voucher detail'],
     frontendRouteFiles: [
       fileRef('apps/web/src/app/(app)/accounting/vouchers/page.tsx'),
@@ -399,6 +408,10 @@ export const defenseTraceRegistry = [
     label: 'Trial Balance',
     category: 'financial-reporting',
     routePatterns: ['/accounting/reports/trial-balance'],
+    apiPatterns: [
+      'accounting/reports/trial-balance',
+      'accounting/reports/trial-balance/export',
+    ],
     uiTexts: ['Trial Balance', 'Closing debit', 'Closing credit'],
     frontendRouteFiles: [
       fileRef('apps/web/src/app/(app)/accounting/reports/trial-balance/page.tsx'),
@@ -470,6 +483,10 @@ export const defenseTraceRegistry = [
     label: 'Business Overview',
     category: 'financial-reporting',
     routePatterns: ['/accounting/reports/business-overview'],
+    apiPatterns: [
+      'accounting/reports/business-overview',
+      'accounting/reports/business-overview/export',
+    ],
     uiTexts: ['Business Performance Overview', 'Business result', 'Collection efficiency'],
     frontendRouteFiles: [
       fileRef(
@@ -541,6 +558,7 @@ export const defenseTraceRegistry = [
     label: 'Customers',
     category: 'crm',
     routePatterns: ['/crm-property-desk/customers'],
+    apiPatterns: ['customers'],
     uiTexts: ['Customers', 'Customer', 'CRM & Property Desk'],
     frontendRouteFiles: [
       fileRef('apps/web/src/app/(app)/crm-property-desk/customers/page.tsx'),
@@ -599,6 +617,7 @@ export const defenseTraceRegistry = [
     label: 'Customer Profile',
     category: 'crm',
     routePatterns: ['/crm-property-desk/customers/[customerId]'],
+    apiPatterns: ['customers/:customerId/profile'],
     uiTexts: ['Customer Profile', 'Transaction History', 'Commercial timeline'],
     frontendRouteFiles: [
       fileRef(
@@ -668,6 +687,14 @@ export const defenseTraceRegistry = [
     routePatterns: [
       '/audit-documents/attachments',
       '/audit-documents/attachments/[attachmentId]',
+    ],
+    apiPatterns: [
+      'attachments',
+      'attachments/uploads',
+      'attachments/:attachmentId/finalize',
+      'attachments/:attachmentId/download-url',
+      'attachments/:attachmentId/links',
+      'attachments/references',
     ],
     uiTexts: ['Attachments', 'Upload attachment', 'Download access'],
     frontendRouteFiles: [
@@ -740,6 +767,15 @@ export const defenseTraceRegistry = [
       '/hr/attendance-logs',
       '/hr/leave-types',
       '/hr/leave-requests',
+    ],
+    apiPatterns: [
+      'employees',
+      'attendance-devices',
+      'device-users',
+      'attendance-logs',
+      'leave-types',
+      'leave-requests',
+      'hr/references',
     ],
     uiTexts: ['Employees', 'Attendance devices', 'Leave requests'],
     frontendRouteFiles: [
@@ -832,6 +868,13 @@ export const defenseTraceRegistry = [
       '/payroll/runs',
       '/payroll/runs/[payrollRunId]',
       '/payroll/posting',
+    ],
+    apiPatterns: [
+      'payroll',
+      'salary-structures',
+      'payroll-runs',
+      'payroll-runs/:payrollRunId/lines',
+      'payroll-runs/:payrollRunId/post',
     ],
     uiTexts: ['Payroll Runs', 'Salary Structures', 'Payroll Posting'],
     frontendRouteFiles: [

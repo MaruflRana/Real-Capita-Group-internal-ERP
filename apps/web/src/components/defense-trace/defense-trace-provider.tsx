@@ -10,6 +10,12 @@ import {
 import { usePathname } from 'next/navigation';
 
 import {
+  clearDefenseTraceBufferedApiActivities,
+  DEFENSE_TRACE_API_ACTIVITY_EVENT,
+  limitDefenseTraceApiActivities,
+  readDefenseTraceBufferedApiActivities,
+} from '../../lib/defense-trace/api-trace';
+import {
   matchDefenseTraceEntry,
 } from '../../lib/defense-trace/match-trace';
 import {
@@ -19,7 +25,10 @@ import {
   type DefenseTracePanelPosition,
 } from '../../lib/defense-trace/preferences';
 import { defenseTraceRegistry } from '../../lib/defense-trace/trace-registry';
-import type { DefenseTraceEntry } from '../../lib/defense-trace/types';
+import type {
+  DefenseTraceApiActivity,
+  DefenseTraceEntry,
+} from '../../lib/defense-trace/types';
 import {
   DEFENSE_TRACE_ENABLED_STORAGE_KEY,
   normalizeWorkspaceRoot,
@@ -70,6 +79,9 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
   const [workspaceRoot, setWorkspaceRoot] = useState('');
   const [selectedEntryId, setSelectedEntryId] = useState('');
   const [manualSelection, setManualSelection] = useState(false);
+  const [apiActivities, setApiActivities] = useState<
+    readonly DefenseTraceApiActivity[]
+  >([]);
   const routeMatch = useMemo(() => matchDefenseTraceEntry(pathname), [pathname]);
 
   useEffect(() => {
@@ -83,6 +95,10 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
 
     if (shouldEnableFromUrl) {
       writeTraceEnabled(true);
+    }
+
+    if (shouldEnable) {
+      setApiActivities(readDefenseTraceBufferedApiActivities());
     }
 
     const settings = readDefenseTraceWorkspaceSettings();
@@ -185,8 +201,15 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
     setSelectedEntryId(routeMatch?.entry.id ?? '');
   }, [routeMatch?.entry.id]);
 
+  const clearApiActivities = useCallback(() => {
+    clearDefenseTraceBufferedApiActivities();
+    setApiActivities([]);
+  }, []);
+
   useEffect(() => {
     if (!enabled) {
+      clearDefenseTraceBufferedApiActivities();
+      setApiActivities([]);
       return;
     }
 
@@ -220,6 +243,39 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [enabled, persistPreferences]);
 
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
+    setApiActivities(readDefenseTraceBufferedApiActivities());
+
+    const handleApiActivity = (event: Event) => {
+      const apiActivityEvent = event as CustomEvent<DefenseTraceApiActivity>;
+      const activity = apiActivityEvent.detail;
+
+      if (!activity) {
+        return;
+      }
+
+      setApiActivities((currentActivities) =>
+        limitDefenseTraceApiActivities([activity, ...currentActivities]),
+      );
+    };
+
+    window.addEventListener(
+      DEFENSE_TRACE_API_ACTIVITY_EVENT,
+      handleApiActivity,
+    );
+
+    return () => {
+      window.removeEventListener(
+        DEFENSE_TRACE_API_ACTIVITY_EVENT,
+        handleApiActivity,
+      );
+    };
+  }, [enabled]);
+
   const selectedEntry = useMemo<DefenseTraceEntry | null>(
     () =>
       defenseTraceRegistry.find((entry) => entry.id === selectedEntryId) ??
@@ -234,11 +290,13 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
       {hasMounted && enabled ? (
         <DefenseTracePanel
           currentPathname={pathname}
+          apiActivities={apiActivities}
           entries={defenseTraceRegistry}
           isManualSelection={manualSelection}
           minimized={minimized}
           onClose={closeOverlay}
           onCurrentRouteSelect={selectCurrentRouteTrace}
+          onApiActivitiesClear={clearApiActivities}
           onMinimizedChange={updateMinimized}
           onPanelPositionChange={updatePanelPosition}
           onSelectedEntryIdChange={selectTraceEntry}

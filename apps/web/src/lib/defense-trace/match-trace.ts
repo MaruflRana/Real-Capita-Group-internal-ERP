@@ -142,6 +142,7 @@ const getEntrySearchText = (entry: DefenseTraceEntry): string =>
     entry.label,
     entry.category,
     ...entry.routePatterns,
+    ...(entry.apiPatterns ?? []),
     ...entry.uiTexts,
     ...entry.prismaModels,
     ...entry.searchCommands.flatMap((command) => [

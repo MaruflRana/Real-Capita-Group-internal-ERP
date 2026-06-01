@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import {
+  Activity,
   BookOpen,
   ChevronDown,
   Code2,
@@ -15,11 +16,17 @@ import {
 } from 'lucide-react';
 
 import {
+  createDefenseTraceEntryApiFallbackCommand,
+  createDefenseTraceApiSearchCommand,
+  createDefenseTraceMatchedTraceCommand,
+} from '../../lib/defense-trace/api-trace';
+import {
   searchDefenseTraceEntries,
   type DefenseTraceRouteMatch,
 } from '../../lib/defense-trace/match-trace';
 import type { DefenseTracePanelPosition } from '../../lib/defense-trace/preferences';
 import type {
+  DefenseTraceApiActivity,
   DefenseTraceEntry,
   DefenseTraceFileReference,
   DefenseTraceSearchCommand,
@@ -136,6 +143,157 @@ const SearchCommandList = ({
       </div>
     ))}
   </div>
+);
+
+const RecentApiActivity = ({
+  activities,
+  onClear,
+  onSelectedEntryIdChange,
+  selectedEntry,
+}: {
+  activities: readonly DefenseTraceApiActivity[];
+  onClear: () => void;
+  onSelectedEntryIdChange: (entryId: string) => void;
+  selectedEntry: DefenseTraceEntry | null;
+}) => (
+  <details className="group rounded-xl border border-border bg-card">
+    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-foreground">
+      <span className="flex items-center gap-2">
+        <Activity className="h-4 w-4 text-brand-green" />
+        Recent API Activity
+        <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+          {activities.length}
+        </span>
+      </span>
+      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition group-open:rotate-180" />
+    </summary>
+    <div className="space-y-3 border-t border-border p-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="space-y-1">
+          <p className="inline-flex rounded-full border border-brand-green/30 bg-brand-greenSoft px-2 py-1 text-[11px] font-semibold text-brand-navy">
+            Trace capture active
+          </p>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Metadata-only request trace. It shows method, request path, status,
+            duration, and matched topic when available.
+          </p>
+        </div>
+        <button
+          className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold text-foreground shadow-sm transition hover:border-brand-sky/60 hover:bg-brand-skySoft/60 disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={activities.length === 0}
+          onClick={onClear}
+          type="button"
+        >
+          Clear activity
+        </button>
+      </div>
+      {activities.length > 0 ? (
+        <div className="max-h-72 space-y-2 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
+          {activities.map((activity) => {
+            const backendSearchCommand =
+              createDefenseTraceApiSearchCommand(activity);
+            const traceCommand =
+              createDefenseTraceMatchedTraceCommand(activity);
+
+            return (
+              <div
+                className="space-y-2 rounded-lg border border-border bg-muted/25 p-2"
+                key={activity.id}
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded bg-brand-navy px-2 py-1 font-mono text-[11px] font-semibold text-white">
+                    {activity.method}
+                  </span>
+                  <span
+                    className={`rounded px-2 py-1 text-[11px] font-semibold ${
+                      activity.failed
+                        ? 'bg-status-warningSoft text-status-warning'
+                        : 'bg-brand-greenSoft text-brand-navy'
+                    }`}
+                  >
+                    {activity.statusCode ?? 'No status'}
+                  </span>
+                  <span className="rounded bg-background px-2 py-1 text-[11px] font-semibold text-muted-foreground">
+                    {activity.durationMs} ms
+                  </span>
+                  <time
+                    className="text-[11px] text-muted-foreground"
+                    dateTime={activity.timestampIso}
+                  >
+                    {new Date(activity.timestampIso).toLocaleTimeString()}
+                  </time>
+                </div>
+                <code className="block break-all rounded bg-background/80 px-2 py-1 font-mono text-[11px] leading-relaxed text-foreground">
+                  {activity.path}
+                </code>
+                {activity.queryKeys.length > 0 ? (
+                  <p className="text-[11px] text-muted-foreground">
+                    Query keys:{' '}
+                    <span className="font-mono">
+                      {activity.queryKeys.join(', ')}
+                    </span>
+                  </p>
+                ) : null}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[11px] font-semibold text-muted-foreground">
+                    Matched topic:
+                  </span>
+                  {activity.matchedTraceEntryId &&
+                  activity.matchedTraceEntryLabel ? (
+                    <button
+                      className="rounded-full border border-brand-sky/40 bg-brand-skySoft/60 px-2 py-1 text-[11px] font-semibold text-brand-navy transition hover:bg-brand-skySoft"
+                      onClick={() =>
+                        onSelectedEntryIdChange(activity.matchedTraceEntryId!)
+                      }
+                      type="button"
+                    >
+                      {activity.matchedTraceEntryLabel}
+                    </button>
+                  ) : (
+                    <span className="rounded-full border border-border bg-background px-2 py-1 text-[11px] text-muted-foreground">
+                      Not matched
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <DefenseTraceCopyCommandButton
+                    command={activity.path}
+                    label="Copy API path"
+                  />
+                  <DefenseTraceCopyCommandButton
+                    command={backendSearchCommand}
+                    label="Copy backend search"
+                  />
+                  {activity.matchedTraceEntryId ? (
+                    <DefenseTraceCopyCommandButton
+                      command={traceCommand}
+                      label="Trace command"
+                    />
+                  ) : null}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="space-y-2 rounded-lg border border-dashed border-border bg-muted/25 px-3 py-3">
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            No API calls captured yet. Refresh this page or open a data page
+            such as Dashboard, Customers, Vouchers, or Trial Balance.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-semibold text-muted-foreground">
+              Fallback command:
+            </span>
+            <DefenseTraceCopyCommandButton
+              command={createDefenseTraceEntryApiFallbackCommand(selectedEntry)}
+              label="Copy backend search"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  </details>
 );
 
 const TraceLayerLadder = ({ entry }: { entry: DefenseTraceEntry }) => {
@@ -397,7 +555,7 @@ const TraceEntryDetails = ({
           <ul className="mt-1 space-y-1">
             {entry.riskNotes.map((note) => (
               <li className="flex gap-2" key={note}>
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-warning" />
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-status-warning" />
                 <span>{note}</span>
               </li>
             ))}
@@ -409,12 +567,14 @@ const TraceEntryDetails = ({
 );
 
 export const DefenseTracePanel = ({
+  apiActivities,
   currentPathname,
   entries,
   isManualSelection,
   minimized,
   onClose,
   onCurrentRouteSelect,
+  onApiActivitiesClear,
   onMinimizedChange,
   onPanelPositionChange,
   onSelectedEntryIdChange,
@@ -425,12 +585,14 @@ export const DefenseTracePanel = ({
   selectedEntryId,
   workspaceRoot,
 }: {
+  apiActivities: readonly DefenseTraceApiActivity[];
   currentPathname: string;
   entries: readonly DefenseTraceEntry[];
   isManualSelection: boolean;
   minimized: boolean;
   onClose: () => void;
   onCurrentRouteSelect: () => void;
+  onApiActivitiesClear: () => void;
   onMinimizedChange: (minimized: boolean) => void;
   onPanelPositionChange: (panelPosition: DefenseTracePanelPosition) => void;
   onSelectedEntryIdChange: (entryId: string) => void;
@@ -559,6 +721,13 @@ export const DefenseTracePanel = ({
             </p>
           )}
         </section>
+
+        <RecentApiActivity
+          activities={apiActivities}
+          onClear={onApiActivitiesClear}
+          onSelectedEntryIdChange={onSelectedEntryIdChange}
+          selectedEntry={selectedEntry}
+        />
 
         <section className="space-y-3 rounded-xl border border-border bg-card p-3">
           <label

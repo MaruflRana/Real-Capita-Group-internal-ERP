@@ -1,5 +1,9 @@
 import { buildApiUrl } from '@real-capita/config';
 
+import {
+  emitDefenseTraceApiActivity,
+  getDefenseTraceApiDurationMs,
+} from '../defense-trace/api-trace';
 import type { ApiErrorResponse } from './types';
 
 const DEFAULT_API_BASE_URL = 'http://localhost:3333';
@@ -30,6 +34,39 @@ const getResourceUrl = (resource: string): string =>
 
 const isJsonResponse = (response: Response): boolean =>
   response.headers.get('content-type')?.includes('application/json') ?? false;
+
+const fetchWithDefenseTrace = async (
+  resource: string,
+  requestInit: RequestInit,
+): Promise<Response> => {
+  const requestUrl = getResourceUrl(resource);
+  const startedAtMs =
+    typeof performance === 'undefined' ? Date.now() : performance.now();
+  const method = requestInit.method ?? 'GET';
+
+  try {
+    const response = await fetch(requestUrl, requestInit);
+
+    emitDefenseTraceApiActivity({
+      durationMs: getDefenseTraceApiDurationMs(startedAtMs),
+      failed: !response.ok,
+      method,
+      resourceOrUrl: requestUrl,
+      statusCode: response.status,
+    });
+
+    return response;
+  } catch (error) {
+    emitDefenseTraceApiActivity({
+      durationMs: getDefenseTraceApiDurationMs(startedAtMs),
+      failed: true,
+      method,
+      resourceOrUrl: requestUrl,
+    });
+
+    throw error;
+  }
+};
 
 const normalizeApiError = async (response: Response): Promise<ApiError> => {
   const fallbackPayload: ApiErrorResponse = {
@@ -62,7 +99,7 @@ const refreshBrowserSession = async (): Promise<void> => {
 
   if (!refreshPromise) {
     refreshPromise = (async () => {
-      const response = await fetch(getResourceUrl('auth/refresh'), {
+      const response = await fetchWithDefenseTrace('auth/refresh', {
         method: 'POST',
         body: JSON.stringify({}),
         cache: 'no-store',
@@ -151,7 +188,7 @@ const executeApiRequest = async (
       requestInit.body = serializedBody;
     }
 
-    const response = await fetch(getResourceUrl(resource), requestInit);
+    const response = await fetchWithDefenseTrace(resource, requestInit);
 
     if (
       response.status === 401 &&
