@@ -502,7 +502,7 @@ export const DashboardPage = () => {
   ]);
 
   return (
-    <AppPage>
+    <AppPage data-defense-trace="dashboard">
       <section className="grid gap-5 2xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
         <Card
           className="min-w-0 overflow-hidden border-brand-sky/40"
@@ -604,6 +604,7 @@ export const DashboardPage = () => {
           canAccessOrgSecurity ? (
             <Link
               className={cn(buttonVariants({ variant: 'outline' }))}
+              data-defense-trace="role-access"
               href={APP_ROUTES.orgSecurityCompanies}
             >
               Open company admin

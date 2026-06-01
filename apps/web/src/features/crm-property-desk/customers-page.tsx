@@ -181,7 +181,7 @@ export const CustomersPage = () => {
   };
 
   return (
-    <AppPage>
+    <AppPage data-defense-trace="customers">
       <CrmPropertyDeskPageHeader
         title="Customers"
         description="Operate the company-scoped customer directory used by bookings, contracts, installment schedules, and collections."

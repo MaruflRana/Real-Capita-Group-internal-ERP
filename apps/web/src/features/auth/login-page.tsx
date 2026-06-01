@@ -131,7 +131,10 @@ export const LoginPage = ({ nextRoute }: { nextRoute: string }) => {
 
   return (
     <div className="flex w-full items-center justify-center py-8">
-      <Card className="w-full max-w-[520px] overflow-hidden rounded-2xl shadow-md shadow-black/5">
+      <Card
+        className="w-full max-w-[520px] overflow-hidden rounded-2xl shadow-md shadow-black/5"
+        data-defense-trace="login-auth"
+      >
         <CardHeader className="flex flex-col items-center gap-5 pt-8 text-center">
           <div className="w-full max-w-[440px]">
             <Image

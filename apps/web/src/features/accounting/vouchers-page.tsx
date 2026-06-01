@@ -90,7 +90,7 @@ export const VouchersPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-defense-trace="vouchers">
       <AccountingPageHeader
         title="Vouchers"
         description="Review draft and posted vouchers, filter by date and status, and enter the draft workflow for voucher creation or explicit posting."

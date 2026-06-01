@@ -191,6 +191,7 @@ export const TrialBalancePage = () => {
     <AppPage>
       <div
         className="printable-report-screen-content space-y-5 xl:space-y-6"
+        data-defense-trace="trial-balance"
         data-testid="printable-report-screen-content"
       >
         <FinancialReportingPageHeader

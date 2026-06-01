@@ -3,6 +3,8 @@ import { IBM_Plex_Mono, Source_Sans_3 } from 'next/font/google';
 
 import { APP_NAME } from '@real-capita/config';
 
+import { DefenseTraceProvider } from '../components/defense-trace/defense-trace-provider';
+
 import './global.css';
 
 const sans = Source_Sans_3({
@@ -28,7 +30,9 @@ export default function RootLayout({
 }>) {
   return (
     <html className={`${sans.variable} ${mono.variable}`} lang="en">
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        <DefenseTraceProvider>{children}</DefenseTraceProvider>
+      </body>
     </html>
   );
 }

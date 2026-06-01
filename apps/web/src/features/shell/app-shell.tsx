@@ -377,6 +377,42 @@ const getNavigationSearchScore = (
   return null;
 };
 
+const getNavigationDefenseTraceId = (href: string) => {
+  if (href === APP_ROUTES.dashboard) {
+    return 'dashboard';
+  }
+
+  if (href.startsWith(APP_ROUTES.accountingVouchers)) {
+    return 'vouchers';
+  }
+
+  if (href === APP_ROUTES.accountingReportsTrialBalance) {
+    return 'trial-balance';
+  }
+
+  if (href === APP_ROUTES.accountingReportsBusinessOverview) {
+    return 'business-overview';
+  }
+
+  if (href.startsWith(APP_ROUTES.crmPropertyDeskCustomers)) {
+    return 'customers';
+  }
+
+  if (href.startsWith(APP_ROUTES.auditDocumentsAttachments)) {
+    return 'attachments-documents';
+  }
+
+  if (href.startsWith('/hr')) {
+    return 'hr';
+  }
+
+  if (href.startsWith('/payroll')) {
+    return 'payroll';
+  }
+
+  return 'sidebar-navigation';
+};
+
 export const AppShell = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
   const router = useRouter();
@@ -710,6 +746,7 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
             <nav
               aria-label="Primary navigation"
               className="min-h-0 flex-1 space-y-4 overflow-y-auto px-3 py-4 [scrollbar-gutter:stable]"
+              data-defense-trace="sidebar-navigation"
             >
               {visibleNavigation.map((section) => {
                 const sectionActive = section.items.some(
@@ -745,6 +782,9 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                               isActive
                                 ? 'sidebar-active-nav-bg border-y border-brand-sky/40 border-l-[3px] border-l-brand-green/50 text-primary-foreground shadow-[0_1px_3px_rgba(0,111,183,0.14)]'
                                 : 'text-primary-foreground/76 hover:bg-brand-sky/12 hover:text-primary-foreground',
+                            )}
+                            data-defense-trace={getNavigationDefenseTraceId(
+                              item.href,
                             )}
                             href={item.href}
                             key={item.href}

@@ -541,7 +541,7 @@ export const CustomerProfilePage = ({ customerId }: { customerId: string }) => {
   }
 
   return (
-    <AppPage>
+    <AppPage data-defense-trace="customer-profile">
       <CrmPropertyDeskPageHeader
         actions={
           <Link
