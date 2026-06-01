@@ -96,14 +96,14 @@ corepack pnpm docker:bootstrap -- \
   --admin-password "replace-with-a-strong-temporary-password"
 ```
 
-For a populated presentation workspace, seed only the explicit synthetic demo/UAT data and verify it:
+For a populated practicum/UAT presentation workspace, seed only the explicit realistic UAT data and verify it:
 
 ```bash
-corepack pnpm seed:demo -- --confirm-production-demo-data
-corepack pnpm seed:demo:verify -- --confirm-production-demo-data
+corepack pnpm seed:realistic:uat -- --confirm-production-realistic-data
+corepack pnpm seed:realistic:verify -- --confirm-production-realistic-data
 ```
 
-The seed command is intentionally guarded in `NODE_ENV=production`. Use it only for a demo/UAT workspace and do not present synthetic records as live production records.
+The seed command is intentionally guarded in `NODE_ENV=production`. Use it only for a practicum/UAT workspace and do not present seeded records as live production records. Public README UAT credentials are for local/dev/UAT walkthroughs only; replace them before any real production deployment.
 
 ## Runtime Verification
 
@@ -119,7 +119,7 @@ docker compose ps
 Manual verification:
 
 - Open `https://erp.example.com/login`.
-- Sign in with the bootstrapped admin or seeded demo account.
+- Sign in with the bootstrapped admin or seeded UAT account.
 - Confirm the dashboard loads.
 - Confirm financial reports load and printable report controls still work.
 - Confirm sidebar navigation search still works.
@@ -160,8 +160,8 @@ Object storage backup remains operator-managed. Back up the `minio-data` Docker 
 - Only ports `22`, `80`, and `443` are reachable publicly.
 - `.env` is never committed.
 - Swagger remains disabled unless there is a deliberate reason to expose it.
-- Demo credentials are changed before any executive review.
-- The seeded demo/UAT company is treated as presentation data, not production data.
+- Public local/dev/UAT credentials are changed before any real production or externally hosted review.
+- The seeded realistic UAT workspace is treated as presentation data, not production data.
 - Backups are copied off the VPS or to separately managed durable storage.
 
 ## When Credentials Are Not Available

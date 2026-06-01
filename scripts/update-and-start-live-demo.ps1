@@ -2,8 +2,8 @@
 [CmdletBinding()]
 param(
   [switch]$RefreshDemoData,
-  [string]$DemoEmail = 'demo.admin@demo.realcapita.test',
-  [string]$DemoPassword = 'change-me-demo-uat-password',
+  [string]$DemoEmail = 'admin@realcapita.com.bd',
+  [string]$DemoPassword = 'rcg-uat-2026-password',
   [int]$HealthTimeoutSeconds = 420,
   [int]$LoginTimeoutSeconds = 60
 )
@@ -299,25 +299,37 @@ function Test-ApiHealth {
 
 function Verify-DemoData {
   if ($RefreshDemoData) {
-    Write-Step 'Reseeding demo data (requested with -RefreshDemoData)'
-    Invoke-CheckedCommand 'corepack' @('pnpm', 'seed:demo')
-    Write-Note 'demo data reseeded'
-  }
+    Write-Step 'Reseeding realistic UAT data (requested with -RefreshDemoData)'
+    $previousUatPassword = $env:UAT_PASSWORD
+    $env:UAT_PASSWORD = $DemoPassword
 
-  Write-Step 'Verifying demo data'
-  $verifyOutput = Invoke-CapturedCommand 'corepack' @('pnpm', 'seed:demo:verify')
-
-  if ($verifyOutput -match 'verify ok') {
-    Write-Note 'demo data verification passed'
-  } else {
-    if (-not $RefreshDemoData) {
-      Write-Host 'Demo data verification FAILED.' -ForegroundColor Red
-      Write-Host 'The demo seed data appears incomplete or stale.' -ForegroundColor Red
-      Write-Host 'Rerun this script with -RefreshDemoData to reseed fresh demo data.' -ForegroundColor Yellow
-      throw 'Demo data verification failed. Rerun with -RefreshDemoData to fix.'
+    try {
+      Invoke-CheckedCommand 'corepack' @('pnpm', 'seed:realistic:uat')
+    } finally {
+      if ($null -eq $previousUatPassword) {
+        Remove-Item Env:\UAT_PASSWORD -ErrorAction SilentlyContinue
+      } else {
+        $env:UAT_PASSWORD = $previousUatPassword
+      }
     }
 
-    throw 'Demo data verification failed even after reseeding. Check the seed:demo:verify output above.'
+    Write-Note 'realistic UAT data reseeded'
+  }
+
+  Write-Step 'Verifying realistic UAT data'
+  $verifyOutput = Invoke-CapturedCommand 'corepack' @('pnpm', 'seed:realistic:verify')
+
+  if ($verifyOutput -match 'All checks passed') {
+    Write-Note 'realistic UAT data verification passed'
+  } else {
+    if (-not $RefreshDemoData) {
+      Write-Host 'Realistic UAT data verification FAILED.' -ForegroundColor Red
+      Write-Host 'The realistic UAT seed data appears incomplete or stale.' -ForegroundColor Red
+      Write-Host 'Rerun this script with -RefreshDemoData to reseed fresh realistic UAT data.' -ForegroundColor Yellow
+      throw 'Realistic UAT data verification failed. Rerun with -RefreshDemoData to fix.'
+    }
+
+    throw 'Realistic UAT data verification failed even after reseeding. Check the seed:realistic:verify output above.'
   }
 }
 
@@ -328,7 +340,7 @@ function Test-DemoLogin {
     [string]$Password = $DemoPassword
   )
 
-  Write-Note "testing demo login at $BaseUrl with email $Email"
+  Write-Note "testing UAT login at $BaseUrl with email $Email"
 
   Add-Type -AssemblyName System.Net.Http
 
@@ -348,26 +360,26 @@ function Test-DemoLogin {
       $parsed = $responseBody | ConvertFrom-Json
 
       if ($parsed.user -and $parsed.user.email -eq $Email) {
-        Write-Note "demo login verified: HTTP $statusCode, user $($parsed.user.email), company $($parsed.user.currentCompany.name)"
+        Write-Note "UAT login verified: HTTP $statusCode, user $($parsed.user.email), company $($parsed.user.currentCompany.name)"
         return $true
       }
 
-      Write-Note "demo login returned HTTP $statusCode but unexpected response structure"
+      Write-Note "UAT login returned HTTP $statusCode but unexpected response structure"
       return $false
     }
 
-    Write-Host "Demo login FAILED at $BaseUrl" -ForegroundColor Red
+    Write-Host "UAT login FAILED at $BaseUrl" -ForegroundColor Red
     Write-Host "  HTTP status: $statusCode" -ForegroundColor Red
     Write-Host "  Response: $responseBody" -ForegroundColor Red
 
     if ($statusCode -eq 400 -and $responseBody -match 'availableCompanies') {
       Write-Host '  The user has multiple company assignments. The login requires a companyId parameter.' -ForegroundColor Yellow
-      Write-Host '  This is expected behavior for multi-company accounts but not for the default demo admin.' -ForegroundColor Yellow
+      Write-Host '  This is expected behavior for multi-company accounts but not for the default UAT admin.' -ForegroundColor Yellow
     }
 
     return $false
   } catch {
-    Write-Host "Demo login FAILED: network/CORS error at $BaseUrl" -ForegroundColor Red
+    Write-Host "UAT login FAILED: network/CORS error at $BaseUrl" -ForegroundColor Red
     Write-Host "  Error: $($_.Exception.Message)" -ForegroundColor Red
     Write-Host '  This typically indicates a CORS_ORIGIN mismatch between the browser/API origin and the .env configuration.' -ForegroundColor Yellow
     return $false
@@ -402,20 +414,26 @@ try {
 
   Write-Note 'API is healthy'
 
-  Write-Step 'Verifying demo data'
+  Write-Step 'Verifying realistic UAT data'
   Verify-DemoData
 
-  Write-Step 'Verifying local demo login'
+  Write-Step 'Verifying local UAT login'
   $loginOk = Test-DemoLogin
 
   if (-not $loginOk) {
-    throw 'Local demo login verification failed. The runtime is not ready for a live demo tunnel.'
+    throw 'Local UAT login verification failed. The runtime is not ready for a live demo tunnel.'
   }
 
-  Write-Note 'Local demo login verified successfully'
+  Write-Note 'Local UAT login verified successfully'
 
   Write-Step 'Starting Cloudflare live demo tunnel'
-  $scriptArgs = @('-ExecutionPolicy', 'Bypass', '-File', $StartDemoScript, '-SkipInitialBuild')
+  $scriptArgs = @(
+    '-ExecutionPolicy', 'Bypass',
+    '-File', $StartDemoScript,
+    '-SkipInitialBuild',
+    '-DemoEmail', $DemoEmail,
+    '-DemoPassword', $DemoPassword
+  )
 
   $scriptArgsDisplay = $scriptArgs -join ' '
   Write-Note "calling: powershell $scriptArgsDisplay"

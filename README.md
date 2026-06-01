@@ -90,9 +90,12 @@ tests/
 
 ## Fresh Local Setup
 
-The Docker Compose path is the recommended first-run route because it mirrors the local/single-VM runtime baseline.
+The Docker Compose path is the recommended first-run route because it mirrors the local/single-VM runtime baseline. Use this path on a new development or practicum/UAT machine.
 
 ```powershell
+git clone git@github.com:MaruflRana/Real-Capita-Group-internal-ERP.git
+Set-Location Real-Capita-Group-internal-ERP
+corepack enable
 Copy-Item .env.example .env
 corepack pnpm install
 docker compose up -d --build
@@ -111,6 +114,8 @@ http://localhost:3000
 Environment notes:
 
 - `.env.example` is the repository template; `.env` is the local machine copy used by Compose and local tooling.
+- The checked-in `.env.example` uses local/dev/UAT placeholders only. Do not copy values from production or private machines into git.
+- `UAT_PASSWORD` in `.env.example` is the public practicum UAT walkthrough password documented below.
 - `WEB_APP_URL`, `API_BASE_URL`, and `CORS_ORIGIN` should stay aligned for the current browser origin.
 - `S3_PUBLIC_ENDPOINT` must stay browser-resolvable for presigned document upload/download flows; local Docker defaults use `http://localhost:9000`.
 - Do not commit `.env` or local tunnel/env backup files.
@@ -155,7 +160,9 @@ corepack pnpm seed:realistic:uat
 corepack pnpm seed:realistic:verify
 ```
 
-## Realistic UAT Data And Login
+## Public UAT Login Credentials
+
+These credentials are only for local development, practicum walkthroughs, and UAT/demo review of this private/internal repository. They are intentionally public here to reduce setup friction. Do not reuse them for production, hosted customer data, real cloud services, or private infrastructure.
 
 The repository includes an explicit, resettable realistic UAT seed for the Real Capita Group company:
 
@@ -164,24 +171,18 @@ Real Capita Group
 real-capita-group
 ```
 
-Walkthrough users:
-
-```text
-admin@realcapita.com.bd
-accountant@realcapita.com.bd
-hr@realcapita.com.bd
-payroll@realcapita.com.bd
-sales@realcapita.com.bd
-member@realcapita.com.bd
-```
-
-Local UAT password (also set via `UAT_PASSWORD` in `.env`):
-
-```text
-rcg-uat-2026-password
-```
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | `admin@realcapita.com.bd` | `rcg-uat-2026-password` |
+| Accountant | `accountant@realcapita.com.bd` | `rcg-uat-2026-password` |
+| HR | `hr@realcapita.com.bd` | `rcg-uat-2026-password` |
+| Payroll | `payroll@realcapita.com.bd` | `rcg-uat-2026-password` |
+| Sales | `sales@realcapita.com.bd` | `rcg-uat-2026-password` |
+| Member | `member@realcapita.com.bd` | `rcg-uat-2026-password` |
 
 > Use this password only in controlled local/UAT environments. Never in production.
+
+## Realistic UAT Data
 
 Realistic UAT data rules:
 
@@ -230,6 +231,8 @@ The wrapper:
 - verifies local UAT login,
 - launches a Cloudflare Quick Tunnel,
 - verifies the public login page and public UAT login before printing the final URL.
+
+Local and live URLs are different. Normal development uses `http://localhost:3000` on the machine running Docker. The live-demo workflow exposes that local machine through a temporary public Cloudflare Quick Tunnel URL; the public URL changes after each fresh tunnel start and stops working when the machine, Docker stack, or tunnel process stops.
 
 To intentionally refresh realistic UAT data before launching the public link:
 

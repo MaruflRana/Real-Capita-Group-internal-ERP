@@ -4,8 +4,8 @@ param(
   [int]$HealthTimeoutSeconds = 420,
   [int]$TunnelTimeoutSeconds = 120,
   [switch]$SkipInitialBuild,
-  [string]$DemoEmail = 'demo.admin@demo.realcapita.test',
-  [string]$DemoPassword = 'change-me-demo-uat-password'
+  [string]$DemoEmail = 'admin@realcapita.com.bd',
+  [string]$DemoPassword = 'rcg-uat-2026-password'
 )
 
 Set-StrictMode -Version Latest
@@ -644,7 +644,7 @@ function Verify-PublicDemoLogin {
     [string]$Password = $DemoPassword
   )
 
-  Write-Note "verifying demo login through tunnel URL: $PublicUrl/api/v1/auth/login"
+  Write-Note "verifying UAT login through tunnel URL: $PublicUrl/api/v1/auth/login"
 
   Add-Type -AssemblyName System.Net.Http
 
@@ -662,15 +662,15 @@ function Verify-PublicDemoLogin {
     $responseBody = $response.Content.ReadAsStringAsync().GetAwaiter().GetResult()
 
     if ($statusCode -eq 201 -or $statusCode -eq 200) {
-      Write-Note "public demo login verified: HTTP $statusCode"
+      Write-Note "public UAT login verified: HTTP $statusCode"
       return $true
     }
 
-    Write-Host "Public demo login FAILED: HTTP $statusCode" -ForegroundColor Red
+    Write-Host "Public UAT login FAILED: HTTP $statusCode" -ForegroundColor Red
     Write-Host "  Response: $responseBody" -ForegroundColor Red
     return $false
   } catch {
-    Write-Host "Public demo login FAILED: network error" -ForegroundColor Red
+    Write-Host "Public UAT login FAILED: network error" -ForegroundColor Red
     Write-Host "  Error: $($_.Exception.Message)" -ForegroundColor Red
     return $false
   } finally {
@@ -719,11 +719,11 @@ try {
   Write-Note "root status: HTTP $($verification.RootStatusCode), location: $($verification.RootLocation)"
   Write-Note "login page status: HTTP $($verification.LoginStatusCode)"
 
-  Write-Step 'Verifying demo login through public tunnel URL'
+  Write-Step 'Verifying UAT login through public tunnel URL'
   $publicLoginOk = Verify-PublicDemoLogin $publicUrl
 
   if (-not $publicLoginOk) {
-    throw 'Public demo login verification failed. The tunnel is live but login does not work. Run stop-live-demo.ps1 to clean up.'
+    throw 'Public UAT login verification failed. The tunnel is live but login does not work. Run stop-live-demo.ps1 to clean up.'
   }
 
   Write-Host ''
@@ -731,7 +731,7 @@ try {
   Write-Host 'REAL CAPITA ERP TEMPORARY PUBLIC DEMO IS LIVE' -ForegroundColor Green
   Write-Host '============================================================' -ForegroundColor Green
   Write-Host "PUBLIC DEMO URL: $publicUrl" -ForegroundColor Yellow
-  Write-Host 'Demo login verified through the public URL.' -ForegroundColor Green
+  Write-Host 'UAT login verified through the public URL.' -ForegroundColor Green
   Write-Host ''
   Write-Host 'Keep these running during the demo:'
   Write-Host '- Docker Desktop'
@@ -739,7 +739,7 @@ try {
   Write-Host "- Caddy proxy container: $CaddyContainerName"
   Write-Host "- cloudflared process PID: $((Get-Content -LiteralPath $CloudflaredPidPath -Raw).Trim())"
   Write-Host ''
-  Write-Host 'Sign in at the public URL using the documented demo credentials.'
+  Write-Host 'Sign in at the public URL using the documented public UAT credentials.'
   Write-Host 'The Quick Tunnel URL changes after every fresh run.'
   Write-Host 'Known caveat: MinIO-backed direct upload/download links may remain local-only because S3_PUBLIC_ENDPOINT is not tunneled.'
   Write-Host ''

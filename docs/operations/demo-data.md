@@ -110,13 +110,13 @@ Do not use that password outside a controlled local/UAT environment.
 - Reset is scoped to the exact company slug `real-capita-group`.
 - No "Demo", "UAT", "Synthetic", "Test", "Sample", or "Mock" strings appear in any business-facing seeded field.
 
-The reset command disables only the table-level business-rule triggers needed to delete posted demo vouchers and posted payroll lines inside the guarded synthetic company reset transaction. It does not disable constraints for normal app use and it does not target non-demo companies.
+The reset command disables only the table-level business-rule triggers needed to delete posted realistic UAT vouchers and posted payroll lines inside the guarded Real Capita Group reset transaction. It does not disable constraints for normal app use and it does not target non-UAT companies.
 
 ## Data Coverage
 
 The seed covers existing Phase 1 modules only:
 
-- Org & Security: the synthetic company, six role users, role assignments, RCG-context office/site locations, functional departments, and sister-concern coordination labels.
+- Org & Security: the Real Capita Group UAT company, six role users, role assignments, RCG-context office/site locations, functional departments, and sister-concern coordination labels.
 - Accounting: account groups, ledgers, posting accounts, posted and draft vouchers, and all Phase 1 voucher types.
 - Financial Reports: posted voucher activity across assets, liabilities, equity, revenue, and expenses.
 - Project & Property Master: RCG-context project names, project locations, cost centers, phases, blocks A-H, zones B/D/N/M/E/S/ES/DV/TV, public unit-type patterns, and unit inventory across available, booked, sold, allotted, transferred, and cancelled statuses.
@@ -125,45 +125,21 @@ The seed covers existing Phase 1 modules only:
 - Payroll: synthetic salary structures, draft/finalized/posted payroll runs, payroll lines, and payroll posting through the existing database posting function.
 - Audit & Documents: safe synthetic attachment metadata, attachment links, and synthetic audit events.
 
-## Receipt Demo Scenario
+## Receipt Walkthrough Scenario
 
-The authoritative seed now includes a management-demo-ready printable receipt path for CRM & Property Desk.
+The authoritative seed includes management-demo-ready printable receipt paths for CRM & Property Desk.
 
-Recommended demo login:
-
-```text
-demo.sales@demo.realcapita.test
-```
-
-Recommended seeded collection:
+Recommended walkthrough login:
 
 ```text
-DEMO-COL-2026-001
+sales@realcapita.com.bd
 ```
 
-Recommended Customer 360 profile candidate:
+Receipt walkthrough path:
 
-```text
-DEMO Customer Nadia Synthetic
-```
-
-That seeded scenario provides the full walkthrough chain:
-
-```text
-DEMO Customer Nadia Synthetic
--> booking on DEMO-MAYA-A-B-2P5-001
--> sale contract DEMO-SC-2026-RC-MAYA-001
--> installment #1 due 2026-03-15
--> posted voucher DEMO-COL-2026-001
--> collection DEMO-COL-2026-001
--> printable receipt route
-```
-
-Receipt demo path:
-
-1. Sign in as `demo.sales@demo.realcapita.test` or `demo.admin@demo.realcapita.test`.
-2. Open `/crm-property-desk/customers` and open the profile for `DEMO Customer Nadia Synthetic` to show identity, booking, sale contract, installment schedule, collection transaction history, posted voucher context, timeline, and receipt action.
-3. From the profile transaction history, use `Printable Receipt`, or open `/crm-property-desk/collections` and search for `DEMO-COL-2026-001`.
+1. Sign in as `sales@realcapita.com.bd` or `admin@realcapita.com.bd` using the public local/UAT password documented in README.md.
+2. Open `/crm-property-desk/customers` and choose a realistic seeded customer with bookings, sale contracts, installment schedules, and collection transaction history.
+3. From the profile transaction history, use `Printable Receipt`, or open `/crm-property-desk/collections` and choose a seeded collection.
 4. Open `Receipt` from the collections table or `Open Receipt` from the detail side panel.
 5. Use `Print Receipt` for the browser-print acknowledgement view.
 
@@ -188,49 +164,49 @@ It provides variation for:
 
 ## Analytics Demo Workflow
 
-Prompt 31/32/38 consume the same synthetic company through existing REST endpoints, frontend aggregation, and the read-only business overview report endpoint. For a populated supervisor demo:
+Prompt 31/32/38 consume the same realistic UAT company through existing REST endpoints, frontend aggregation, and the read-only business overview report endpoint. For a populated supervisor demo:
 
 ```powershell
-corepack pnpm seed:demo
-corepack pnpm seed:demo:verify
+corepack pnpm seed:realistic:uat
+corepack pnpm seed:realistic:verify
 ```
 
-Then sign in as a `demo.realcapita.test` user and review `/dashboard`, `/accounting/reports/business-overview`, `/accounting/reports/daily`, `/accounting/reports/weekly`, `/accounting/reports/monthly`, `/accounting/reports/yearly`, plus representative operational pages such as vouchers, project units, CRM leads/bookings/collections, HR employees/attendance/leave, payroll runs, attachments, and audit events. Empty analytics/report states should remain honest and may point operators back to these explicit seed commands when a populated supervisor demo is relevant. The UI must continue to label this as Demo/UAT data when the active company slug is `real-capita-demo-uat`.
+Then sign in as a `realcapita.com.bd` walkthrough user and review `/dashboard`, `/accounting/reports/business-overview`, `/accounting/reports/daily`, `/accounting/reports/weekly`, `/accounting/reports/monthly`, `/accounting/reports/yearly`, plus representative operational pages such as vouchers, project units, CRM leads/bookings/collections, HR employees/attendance/leave, payroll runs, attachments, and audit events. Empty analytics/report states should remain honest and may point operators back to these explicit seed commands when a populated supervisor demo is relevant.
 
 ## Verification
 
 Run:
 
 ```powershell
-corepack pnpm seed:demo:verify
+corepack pnpm seed:realistic:verify
 ```
 
 The verify command checks:
 
-- synthetic company existence
-- demo role access
+- realistic UAT company existence
+- walkthrough role access
 - non-zero key module counts
 - RCG-context project-name coverage
 - public block, zone, and unit-type pattern coverage
-- customer and employee synthetic-data safeguards
+- realistic UAT customer and employee safeguards
 - voucher type coverage
 - unit status coverage
 - payroll and leave status coverage
 - posted voucher balance
 - accounting activity across report-relevant account classes
-- reset marker cleanliness
+- reset safety and cross-module integrity
 
 If verification fails, do not use the database for supervisor demo until the failure is addressed.
 
 ## Reset Limitations
 
-Reset is deliberately conservative. It refuses to delete if the synthetic company contains unmarked records because those records may have been created outside the seed script.
+Reset is deliberately conservative and scoped to the exact `real-capita-group` company. Use it only when the Real Capita Group UAT workspace is intended to be refreshed.
 
 If reset refuses:
 
 1. Review the reported unmarked record type.
 2. Decide whether the data is intentional UAT evidence that should be preserved.
-3. Remove or mark that data manually only if the operator is certain it is synthetic demo/UAT data.
-4. Run `corepack pnpm seed:demo:reset -- --dry-run` again before running the actual reset.
+3. Remove data manually only if the operator is certain it is disposable local/UAT data.
+4. Run `corepack pnpm seed:realistic:uat:reset -- --dry-run` again before running the actual reset.
 
-Do not use this command to clean non-demo company data.
+Do not use this command to clean non-UAT company data.

@@ -22,17 +22,17 @@ This wrapper script:
 - normalizes `.env` to local-dev values if stale tunnel URLs are detected
 - rebuilds the Docker Compose stack with the current `.env`
 - verifies API health at `http://localhost:3333/api/v1/health`
-- verifies demo data with `corepack pnpm seed:demo:verify`
-- verifies local demo login against the API
+- verifies realistic UAT data with `corepack pnpm seed:realistic:verify`
+- verifies local UAT login against the API
 - then calls `start-live-demo.ps1 -SkipInitialBuild` to launch the Cloudflare tunnel
 
 Optional flags:
 
-- `-RefreshDemoData` — reseed demo data before verification (default: verify only)
-- `-DemoEmail` — override the demo login email (default: `demo.admin@demo.realcapita.test`)
-- `-DemoPassword` — override the demo login password (default: `change-me-demo-uat-password`)
+- `-RefreshDemoData` — reseed realistic UAT data before verification (default: verify only)
+- `-DemoEmail` — override the UAT login email (default: `admin@realcapita.com.bd`)
+- `-DemoPassword` — override the UAT login password (default: `rcg-uat-2026-password`)
 
-To reseed fresh demo data and launch:
+To reseed fresh realistic UAT data and launch:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\update-and-start-live-demo.ps1 -RefreshDemoData
@@ -57,7 +57,7 @@ The standalone script:
 - updates only the local `.env` URL/CORS values for the demo session
 - rebuilds/recreates `api` and `web`
 - verifies the public URL reaches the login page
-- verifies demo login works through the public URL
+- verifies UAT login works through the public URL
 
 ## Stop
 
@@ -90,7 +90,7 @@ The Quick Tunnel URL changes after every fresh start.
 The proven remote path covers:
 
 - login page
-- demo admin login (verified by the start script)
+- public UAT admin login (verified by the start script)
 - dashboard
 - Business Overview
 - Projects
@@ -110,17 +110,17 @@ The `update-and-start-live-demo.ps1` wrapper performs these checks before launch
 4. `.env` is normalized to local-dev values (stale tunnel URLs are repaired)
 5. Docker stack is rebuilt and healthy
 6. API health endpoint responds
-7. Demo data verification passes (`corepack pnpm seed:demo:verify`)
-8. Local demo login succeeds against the API
+7. Realistic UAT data verification passes (`corepack pnpm seed:realistic:verify`)
+8. Local UAT login succeeds against the API
 9. Cloudflare tunnel is launched (delegated to `start-live-demo.ps1`)
 10. Public URL login verification passes (delegated to `start-live-demo.ps1`)
 
 If any check fails, the script stops with a clear error message and guidance.
 
-## Demo Data Policy
+## Realistic UAT Data Policy
 
-- Default behavior: verify existing demo data only. If verification fails, the script stops and suggests rerunning with `-RefreshDemoData`.
-- With `-RefreshDemoData`: reseed demo data (`corepack pnpm seed:demo`) then verify. Continue only if verification passes.
+- Default behavior: verify existing realistic UAT data only. If verification fails, the script stops and suggests rerunning with `-RefreshDemoData`.
+- With `-RefreshDemoData`: reseed realistic UAT data (`corepack pnpm seed:realistic:uat`) then verify. Continue only if verification passes.
 - Never reseed automatically without the explicit flag.
 
 ## Known Caveat
@@ -164,7 +164,7 @@ Tunnel starts but the app does not open:
 
 Login fails at the public URL:
 
-- The start script verifies demo login through the public URL before reporting success.
+- The start script verifies UAT login through the public URL before reporting success.
 - If login fails, the script stops with an error. Run `stop-live-demo.ps1` to clean up and check the `.env` CORS/API URL configuration.
 
 Stale `.env` or restore backup detected:
