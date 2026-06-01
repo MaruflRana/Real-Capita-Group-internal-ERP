@@ -3,6 +3,7 @@ export type DefenseTracePanelPosition = 'bottom' | 'left' | 'right';
 export interface DefenseTracePreferences {
   panelPosition: DefenseTracePanelPosition;
   minimized: boolean;
+  inspectorMode: boolean;
 }
 
 export const DEFENSE_TRACE_PREFERENCES_STORAGE_KEY =
@@ -11,6 +12,7 @@ export const DEFENSE_TRACE_PREFERENCES_STORAGE_KEY =
 export const DEFAULT_DEFENSE_TRACE_PREFERENCES: DefenseTracePreferences = {
   panelPosition: 'right',
   minimized: false,
+  inspectorMode: true,
 };
 
 const isPanelPosition = (value: unknown): value is DefenseTracePanelPosition =>
@@ -40,6 +42,10 @@ export const readDefenseTracePreferences = (): DefenseTracePreferences => {
         typeof parsedValue.minimized === 'boolean'
           ? parsedValue.minimized
           : DEFAULT_DEFENSE_TRACE_PREFERENCES.minimized,
+      inspectorMode:
+        typeof parsedValue.inspectorMode === 'boolean'
+          ? parsedValue.inspectorMode
+          : DEFAULT_DEFENSE_TRACE_PREFERENCES.inspectorMode,
     };
   } catch {
     return DEFAULT_DEFENSE_TRACE_PREFERENCES;

@@ -30,14 +30,20 @@ const ActionButton = ({
   disabled = false,
   onClick,
   title,
+  variant = 'default',
 }: {
   children: React.ReactNode;
   disabled?: boolean;
   onClick: () => void;
   title?: string;
+  variant?: 'default' | 'primary';
 }) => (
   <button
-    className="inline-flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold text-foreground shadow-sm transition hover:border-brand-sky/60 hover:bg-brand-skySoft/60 disabled:cursor-not-allowed disabled:opacity-50"
+    className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
+      variant === 'primary'
+        ? 'border-brand-green/50 bg-brand-green text-white hover:bg-brand-green/90'
+        : 'border-border bg-background text-foreground hover:border-brand-sky/60 hover:bg-brand-skySoft/60'
+    }`}
     disabled={disabled}
     onClick={onClick}
     title={title}
@@ -82,6 +88,129 @@ export const DefenseTraceCopyCommandButton = ({
   );
 };
 
+export const DefenseTraceWorkspaceSetupCard = ({
+  onWorkspaceRootChange,
+  workspaceRoot,
+}: {
+  onWorkspaceRootChange: (value: string) => void;
+  workspaceRoot: string;
+}) => (
+  <section className="rounded-xl border border-brand-sky/30 bg-brand-skySoft/50 p-4 space-y-3">
+    <p className="text-sm font-semibold text-foreground">
+      Set your project root once
+    </p>
+    <p className="text-xs leading-relaxed text-muted-foreground">
+      In VS Code terminal, run:
+    </p>
+    <code className="block rounded bg-background/80 px-3 py-2 font-mono text-[11px] text-foreground">
+      (Get-Location).Path
+    </code>
+    <p className="text-xs leading-relaxed text-muted-foreground">
+      Or copy the helper command that sets clipboard automatically:
+    </p>
+    <DefenseTraceCopyCommandButton
+      command="(Get-Location).Path | Set-Clipboard"
+      label="Copy helper command"
+    />
+    <p className="text-xs leading-relaxed text-muted-foreground">
+      Then paste the result below.
+    </p>
+    <input
+      className="w-full rounded-lg border border-input bg-background px-3 py-2 font-mono text-xs text-foreground shadow-sm outline-none transition placeholder:text-muted-foreground focus:border-brand-sky focus:ring-2 focus:ring-brand-sky/25"
+      onChange={(event) => onWorkspaceRootChange(event.target.value)}
+      placeholder="e.g. C:/Users/wadud/Documents/New project"
+      type="text"
+      value={workspaceRoot}
+    />
+  </section>
+);
+
+export const DefenseTraceOpenFirstFile = ({
+  file,
+  workspaceRoot,
+  onWorkspaceRootChange,
+}: {
+  file: DefenseTraceFileReference;
+  workspaceRoot: string;
+  onWorkspaceRootChange: (value: string) => void;
+}) => {
+  const [status, setStatus] = useState<string | null>(null);
+  const resolvedTarget = resolveDefenseTraceFileTarget(file, workspaceRoot);
+  const hasWorkspaceRoot = Boolean(resolvedTarget);
+
+  const updateStatus = (message: string, timeout = 1800) => {
+    setStatus(message);
+    window.setTimeout(() => setStatus(null), timeout);
+  };
+
+  const copyValue = async (value: string, message = 'Copied') => {
+    try {
+      await copyTextToClipboard(value);
+      updateStatus(message);
+    } catch {
+      updateStatus('Copy unavailable', 2200);
+    }
+  };
+
+  const openInVscode = () => {
+    if (!resolvedTarget) {
+      updateStatus('Set workspace root first', 2200);
+      return;
+    }
+
+    window.location.href = resolvedTarget.vscodeUri;
+    updateStatus('Opening requested. If browser asks permission, choose Open Visual Studio Code.', 3200);
+  };
+
+  if (!hasWorkspaceRoot) {
+    return (
+      <div className="space-y-3">
+        <p className="text-sm font-semibold text-foreground">
+          Open this first: <code className="rounded bg-muted/50 px-1 py-0.5 font-mono text-[11px]">{file.relativePath}</code>
+        </p>
+        <DefenseTraceWorkspaceSetupCard
+          onWorkspaceRootChange={onWorkspaceRootChange}
+          workspaceRoot={workspaceRoot}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-semibold text-foreground">
+        Open this first: <code className="rounded bg-muted/50 px-1 py-0.5 font-mono text-[11px]">{file.relativePath}</code>
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        <ActionButton onClick={openInVscode} variant="primary" title="Open in VS Code">
+          <ExternalLink className="h-3.5 w-3.5" />
+          Open in VS Code
+        </ActionButton>
+        <ActionButton onClick={() => void copyValue(resolvedTarget!.absolutePath, 'Absolute path copied')} title="Copy absolute path">
+          <Clipboard className="h-3 w-3" />
+          Copy path
+        </ActionButton>
+        <ActionButton onClick={() => void copyValue(resolvedTarget!.vscodeCliCommand, 'VS Code command copied')} title="Copy VS Code CLI command">
+          <Clipboard className="h-3 w-3" />
+          Copy code command
+        </ActionButton>
+        <ActionButton onClick={() => void copyValue(resolvedTarget!.gitGrepCommand, 'git grep copied')} title="Copy git grep command">
+          <Clipboard className="h-3 w-3" />
+          Copy search
+        </ActionButton>
+      </div>
+      {status ? (
+        <p className="text-[11px] font-semibold text-brand-navy dark:text-brand-sky">
+          {status}
+        </p>
+      ) : null}
+      <p className="text-[11px] text-muted-foreground">
+        If browser asks permission, choose Open Visual Studio Code. If open fails, use Copy code command or Copy path as fallback.
+      </p>
+    </div>
+  );
+};
+
 export const DefenseTraceFileActions = ({
   file,
   workspaceRoot,
@@ -114,7 +243,7 @@ export const DefenseTraceFileActions = ({
     }
 
     window.location.href = resolvedTarget.vscodeUri;
-    updateStatus('Opening requested. Use copy command if blocked.', 3200);
+    updateStatus('Opening requested. If browser asks permission, choose Open Visual Studio Code.', 3200);
   };
 
   return (
@@ -173,17 +302,6 @@ export const DefenseTraceFileActions = ({
           code -g
         </ActionButton>
         <ActionButton
-          onClick={() => {
-            const command =
-              resolvedTarget?.ripgrepCommand ??
-              `rg --files | rg "${file.relativePath}"`;
-            void copyValue(command, 'Search command copied');
-          }}
-        >
-          <Clipboard className="h-3 w-3" />
-          rg
-        </ActionButton>
-        <ActionButton
           disabled={!hasWorkspaceRoot}
           onClick={openInVscode}
           title={
@@ -194,6 +312,30 @@ export const DefenseTraceFileActions = ({
         >
           <ExternalLink className="h-3 w-3" />
           Open
+        </ActionButton>
+        <ActionButton
+          onClick={() => {
+            const command =
+              resolvedTarget?.ripgrepCommand ??
+              `rg --files | rg "${file.relativePath}"`;
+            void copyValue(command, 'rg command copied');
+          }}
+          title="Copy ripgrep search command"
+        >
+          <Clipboard className="h-3 w-3" />
+          rg
+        </ActionButton>
+        <ActionButton
+          onClick={() => {
+            const command =
+              resolvedTarget?.gitGrepCommand ??
+              `git grep -n "${file.relativePath}" -- apps/web/src apps/api/src`;
+            void copyValue(command, 'git grep copied');
+          }}
+          title="Copy git grep search command"
+        >
+          <Clipboard className="h-3 w-3" />
+          git grep
         </ActionButton>
       </div>
       {status ? (

@@ -572,9 +572,12 @@ export const DefenseTracePanel = ({
   entries,
   isManualSelection,
   minimized,
+  inspectorMode,
   onClose,
+  onClosePanelKeepEnabled,
   onCurrentRouteSelect,
   onApiActivitiesClear,
+  onInspectorModeChange,
   onMinimizedChange,
   onPanelPositionChange,
   onSelectedEntryIdChange,
@@ -583,6 +586,7 @@ export const DefenseTracePanel = ({
   routeMatch,
   selectedEntry,
   selectedEntryId,
+  selectionSource,
   workspaceRoot,
 }: {
   apiActivities: readonly DefenseTraceApiActivity[];
@@ -590,9 +594,12 @@ export const DefenseTracePanel = ({
   entries: readonly DefenseTraceEntry[];
   isManualSelection: boolean;
   minimized: boolean;
+  inspectorMode: boolean;
   onClose: () => void;
+  onClosePanelKeepEnabled: () => void;
   onCurrentRouteSelect: () => void;
   onApiActivitiesClear: () => void;
+  onInspectorModeChange: (inspectorMode: boolean) => void;
   onMinimizedChange: (minimized: boolean) => void;
   onPanelPositionChange: (panelPosition: DefenseTracePanelPosition) => void;
   onSelectedEntryIdChange: (entryId: string) => void;
@@ -601,6 +608,7 @@ export const DefenseTracePanel = ({
   routeMatch: DefenseTraceRouteMatch | null;
   selectedEntry: DefenseTraceEntry | null;
   selectedEntryId: string;
+  selectionSource: string;
   workspaceRoot: string;
 }) => {
   const [topicSearch, setTopicSearch] = useState('');
@@ -682,6 +690,32 @@ export const DefenseTracePanel = ({
       </header>
 
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
+        {inspectorMode ? (
+          <div className="rounded-xl border border-brand-sky/30 bg-brand-skySoft/50 px-3 py-2 text-sm text-foreground">
+            <p className="font-semibold">Click any highlighted area to trace its code.</p>
+            <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+              <input
+                checked={inspectorMode}
+                className="h-3.5 w-3.5 accent-brand-sky"
+                onChange={(event) => onInspectorModeChange(event.target.checked)}
+                type="checkbox"
+              />
+              Inspector Mode ON — outlines and click-to-trace are active
+            </label>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                checked={inspectorMode}
+                className="h-3.5 w-3.5 accent-brand-sky"
+                onChange={(event) => onInspectorModeChange(event.target.checked)}
+                type="checkbox"
+              />
+              Inspector Mode OFF — turn on to highlight clickable trace areas
+            </label>
+          </div>
+        )}
         <section className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <Route className="h-4 w-4 text-brand-sky" />

@@ -76,6 +76,7 @@ export interface DefenseTraceResolvedFileTarget {
   vscodeUri: string;
   vscodeCliCommand: string;
   ripgrepCommand: string;
+  gitGrepCommand: string;
 }
 
 export interface DefenseTraceApiActivity {

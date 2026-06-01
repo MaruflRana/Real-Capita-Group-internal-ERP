@@ -28,7 +28,8 @@ const createVscodeUri = (absolutePath: string, line?: number): string => {
   const normalizedPath = absolutePath.replace(/\\/g, '/');
   const encodedPath = encodeURI(normalizedPath)
     .replace(/#/g, '%23')
-    .replace(/\?/g, '%3F');
+    .replace(/\?/g, '%3F')
+    .replace(/'/g, '%27');
 
   return `vscode://file/${encodedPath}${line ? `:${line}` : ''}`;
 };
@@ -45,6 +46,14 @@ const createRipgrepCommand = (fileReference: DefenseTraceFileReference): string 
   }
 
   return `rg --files | rg "${escapeDoubleQuotes(fileReference.relativePath)}"`;
+};
+
+const createGitGrepCommand = (fileReference: DefenseTraceFileReference): string => {
+  if (fileReference.symbolName) {
+    return `git grep -n "${escapeDoubleQuotes(fileReference.symbolName)}" -- apps/web/src apps/api/src`;
+  }
+
+  return `git grep -n "${escapeDoubleQuotes(fileReference.relativePath)}" -- apps/web/src apps/api/src`;
 };
 
 export const buildAbsolutePath = (
@@ -89,6 +98,7 @@ export const resolveDefenseTraceFileTarget = (
     vscodeUri: createVscodeUri(absolutePath, fileReference.line),
     vscodeCliCommand: createVscodeCliCommand(absolutePath, fileReference.line),
     ripgrepCommand: createRipgrepCommand(fileReference),
+    gitGrepCommand: createGitGrepCommand(fileReference),
   };
 };
 

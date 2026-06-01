@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -66,12 +67,38 @@ const writeTraceEnabled = (enabled: boolean): void => {
   }
 };
 
+const isEditableElement = (target: EventTarget | null): boolean => {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  const tagName = target.tagName;
+
+  if (
+    tagName === 'INPUT' ||
+    tagName === 'TEXTAREA' ||
+    tagName === 'SELECT'
+  ) {
+    return true;
+  }
+
+  if (target.isContentEditable) {
+    return true;
+  }
+
+  return false;
+};
+
 export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
   const pathname = usePathname() ?? '/';
   const [hasMounted, setHasMounted] = useState(false);
   const [enabled, setEnabled] = useState(false);
+  const [panelVisible, setPanelVisible] = useState(true);
   const [minimized, setMinimized] = useState(
     DEFAULT_DEFENSE_TRACE_PREFERENCES.minimized,
+  );
+  const [inspectorMode, setInspectorMode] = useState(
+    DEFAULT_DEFENSE_TRACE_PREFERENCES.inspectorMode,
   );
   const [panelPosition, setPanelPosition] = useState<DefenseTracePanelPosition>(
     DEFAULT_DEFENSE_TRACE_PREFERENCES.panelPosition,
@@ -79,25 +106,35 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
   const [workspaceRoot, setWorkspaceRoot] = useState('');
   const [selectedEntryId, setSelectedEntryId] = useState('');
   const [manualSelection, setManualSelection] = useState(false);
+  const [selectionSource, setSelectionSource] = useState<
+    'route' | 'click' | 'search' | 'api'
+  >('route');
   const [apiActivities, setApiActivities] = useState<
     readonly DefenseTraceApiActivity[]
   >([]);
   const routeMatch = useMemo(() => matchDefenseTraceEntry(pathname), [pathname]);
+  const tooltipRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setHasMounted(true);
 
     const searchParams = new URLSearchParams(window.location.search);
-    const shouldEnableFromUrl = searchParams.get('trace') === '1';
-    const shouldEnable = shouldEnableFromUrl || readTraceEnabled();
+    const traceParam = searchParams.get('trace');
 
-    setEnabled(shouldEnable);
-
-    if (shouldEnableFromUrl) {
+    if (traceParam === '1') {
+      setEnabled(true);
+      setPanelVisible(true);
       writeTraceEnabled(true);
+    } else if (traceParam === '0' || traceParam === 'off') {
+      setEnabled(false);
+      setPanelVisible(false);
+      writeTraceEnabled(false);
+    } else {
+      const shouldEnable = readTraceEnabled();
+      setEnabled(shouldEnable);
     }
 
-    if (shouldEnable) {
+    if (enabled || readTraceEnabled()) {
       setApiActivities(readDefenseTraceBufferedApiActivities());
     }
 
@@ -106,12 +143,14 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
 
     const preferences = readDefenseTracePreferences();
     setMinimized(preferences.minimized);
+    setInspectorMode(preferences.inspectorMode);
     setPanelPosition(preferences.panelPosition);
   }, []);
 
   useEffect(() => {
     if (!manualSelection) {
       setSelectedEntryId(routeMatch?.entry.id ?? '');
+      setSelectionSource('route');
     }
   }, [manualSelection, routeMatch?.entry.id]);
 
@@ -119,22 +158,31 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
     ({
       nextMinimized = minimized,
       nextPanelPosition = panelPosition,
+      nextInspectorMode = inspectorMode,
     }: {
       nextMinimized?: boolean;
       nextPanelPosition?: DefenseTracePanelPosition;
+      nextInspectorMode?: boolean;
     }) => {
       writeDefenseTracePreferences({
         minimized: nextMinimized,
         panelPosition: nextPanelPosition,
+        inspectorMode: nextInspectorMode,
       });
     },
-    [minimized, panelPosition],
+    [minimized, panelPosition, inspectorMode],
   );
 
   const toggleEnabled = useCallback(() => {
     setEnabled((currentEnabled) => {
       const nextEnabled = !currentEnabled;
       writeTraceEnabled(nextEnabled);
+      if (nextEnabled) {
+        setPanelVisible(true);
+      } else {
+        setPanelVisible(false);
+        setMinimized(false);
+      }
       return nextEnabled;
     });
     setMinimized(false);
@@ -143,28 +191,49 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (
-        event.ctrlKey &&
-        event.altKey &&
-        event.key.toLowerCase() === 't'
-      ) {
-        event.preventDefault();
-        event.stopPropagation();
-        toggleEnabled();
+      const isCtrlAltT =
+        event.ctrlKey && event.altKey && event.key.toLowerCase() === 't';
+
+      const isAltBackquote =
+        event.altKey && !event.ctrlKey && !event.shiftKey && event.key === '`';
+
+      if (!isCtrlAltT && !isAltBackquote) {
+        return;
       }
+
+      if (isEditableElement(event.target)) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      toggleEnabled();
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, true);
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDown, true);
     };
   }, [toggleEnabled]);
 
   const closeOverlay = useCallback(() => {
-    setEnabled(false);
+    setPanelVisible(false);
     setMinimized(false);
+    setEnabled(false);
     writeTraceEnabled(false);
+    persistPreferences({ nextMinimized: false });
+  }, [persistPreferences]);
+
+  const closePanelKeepEnabled = useCallback(() => {
+    setPanelVisible(false);
+    setMinimized(false);
+    persistPreferences({ nextMinimized: false });
+  }, [persistPreferences]);
+
+  const openPanel = useCallback(() => {
+    setPanelVisible(true);
+    setMinimized(false);
     persistPreferences({ nextMinimized: false });
   }, [persistPreferences]);
 
@@ -172,6 +241,14 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
     (nextMinimized: boolean) => {
       setMinimized(nextMinimized);
       persistPreferences({ nextMinimized });
+    },
+    [persistPreferences],
+  );
+
+  const updateInspectorMode = useCallback(
+    (nextInspectorMode: boolean) => {
+      setInspectorMode(nextInspectorMode);
+      persistPreferences({ nextInspectorMode });
     },
     [persistPreferences],
   );
@@ -190,16 +267,19 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
     writeDefenseTraceWorkspaceSettings(normalizedRoot);
   }, []);
 
-  const selectTraceEntry = useCallback((entryId: string) => {
+  const selectTraceEntry = useCallback((entryId: string, source: 'click' | 'search' | 'api' = 'click') => {
     setSelectedEntryId(entryId);
     setManualSelection(Boolean(entryId));
+    setSelectionSource(source);
     setMinimized(false);
+    setPanelVisible(true);
     persistPreferences({ nextMinimized: false });
   }, [persistPreferences]);
 
   const selectCurrentRouteTrace = useCallback(() => {
     setManualSelection(false);
     setSelectedEntryId(routeMatch?.entry.id ?? '');
+    setSelectionSource('route');
   }, [routeMatch?.entry.id]);
 
   const clearApiActivities = useCallback(() => {
@@ -231,10 +311,12 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      setSelectedEntryId(traceEntryId);
-      setManualSelection(true);
-      setMinimized(false);
-      persistPreferences({ nextMinimized: false });
+      if (inspectorMode) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+
+      selectTraceEntry(traceEntryId, 'click');
     };
 
     document.addEventListener('click', handleTraceAnchorClick, true);
@@ -242,7 +324,90 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       document.removeEventListener('click', handleTraceAnchorClick, true);
     };
-  }, [enabled, persistPreferences]);
+  }, [enabled, inspectorMode, selectTraceEntry]);
+
+  useEffect(() => {
+    if (!enabled || !inspectorMode) {
+      const existing = tooltipRef.current;
+
+      if (existing && existing.parentNode) {
+        existing.parentNode.removeChild(existing);
+      }
+
+      return;
+    }
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const target = event.target;
+
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      const traceElement = target.closest<HTMLElement>('[data-defense-trace]');
+      const existing = tooltipRef.current;
+
+      if (!traceElement) {
+        if (existing && existing.parentNode) {
+          existing.parentNode.removeChild(existing);
+          tooltipRef.current = null;
+        }
+
+        return;
+      }
+
+      if (!tooltipRef.current) {
+        tooltipRef.current = document.createElement('div');
+        tooltipRef.current.textContent = 'Click to trace code';
+        tooltipRef.current.setAttribute('role', 'tooltip');
+        tooltipRef.current.style.cssText =
+          'position:fixed;z-index:91;padding:4px 10px;font-size:11px;font-weight:600;' +
+          'background:hsl(var(--brand-navy));color:#fff;border-radius:6px;' +
+          'pointer-events:none;white-space:nowrap;font-family:system-ui,sans-serif;' +
+          'box-shadow:0 2px 8px rgba(0,0,0,0.18);';
+        document.body.appendChild(tooltipRef.current);
+      }
+
+      tooltipRef.current.textContent = 'Click to trace code';
+
+      const offset = 12;
+      const tooltipWidth = tooltipRef.current.offsetWidth;
+      const viewportWidth = window.innerWidth;
+
+      let left = event.clientX + offset;
+
+      if (left + tooltipWidth > viewportWidth - 8) {
+        left = event.clientX - tooltipWidth - offset;
+      }
+
+      tooltipRef.current.style.left = `${left}px`;
+      tooltipRef.current.style.top = `${event.clientY - 28}px`;
+    };
+
+    const handleMouseLeave = () => {
+      const existing = tooltipRef.current;
+
+      if (existing && existing.parentNode) {
+        existing.parentNode.removeChild(existing);
+        tooltipRef.current = null;
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseleave', handleMouseLeave);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseleave', handleMouseLeave);
+
+      const existing = tooltipRef.current;
+
+      if (existing && existing.parentNode) {
+        existing.parentNode.removeChild(existing);
+        tooltipRef.current = null;
+      }
+    };
+  }, [enabled, inspectorMode]);
 
   useEffect(() => {
     if (!enabled) {
@@ -285,40 +450,76 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
     [routeMatch?.entry, selectedEntryId],
   );
 
+  const showPanel = hasMounted && enabled && panelVisible;
+  const showLauncher =
+    hasMounted && enabled && !panelVisible;
+  const showInspectorStyles =
+    hasMounted && enabled && inspectorMode;
+
   return (
     <>
       {children}
-      {hasMounted && enabled ? (
+      {showPanel ? (
         <DefenseTracePanel
           currentPathname={pathname}
           apiActivities={apiActivities}
           entries={defenseTraceRegistry}
           isManualSelection={manualSelection}
           minimized={minimized}
+          inspectorMode={inspectorMode}
           onClose={closeOverlay}
+          onClosePanelKeepEnabled={closePanelKeepEnabled}
           onCurrentRouteSelect={selectCurrentRouteTrace}
           onApiActivitiesClear={clearApiActivities}
+          onInspectorModeChange={updateInspectorMode}
           onMinimizedChange={updateMinimized}
           onPanelPositionChange={updatePanelPosition}
-          onSelectedEntryIdChange={selectTraceEntry}
+          onSelectedEntryIdChange={(entryId) => selectTraceEntry(entryId, 'search')}
           onWorkspaceRootChange={updateWorkspaceRoot}
           panelPosition={panelPosition}
           routeMatch={routeMatch}
           selectedEntry={selectedEntry}
           selectedEntryId={selectedEntryId}
+          selectionSource={selectionSource}
           workspaceRoot={workspaceRoot}
         />
       ) : null}
-      {hasMounted && enabled ? (
+      {showLauncher ? (
+        <button
+          className="fixed bottom-4 right-4 z-[89] flex items-center gap-2 rounded-lg border border-brand-sky/40 bg-card px-3 py-2 text-xs font-semibold text-foreground shadow-lg shadow-black/15 transition hover:border-brand-sky/70 hover:bg-brand-skySoft/40"
+          onClick={openPanel}
+          title="Open Defense Trace"
+          type="button"
+        >
+          <span className="inline-flex items-center justify-center rounded-md bg-brand-green px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+            Trace
+          </span>
+          <span className="text-muted-foreground">Trace mode enabled</span>
+        </button>
+      ) : null}
+      {showInspectorStyles ? (
         <style>
           {`
             [data-defense-trace] {
-              outline: 1px solid hsl(var(--brand-sky) / 0.45);
+              outline: 2px solid hsl(var(--brand-sky) / 0.55);
               outline-offset: 3px;
+              cursor: pointer;
+              transition: outline-color 0.15s ease;
             }
 
             [data-defense-trace]:hover {
-              outline-color: hsl(var(--brand-green) / 0.75);
+              outline-color: hsl(var(--brand-green) / 0.8);
+              outline-width: 3px;
+            }
+          `}
+        </style>
+      ) : null}
+      {hasMounted && enabled && !inspectorMode ? (
+        <style>
+          {`
+            [data-defense-trace] {
+              outline: 1px solid hsl(var(--brand-sky) / 0.25);
+              outline-offset: 2px;
             }
           `}
         </style>
