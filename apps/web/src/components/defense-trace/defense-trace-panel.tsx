@@ -859,8 +859,9 @@ export const DefenseTracePanel = ({
       </div>
 
       <footer className="border-t border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
-        Toggle with Ctrl + Shift + D. This overlay is local, read-only, and
-        hidden during normal demos unless enabled.
+        Press Ctrl + Alt + T to toggle Defense Trace. If a browser or system
+        shortcut conflicts, open the page with `?trace=1`. This overlay is
+        local, read-only, and hidden during normal demos unless enabled.
       </footer>
     </aside>
   );

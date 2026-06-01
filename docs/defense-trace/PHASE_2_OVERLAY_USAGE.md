@@ -13,8 +13,10 @@ The overlay is hidden during normal demos unless explicitly enabled.
 Enable or disable from any page:
 
 ```text
-Ctrl + Shift + D
+Ctrl + Alt + T
 ```
+
+If a browser or system shortcut conflicts, open the page with `?trace=1`.
 
 Enable from a URL for the current browser session:
 

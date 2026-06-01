@@ -145,10 +145,11 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (
         event.ctrlKey &&
-        event.shiftKey &&
-        event.key.toLowerCase() === 'd'
+        event.altKey &&
+        event.key.toLowerCase() === 't'
       ) {
         event.preventDefault();
+        event.stopPropagation();
         toggleEnabled();
       }
     };

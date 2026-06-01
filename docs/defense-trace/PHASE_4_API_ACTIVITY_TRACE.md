@@ -46,7 +46,7 @@ The API activity list is not written to Git-tracked config or localStorage.
 
 ## How To Use During Defense
 
-1. Open a route with `?trace=1` or press `Ctrl + Shift + D`.
+1. Open a route with `?trace=1` or press `Ctrl + Alt + T`.
 2. Open **Recent API Activity**.
 3. Trigger a page load or safe read-only action.
 4. Point to the method, request path, status, duration, and matched topic.
