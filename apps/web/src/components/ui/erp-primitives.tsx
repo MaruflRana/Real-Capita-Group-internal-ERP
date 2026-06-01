@@ -171,6 +171,7 @@ export const PageSection = ({
   children,
   className,
   contentClassName,
+  ...restProps
 }: {
   eyebrow?: string | undefined;
   title: string;
@@ -179,8 +180,8 @@ export const PageSection = ({
   children: ReactNode;
   className?: string | undefined;
   contentClassName?: string | undefined;
-}) => (
-  <section className={cn('space-y-4 xl:space-y-5', className)}>
+} & HTMLAttributes<HTMLElement>) => (
+  <section className={cn('space-y-4 xl:space-y-5', className)} {...restProps}>
     <div className="flex flex-col gap-4 border-b border-brand-sky/30 pb-3.5 lg:flex-row lg:items-start lg:justify-between">
       <div className="min-w-0 space-y-2">
         {eyebrow ? (

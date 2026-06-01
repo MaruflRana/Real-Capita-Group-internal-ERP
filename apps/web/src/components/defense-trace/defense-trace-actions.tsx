@@ -97,7 +97,7 @@ export const DefenseTraceWorkspaceSetupCard = ({
 }) => (
   <section className="rounded-xl border border-brand-sky/30 bg-brand-skySoft/50 p-4 space-y-3">
     <p className="text-sm font-semibold text-foreground">
-      Set your project root once
+      Set project root first.
     </p>
     <p className="text-xs leading-relaxed text-muted-foreground">
       In VS Code terminal, run:
@@ -129,10 +129,12 @@ export const DefenseTraceOpenFirstFile = ({
   file,
   workspaceRoot,
   onWorkspaceRootChange,
+  primaryActionLabel = 'Open primary',
 }: {
   file: DefenseTraceFileReference;
   workspaceRoot: string;
   onWorkspaceRootChange: (value: string) => void;
+  primaryActionLabel?: string;
 }) => {
   const [status, setStatus] = useState<string | null>(null);
   const resolvedTarget = resolveDefenseTraceFileTarget(file, workspaceRoot);
@@ -168,6 +170,17 @@ export const DefenseTraceOpenFirstFile = ({
         <p className="text-sm font-semibold text-foreground">
           Open this first: <code className="rounded bg-muted/50 px-1 py-0.5 font-mono text-[11px]">{file.relativePath}</code>
         </p>
+        {file.rolePurpose ? (
+          <p className="text-[11px] text-muted-foreground">
+            Purpose: <span className="font-semibold">{file.rolePurpose}</span>
+          </p>
+        ) : null}
+        <div className="flex flex-wrap gap-2">
+          <DefenseTraceCopyCommandButton
+            command={file.relativePath}
+            label="Copy path"
+          />
+        </div>
         <DefenseTraceWorkspaceSetupCard
           onWorkspaceRootChange={onWorkspaceRootChange}
           workspaceRoot={workspaceRoot}
@@ -179,22 +192,50 @@ export const DefenseTraceOpenFirstFile = ({
   return (
     <div className="space-y-2">
       <p className="text-sm font-semibold text-foreground">
-        Open this first: <code className="rounded bg-muted/50 px-1 py-0.5 font-mono text-[11px]">{file.relativePath}</code>
+        Open this first: <code className="rounded bg-muted/5 px-1 py-0.5 font-mono text-[11px]">{file.relativePath}</code>
       </p>
-      <div className="flex flex-wrap gap-1.5">
-        <ActionButton onClick={openInVscode} variant="primary" title="Open in VS Code">
-          <ExternalLink className="h-3.5 w-3.5" />
-          Open in VS Code
-        </ActionButton>
-        <ActionButton onClick={() => void copyValue(resolvedTarget!.absolutePath, 'Absolute path copied')} title="Copy absolute path">
+      {file.symbolName ? (
+        <p className="text-[11px] text-muted-foreground">
+          Component: <span className="font-semibold">{file.symbolName}</span>
+        </p>
+      ) : null}
+      {file.rolePurpose ? (
+        <p className="text-[11px] text-muted-foreground">
+          Purpose: <span className="font-semibold">{file.rolePurpose}</span>
+        </p>
+      ) : null}
+      {file.line ? (
+        <p className="text-[11px] text-muted-foreground">
+          Line: <span className="font-semibold">{file.line}</span>
+        </p>
+      ) : null}
+
+      {/* Large primary button */}
+      <button
+        className="inline-flex items-center justify-center gap-2 rounded-xl border-brand-green/50 bg-brand-green px-5 py-3 text-sm font-bold text-white shadow-md transition hover:bg-brand-green/90 disabled:cursor-not-allowed disabled:opacity-50"
+        disabled={!hasWorkspaceRoot}
+        onClick={openInVscode}
+        type="button"
+      >
+        <ExternalLink className="h-4 w-4" />
+        {primaryActionLabel}
+      </button>
+
+      {/* Secondary buttons */}
+      <div className="flex flex-wrap gap-2">
+        <ActionButton onClick={() => void copyValue(file.relativePath, 'Relative path copied')}>
           <Clipboard className="h-3 w-3" />
           Copy path
         </ActionButton>
-        <ActionButton onClick={() => void copyValue(resolvedTarget!.vscodeCliCommand, 'VS Code command copied')} title="Copy VS Code CLI command">
+        <ActionButton onClick={() => void copyValue(resolvedTarget!.absolutePath, 'Absolute path copied')}>
+          <Clipboard className="h-3 w-3" />
+          Copy absolute path
+        </ActionButton>
+        <ActionButton onClick={() => void copyValue(resolvedTarget!.vscodeCliCommand, 'Command copied')}>
           <Clipboard className="h-3 w-3" />
           Copy code command
         </ActionButton>
-        <ActionButton onClick={() => void copyValue(resolvedTarget!.gitGrepCommand, 'git grep copied')} title="Copy git grep command">
+        <ActionButton onClick={() => void copyValue(resolvedTarget!.gitGrepCommand, 'Search command copied')}>
           <Clipboard className="h-3 w-3" />
           Copy search
         </ActionButton>
@@ -249,6 +290,9 @@ export const DefenseTraceFileActions = ({
   return (
     <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-2">
       <div className="min-w-0">
+        <p className="text-xs font-semibold text-foreground">
+          {file.rolePurpose ?? 'Source file'}
+        </p>
         <code className="block break-all rounded bg-background/80 px-2 py-1 font-mono text-[11px] leading-relaxed text-foreground">
           {file.relativePath}
           {file.line ? `:${file.line}` : ''}
@@ -264,7 +308,7 @@ export const DefenseTraceFileActions = ({
           onClick={() => copyValue(file.relativePath, 'Relative path copied')}
         >
           <Clipboard className="h-3 w-3" />
-          Relative
+          Copy path
         </ActionButton>
         <ActionButton
           disabled={!hasWorkspaceRoot}
@@ -280,7 +324,7 @@ export const DefenseTraceFileActions = ({
           }
         >
           <Clipboard className="h-3 w-3" />
-          Absolute
+          Copy absolute
         </ActionButton>
         <ActionButton
           disabled={!hasWorkspaceRoot}
@@ -299,7 +343,7 @@ export const DefenseTraceFileActions = ({
           }
         >
           <Clipboard className="h-3 w-3" />
-          code -g
+          Copy command
         </ActionButton>
         <ActionButton
           disabled={!hasWorkspaceRoot}
@@ -315,27 +359,18 @@ export const DefenseTraceFileActions = ({
         </ActionButton>
         <ActionButton
           onClick={() => {
-            const command =
-              resolvedTarget?.ripgrepCommand ??
-              `rg --files | rg "${file.relativePath}"`;
-            void copyValue(command, 'rg command copied');
-          }}
-          title="Copy ripgrep search command"
-        >
-          <Clipboard className="h-3 w-3" />
-          rg
-        </ActionButton>
-        <ActionButton
-          onClick={() => {
+            const fileName =
+              file.relativePath.split('/').pop()?.replace(/\.[^.]+$/, '') ??
+              file.relativePath;
             const command =
               resolvedTarget?.gitGrepCommand ??
-              `git grep -n "${file.relativePath}" -- apps/web/src apps/api/src`;
+              `git grep -n "${file.symbolName ?? fileName}" -- apps/web/src apps/api/src prisma`;
             void copyValue(command, 'git grep copied');
           }}
           title="Copy git grep search command"
         >
           <Clipboard className="h-3 w-3" />
-          git grep
+          Copy search
         </ActionButton>
       </div>
       {status ? (

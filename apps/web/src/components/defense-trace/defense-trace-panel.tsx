@@ -29,11 +29,14 @@ import type {
   DefenseTraceApiActivity,
   DefenseTraceEntry,
   DefenseTraceFileReference,
+  DefenseTraceQuestionAngle,
   DefenseTraceSearchCommand,
 } from '../../lib/defense-trace/types';
+import { buildAbsolutePath } from '../../lib/defense-trace/workspace-root';
 import {
   DefenseTraceCopyCommandButton,
   DefenseTraceFileActions,
+  DefenseTraceOpenFirstFile,
 } from './defense-trace-actions';
 
 const formatCategory = (category: string): string =>
@@ -41,6 +44,14 @@ const formatCategory = (category: string): string =>
     .split('-')
     .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
     .join(' ');
+
+const formatSelectionSource = (source: string): string => {
+  if (source === 'click') return 'click';
+  if (source === 'route') return 'route';
+  if (source === 'search') return 'search';
+  if (source === 'api') return 'API';
+  return source;
+};
 
 const getPanelPositionClassName = (
   panelPosition: DefenseTracePanelPosition,
@@ -70,16 +81,16 @@ const getMinimizedPositionClassName = (
   return 'bottom-4 right-4';
 };
 
-const PathGroup = ({
+const CollapsedSection = ({
+  children,
+  count,
   defaultOpen = false,
-  files,
   title,
-  workspaceRoot,
 }: {
+  children: React.ReactNode;
+  count?: number;
   defaultOpen?: boolean;
-  files: readonly DefenseTraceFileReference[];
   title: string;
-  workspaceRoot: string;
 }) => (
   <details
     className="group rounded-lg border border-border bg-card/80"
@@ -87,30 +98,43 @@ const PathGroup = ({
   >
     <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-foreground">
       <span>
-        {title}{' '}
-        <span className="text-xs font-normal text-muted-foreground">
-          ({files.length})
-        </span>
+        {title}
+        {count !== undefined ? (
+          <span className="text-xs font-normal text-muted-foreground">
+            {' '}({count})
+          </span>
+        ) : null}
       </span>
       <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition group-open:rotate-180" />
     </summary>
     <div className="space-y-2 border-t border-border p-2">
-      {files.length > 0 ? (
-        files.map((file) => (
-          <DefenseTraceFileActions
-            file={file}
-            key={`${title}-${file.relativePath}-${file.line ?? 'root'}`}
-            workspaceRoot={workspaceRoot}
-          />
-        ))
-      ) : (
-        <p className="rounded-md bg-muted/40 px-2 py-1.5 text-xs text-muted-foreground">
-          No verified path registered for this group. Use the search commands
-          below to confirm ownership before editing.
-        </p>
-      )}
+      {children}
     </div>
   </details>
+);
+
+const PathList = ({
+  files,
+  workspaceRoot,
+}: {
+  files: readonly DefenseTraceFileReference[];
+  workspaceRoot: string;
+}) => (
+  <div className="space-y-2">
+    {files.length > 0 ? (
+      files.map((file) => (
+        <DefenseTraceFileActions
+          file={file}
+          key={`${file.relativePath}-${file.line ?? 'root'}`}
+          workspaceRoot={workspaceRoot}
+        />
+      ))
+    ) : (
+      <p className="rounded-md bg-muted/40 px-2 py-1.5 text-xs text-muted-foreground">
+        No registered files for this group.
+      </p>
+    )}
+  </div>
 );
 
 const SearchCommandList = ({
@@ -145,6 +169,443 @@ const SearchCommandList = ({
   </div>
 );
 
+const QUESTION_ANGLES: readonly {
+  id: DefenseTraceQuestionAngle;
+  label: string;
+}[] = [
+  { id: 'ui-frontend', label: 'UI / Frontend' },
+  { id: 'api-call', label: 'API Call' },
+  { id: 'backend-logic', label: 'Backend Logic' },
+  { id: 'database-model', label: 'Database Model' },
+  { id: 'full-flow', label: 'Full Flow' },
+];
+
+const getAngleTitle = (angle: DefenseTraceQuestionAngle): string => {
+  if (angle === 'api-call') return 'Where data comes from';
+  if (angle === 'backend-logic') return 'Backend logic';
+  if (angle === 'database-model') return 'Database models';
+  if (angle === 'full-flow') return 'Full code flow';
+  return 'Open UI code';
+};
+
+const getAngleExplanation = (
+  angle: DefenseTraceQuestionAngle,
+  entry: DefenseTraceEntry,
+): string => {
+  if (angle === 'api-call') {
+    return 'Start at the frontend API helper, then use recent captured paths or search commands to connect the screen to REST requests.';
+  }
+
+  if (angle === 'backend-logic') {
+    return entry.backendFiles.length > 0
+      ? 'Start at the NestJS controller or service registered for this topic.'
+      : 'No exact backend file is registered yet, so use the backend search command as the safe next step.';
+  }
+
+  if (angle === 'database-model') {
+    return entry.prismaModels.length > 0
+      ? 'Start with the Prisma model names and schema search so the data structure is easy to explain.'
+      : 'This topic has no Prisma model registered yet; explain it as frontend or API focused unless a backend search finds a model.';
+  }
+
+  if (angle === 'full-flow') {
+    return 'Open the chain in order: UI file, API helper, backend logic if registered, then Prisma model search.';
+  }
+
+  return 'Start with the React/Next.js screen file that renders the selected UI.';
+};
+
+const createPrismaSchemaFile = (
+  entry: DefenseTraceEntry,
+): DefenseTraceFileReference | null => {
+  if (entry.prismaModels.length === 0) {
+    return null;
+  }
+
+  const primaryModel = entry.prismaModels[0];
+
+  return {
+    relativePath: 'prisma/schema.prisma',
+    ...(primaryModel ? { symbolName: primaryModel } : {}),
+    rolePurpose: 'Database schema/model',
+    openStrategy: 'vscode-file-uri',
+    copyStrategy: ['relative-path', 'absolute-path', 'vscode-cli', 'ripgrep'],
+  };
+};
+
+const dedupeFiles = (
+  files: readonly (DefenseTraceFileReference | null | undefined)[],
+): DefenseTraceFileReference[] => {
+  const seen = new Set<string>();
+
+  return files.filter((file): file is DefenseTraceFileReference => {
+    if (!file) {
+      return false;
+    }
+
+    const key = `${file.relativePath}:${file.line ?? ''}:${file.symbolName ?? ''}`;
+
+    if (seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+};
+
+const getQuestionAngleFiles = (
+  entry: DefenseTraceEntry,
+  angle: DefenseTraceQuestionAngle,
+): DefenseTraceFileReference[] => {
+  const frontendFiles = dedupeFiles([
+    entry.primaryFrontendFile,
+    ...entry.frontendRouteFiles,
+    ...entry.frontendFeatureFiles,
+  ]);
+  const prismaSchemaFile = createPrismaSchemaFile(entry);
+
+  if (angle === 'api-call') {
+    return dedupeFiles(entry.frontendApiFiles);
+  }
+
+  if (angle === 'backend-logic') {
+    return dedupeFiles(entry.backendFiles);
+  }
+
+  if (angle === 'database-model') {
+    return dedupeFiles([prismaSchemaFile]);
+  }
+
+  if (angle === 'full-flow') {
+    return dedupeFiles([
+      frontendFiles[0],
+      ...entry.frontendApiFiles,
+      ...entry.backendFiles,
+      prismaSchemaFile,
+    ]);
+  }
+
+  return frontendFiles;
+};
+
+const escapeDoubleQuotes = (value: string): string => value.replace(/"/g, '\\"');
+
+const createOpenAllCommand = (
+  files: readonly DefenseTraceFileReference[],
+  workspaceRoot: string,
+): string | null => {
+  const targets = files
+    .map((file) => {
+      const absolutePath = buildAbsolutePath(workspaceRoot, file.relativePath);
+
+      if (!absolutePath) {
+        return null;
+      }
+
+      return file.line ? `${absolutePath}:${file.line}` : absolutePath;
+    })
+    .filter((target): target is string => Boolean(target));
+
+  if (targets.length === 0) {
+    return null;
+  }
+
+  return `code -g ${targets
+    .map((target) => `"${escapeDoubleQuotes(target)}"`)
+    .join(' ')}`;
+};
+
+const createAngleSearchCommand = ({
+  angle,
+  clickedLabel,
+  entry,
+}: {
+  angle: DefenseTraceQuestionAngle;
+  clickedLabel: string;
+  entry: DefenseTraceEntry;
+}): string => {
+  const labelTerm =
+    clickedLabel || entry.uiTexts[0] || entry.label || entry.id;
+  const escapedLabel = escapeDoubleQuotes(labelTerm);
+
+  if (angle === 'api-call') {
+    const apiTerm = entry.apiPatterns?.[0] ?? entry.id;
+
+    return `git grep -n "${escapeDoubleQuotes(apiTerm)}" -- apps/web/src/lib/api apps/web/src/features apps/api/src`;
+  }
+
+  if (angle === 'backend-logic') {
+    return `git grep -n "${escapeDoubleQuotes(entry.id)}" -- apps/api/src apps/web/src/lib/api`;
+  }
+
+  if (angle === 'database-model') {
+    const model = entry.prismaModels[0] ?? entry.label;
+
+    return `git grep -n "model ${escapeDoubleQuotes(model)}" -- prisma`;
+  }
+
+  if (angle === 'full-flow') {
+    return `git grep -n "${escapeDoubleQuotes(entry.id)}" -- apps/web/src apps/api/src prisma`;
+  }
+
+  return `git grep -n "${escapedLabel}" -- apps/web/src apps/api/src prisma`;
+};
+
+const getMatchingApiActivities = (
+  entry: DefenseTraceEntry,
+  activities: readonly DefenseTraceApiActivity[],
+): DefenseTraceApiActivity[] =>
+  activities
+    .filter(
+      (activity) =>
+        activity.matchedTraceEntryId === entry.id ||
+        entry.apiPatterns?.some((pattern) =>
+          activity.path.toLowerCase().includes(pattern.toLowerCase()),
+        ),
+    )
+    .slice(0, 3);
+
+const QuestionAngleSelector = ({
+  questionAngle,
+  onQuestionAngleChange,
+}: {
+  questionAngle: DefenseTraceQuestionAngle;
+  onQuestionAngleChange: (questionAngle: DefenseTraceQuestionAngle) => void;
+}) => (
+  <section className="rounded-xl border border-border bg-card/90 p-3">
+    <p className="text-sm font-semibold text-foreground">
+      Choose what faculty asked
+    </p>
+    <div className="mt-2 grid gap-2 sm:grid-cols-2">
+      {QUESTION_ANGLES.map((angle) => {
+        const isActive = questionAngle === angle.id;
+
+        return (
+          <button
+            className={`rounded-lg border px-3 py-2 text-left text-xs font-semibold transition ${
+              isActive
+                ? 'border-brand-green/60 bg-brand-greenSoft text-brand-navy'
+                : 'border-border bg-muted/25 text-foreground hover:border-brand-sky/50 hover:bg-brand-skySoft/45'
+            }`}
+            key={angle.id}
+            onClick={() => onQuestionAngleChange(angle.id)}
+            type="button"
+          >
+            {angle.label}
+          </button>
+        );
+      })}
+    </div>
+  </section>
+);
+
+const FlowStep = ({
+  files,
+  label,
+  models,
+  workspaceRoot,
+}: {
+  files?: readonly DefenseTraceFileReference[];
+  label: string;
+  models?: readonly string[];
+  workspaceRoot: string;
+}) => (
+  <div className="rounded-lg border border-border bg-muted/25 p-2">
+    <p className="text-xs font-semibold text-foreground">{label}</p>
+    {files && files.length > 0 ? (
+      <div className="mt-2 space-y-2">
+        {files.slice(0, 2).map((file) => (
+          <DefenseTraceFileActions
+            file={file}
+            key={`${label}-${file.relativePath}-${file.line ?? 'root'}`}
+            workspaceRoot={workspaceRoot}
+          />
+        ))}
+      </div>
+    ) : models && models.length > 0 ? (
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {models.map((model) => (
+          <span
+            className="rounded-full border border-border bg-background px-2 py-1 font-mono text-[11px] font-semibold text-foreground"
+            key={model}
+          >
+            {model}
+          </span>
+        ))}
+      </div>
+    ) : (
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        No registered item for this layer.
+      </p>
+    )}
+  </div>
+);
+
+const ApiActivityPreview = ({
+  activities,
+}: {
+  activities: readonly DefenseTraceApiActivity[];
+}) => (
+  <div className="space-y-2">
+    <p className="text-xs font-semibold text-foreground">
+      Recent matching API calls
+    </p>
+    {activities.length > 0 ? (
+      <div className="space-y-1.5">
+        {activities.map((activity) => (
+          <div
+            className="rounded-lg border border-border bg-background/70 p-2"
+            key={activity.id}
+          >
+            <div className="flex flex-wrap gap-2 text-[11px]">
+              <span className="rounded bg-brand-navy px-1.5 py-0.5 font-mono font-semibold text-white">
+                {activity.method}
+              </span>
+              <span className="rounded bg-muted px-1.5 py-0.5 font-semibold text-muted-foreground">
+                {activity.statusCode ?? 'No status'}
+              </span>
+              <span className="rounded bg-muted px-1.5 py-0.5 font-semibold text-muted-foreground">
+                {activity.durationMs} ms
+              </span>
+            </div>
+            <code className="mt-1 block break-all font-mono text-[11px] text-foreground">
+              {activity.path}
+            </code>
+          </div>
+        ))}
+      </div>
+    ) : (
+      <p className="rounded-lg border border-dashed border-border bg-muted/25 px-3 py-2 text-xs text-muted-foreground">
+        No matching API calls captured yet. Refresh this page or open the related data page.
+      </p>
+    )}
+  </div>
+);
+
+const QuestionAngleAnswerCard = ({
+  apiActivities,
+  clickedLabel,
+  entry,
+  onWorkspaceRootChange,
+  questionAngle,
+  workspaceRoot,
+}: {
+  apiActivities: readonly DefenseTraceApiActivity[];
+  clickedLabel: string;
+  entry: DefenseTraceEntry;
+  onWorkspaceRootChange: (workspaceRoot: string) => void;
+  questionAngle: DefenseTraceQuestionAngle;
+  workspaceRoot: string;
+}) => {
+  const angleFiles = getQuestionAngleFiles(entry, questionAngle);
+  const primaryFile = angleFiles[0] ?? null;
+  const openAllCommand =
+    angleFiles.length > 1 ? createOpenAllCommand(angleFiles, workspaceRoot) : null;
+  const searchCommand = createAngleSearchCommand({
+    angle: questionAngle,
+    clickedLabel,
+    entry,
+  });
+  const matchingApiActivities = getMatchingApiActivities(entry, apiActivities);
+
+  return (
+    <section className="space-y-3 rounded-xl border border-brand-green/30 bg-brand-greenSoft/40 p-3">
+      <div className="space-y-1">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <FileCode2 className="h-4 w-4 text-brand-green" />
+          {getAngleTitle(questionAngle)}
+        </h3>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          {getAngleExplanation(questionAngle, entry)}
+        </p>
+      </div>
+
+      {primaryFile ? (
+        <DefenseTraceOpenFirstFile
+          file={primaryFile}
+          onWorkspaceRootChange={onWorkspaceRootChange}
+          primaryActionLabel="Open primary"
+          workspaceRoot={workspaceRoot}
+        />
+      ) : (
+        <p className="rounded-lg border border-dashed border-border bg-muted/25 px-3 py-3 text-sm text-muted-foreground">
+          No primary file is registered for this angle. Use the search command below.
+        </p>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        <DefenseTraceCopyCommandButton
+          command={searchCommand}
+          label="Copy search"
+        />
+        {angleFiles.length > 1 && openAllCommand ? (
+          <DefenseTraceCopyCommandButton
+            command={openAllCommand}
+            label="Copy Open all command"
+          />
+        ) : angleFiles.length > 1 ? (
+          <span className="rounded-md border border-border bg-background px-2 py-1 text-[11px] font-semibold text-muted-foreground">
+            Set project root to copy Open all relevant files command.
+          </span>
+        ) : null}
+      </div>
+
+      {questionAngle === 'database-model' && entry.prismaModels.length > 0 ? (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-foreground">
+            Prisma models
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {entry.prismaModels.map((model) => (
+              <span
+                className="rounded-full border border-border bg-background px-2 py-1 font-mono text-[11px] font-semibold text-foreground"
+                key={model}
+              >
+                {model}
+              </span>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {questionAngle === 'api-call' ? (
+        <ApiActivityPreview activities={matchingApiActivities} />
+      ) : null}
+
+      {questionAngle === 'full-flow' ? (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-foreground">
+            Ordered code flow
+          </p>
+          <div className="space-y-2">
+            <FlowStep
+              files={dedupeFiles([entry.primaryFrontendFile])}
+              label="UI file"
+              workspaceRoot={workspaceRoot}
+            />
+            <FlowStep
+              files={entry.frontendApiFiles}
+              label="API helper"
+              workspaceRoot={workspaceRoot}
+            />
+            <FlowStep
+              files={entry.backendFiles}
+              label="Backend controller/service"
+              workspaceRoot={workspaceRoot}
+            />
+            <FlowStep
+              label="Database model"
+              models={entry.prismaModels}
+              workspaceRoot={workspaceRoot}
+            />
+          </div>
+        </div>
+      ) : null}
+    </section>
+  );
+};
+
 const RecentApiActivity = ({
   activities,
   onClear,
@@ -156,26 +617,15 @@ const RecentApiActivity = ({
   onSelectedEntryIdChange: (entryId: string) => void;
   selectedEntry: DefenseTraceEntry | null;
 }) => (
-  <details className="group rounded-xl border border-border bg-card">
-    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-foreground">
-      <span className="flex items-center gap-2">
-        <Activity className="h-4 w-4 text-brand-green" />
-        Recent API Activity
-        <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
-          {activities.length}
-        </span>
-      </span>
-      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition group-open:rotate-180" />
-    </summary>
-    <div className="space-y-3 border-t border-border p-3">
+  <CollapsedSection count={activities.length} title="Recent API Activity">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="space-y-1">
           <p className="inline-flex rounded-full border border-brand-green/30 bg-brand-greenSoft px-2 py-1 text-[11px] font-semibold text-brand-navy">
             Trace capture active
           </p>
           <p className="text-xs leading-relaxed text-muted-foreground">
-            Metadata-only request trace. It shows method, request path, status,
-            duration, and matched topic when available.
+            Metadata-only request trace. Method, path, status, duration, and matched topic.
           </p>
         </div>
         <button
@@ -293,7 +743,7 @@ const RecentApiActivity = ({
         </div>
       )}
     </div>
-  </details>
+  </CollapsedSection>
 );
 
 const TraceLayerLadder = ({ entry }: { entry: DefenseTraceEntry }) => {
@@ -302,7 +752,7 @@ const TraceLayerLadder = ({ entry }: { entry: DefenseTraceEntry }) => {
       key: 'ui',
       label: 'UI',
       isPresent: entry.routePatterns.length > 0 || entry.uiTexts.length > 0,
-      description: 'What the user sees/clicks.',
+      description: 'What the user sees or clicks.',
     },
     {
       key: 'frontend',
@@ -322,11 +772,11 @@ const TraceLayerLadder = ({ entry }: { entry: DefenseTraceEntry }) => {
       key: 'backend',
       label: 'Backend',
       isPresent: entry.backendFiles.length > 0,
-      description: 'NestJS controller/service business logic.',
+      description: 'NestJS business logic.',
     },
     {
       key: 'data-model',
-      label: 'Data Model',
+      label: 'Database',
       isPresent: entry.prismaModels.length > 0,
       description: 'Prisma/PostgreSQL structure.',
     },
@@ -373,201 +823,10 @@ const TraceLayerLadder = ({ entry }: { entry: DefenseTraceEntry }) => {
   );
 };
 
-const TraceEntryDetails = ({
-  entry,
-  workspaceRoot,
-}: {
-  entry: DefenseTraceEntry;
-  workspaceRoot: string;
-}) => (
-  <div className="space-y-3">
-    <section className="rounded-xl border border-brand-sky/30 bg-brand-skySoft/50 p-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-brand-navy px-2.5 py-1 text-xs font-semibold text-white">
-          {formatCategory(entry.category)}
-        </span>
-        <span className="rounded-full border border-brand-sky/40 bg-background/80 px-2.5 py-1 text-xs font-semibold text-brand-navy">
-          Presenter-safe
-        </span>
-      </div>
-      <h2 className="mt-2 text-base font-semibold text-foreground">
-        {entry.label}
-      </h2>
-      <p className="mt-1 text-sm leading-relaxed text-foreground">
-        {entry.presenterSummary}
-      </p>
-    </section>
-
-    <section className="space-y-2">
-      <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-        <Route className="h-4 w-4 text-brand-sky" />
-        Route patterns
-      </h3>
-      <div className="flex flex-wrap gap-1.5">
-        {entry.routePatterns.length > 0 ? (
-          entry.routePatterns.map((pattern) => (
-            <code
-              className="rounded-full border border-border bg-muted/50 px-2 py-1 font-mono text-[11px] text-foreground"
-              key={pattern}
-            >
-              {pattern}
-            </code>
-          ))
-        ) : (
-          <span className="text-xs text-muted-foreground">
-            No route pattern. This is a cross-cutting reference entry.
-          </span>
-        )}
-      </div>
-    </section>
-
-    <section className="space-y-2">
-      <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-        <Code2 className="h-4 w-4 text-brand-green" />
-        Stack context
-      </h3>
-      <p className="rounded-lg border border-border bg-muted/30 p-3 text-sm leading-relaxed text-foreground">
-        {entry.stackContext}
-      </p>
-    </section>
-
-    <TraceLayerLadder entry={entry} />
-
-    <section className="space-y-2">
-      <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-        <FileCode2 className="h-4 w-4 text-brand-sky" />
-        Source paths
-      </h3>
-      <PathGroup
-        defaultOpen
-        files={entry.frontendRouteFiles}
-        title="Frontend route files"
-        workspaceRoot={workspaceRoot}
-      />
-      <PathGroup
-        defaultOpen={entry.frontendFeatureFiles.length <= 5}
-        files={entry.frontendFeatureFiles}
-        title="Frontend feature files"
-        workspaceRoot={workspaceRoot}
-      />
-      <PathGroup
-        defaultOpen={entry.frontendApiFiles.length <= 4}
-        files={entry.frontendApiFiles}
-        title="Frontend API files"
-        workspaceRoot={workspaceRoot}
-      />
-      <PathGroup
-        defaultOpen={entry.backendFiles.length > 0 && entry.backendFiles.length <= 5}
-        files={entry.backendFiles}
-        title="Backend files"
-        workspaceRoot={workspaceRoot}
-      />
-    </section>
-
-    <section className="space-y-2">
-      <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-        <Database className="h-4 w-4 text-brand-green" />
-        Prisma models
-      </h3>
-      <div className="flex flex-wrap gap-1.5 rounded-lg border border-border bg-muted/30 p-2">
-        {entry.prismaModels.length > 0 ? (
-          entry.prismaModels.map((model) => (
-            <span
-              className="rounded-full border border-border bg-background px-2 py-1 font-mono text-[11px] font-semibold text-foreground"
-              key={model}
-            >
-              {model}
-            </span>
-          ))
-        ) : (
-          <span className="text-xs text-muted-foreground">
-            No Prisma model is directly tied to this trace entry.
-          </span>
-        )}
-      </div>
-    </section>
-
-    <section className="space-y-2">
-      <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
-        <Search className="h-4 w-4 text-brand-sky" />
-        Search commands
-      </h3>
-      <SearchCommandList commands={entry.searchCommands} />
-    </section>
-
-    <section className="space-y-2">
-      <h3 className="text-sm font-semibold text-foreground">Edit impact</h3>
-      <ul className="space-y-1 rounded-lg border border-border bg-muted/30 p-3 text-sm leading-relaxed text-foreground">
-        {entry.editImpact.map((item) => (
-          <li className="flex gap-2" key={item}>
-            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-green" />
-            <span>{item}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-
-    <details className="group rounded-xl border border-border bg-card/90">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-foreground">
-        <span className="flex items-center gap-2">
-          <BookOpen className="h-4 w-4 text-brand-navy dark:text-brand-sky" />
-          Study Notes
-        </span>
-        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition group-open:rotate-180" />
-      </summary>
-      <div className="space-y-3 border-t border-border p-3 text-sm leading-relaxed text-foreground">
-        <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Beginner explanation
-          </h4>
-          <p className="mt-1">{entry.beginnerExplanation}</p>
-        </div>
-        <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Implementation notes
-          </h4>
-          <ul className="mt-1 space-y-1">
-            {entry.implementationNotes.map((note) => (
-              <li className="flex gap-2" key={note}>
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-sky" />
-                <span>{note}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Study notes
-          </h4>
-          <ul className="mt-1 space-y-1">
-            {entry.studyNotes.map((note) => (
-              <li className="flex gap-2" key={note}>
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-green" />
-                <span>{note}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Risk notes
-          </h4>
-          <ul className="mt-1 space-y-1">
-            {entry.riskNotes.map((note) => (
-              <li className="flex gap-2" key={note}>
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-status-warning" />
-                <span>{note}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </details>
-  </div>
-);
-
 export const DefenseTracePanel = ({
   apiActivities,
+  clickedKind,
+  clickedLabel,
   currentPathname,
   entries,
   isManualSelection,
@@ -580,9 +839,11 @@ export const DefenseTracePanel = ({
   onInspectorModeChange,
   onMinimizedChange,
   onPanelPositionChange,
+  onQuestionAngleChange,
   onSelectedEntryIdChange,
   onWorkspaceRootChange,
   panelPosition,
+  questionAngle,
   routeMatch,
   selectedEntry,
   selectedEntryId,
@@ -590,6 +851,8 @@ export const DefenseTracePanel = ({
   workspaceRoot,
 }: {
   apiActivities: readonly DefenseTraceApiActivity[];
+  clickedKind: string;
+  clickedLabel: string;
   currentPathname: string;
   entries: readonly DefenseTraceEntry[];
   isManualSelection: boolean;
@@ -602,9 +865,11 @@ export const DefenseTracePanel = ({
   onInspectorModeChange: (inspectorMode: boolean) => void;
   onMinimizedChange: (minimized: boolean) => void;
   onPanelPositionChange: (panelPosition: DefenseTracePanelPosition) => void;
+  onQuestionAngleChange: (questionAngle: DefenseTraceQuestionAngle) => void;
   onSelectedEntryIdChange: (entryId: string) => void;
   onWorkspaceRootChange: (workspaceRoot: string) => void;
   panelPosition: DefenseTracePanelPosition;
+  questionAngle: DefenseTraceQuestionAngle;
   routeMatch: DefenseTraceRouteMatch | null;
   selectedEntry: DefenseTraceEntry | null;
   selectedEntryId: string;
@@ -628,7 +893,7 @@ export const DefenseTracePanel = ({
               Defense Trace
             </p>
             <p className="truncate text-sm font-semibold">
-              {routeMatch?.entry.label ?? 'No route match'}
+              {clickedLabel || selectedEntry?.label || routeMatch?.entry.label || 'No selection'}
             </p>
           </div>
           <div className="flex shrink-0 gap-1">
@@ -661,12 +926,9 @@ export const DefenseTracePanel = ({
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-white/75">
-              Professional trace overlay
+              Defense Trace
             </p>
-            <h1 className="mt-1 text-lg font-semibold">Defense Trace</h1>
-            <p className="mt-1 text-sm text-white/85">
-              Read-only route-to-source guide for the current ERP screen.
-            </p>
+            <h1 className="mt-1 text-lg font-semibold">Code Inspector</h1>
           </div>
           <div className="flex shrink-0 gap-1">
             <button
@@ -689,10 +951,11 @@ export const DefenseTracePanel = ({
         </div>
       </header>
 
-      <div className="flex-1 space-y-4 overflow-y-auto p-4">
+      <div className="flex-1 space-y-3 overflow-y-auto p-3">
+        {/* A. Inspector instruction */}
         {inspectorMode ? (
-          <div className="rounded-xl border border-brand-sky/30 bg-brand-skySoft/50 px-3 py-2 text-sm text-foreground">
-            <p className="font-semibold">Click any highlighted area to trace its code.</p>
+          <div className="rounded-xl border border-brand-sky/30 bg-brand-skySoft/50 px-3 py-2.5 text-sm text-foreground">
+            <p className="font-semibold">Click a highlighted UI part to trace its code.</p>
             <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
               <input
                 checked={inspectorMode}
@@ -700,7 +963,7 @@ export const DefenseTracePanel = ({
                 onChange={(event) => onInspectorModeChange(event.target.checked)}
                 type="checkbox"
               />
-              Inspector Mode ON — outlines and click-to-trace are active
+              Inspector Mode ON - outlines and click-to-trace are active
             </label>
           </div>
         ) : (
@@ -712,31 +975,53 @@ export const DefenseTracePanel = ({
                 onChange={(event) => onInspectorModeChange(event.target.checked)}
                 type="checkbox"
               />
-              Inspector Mode OFF — turn on to highlight clickable trace areas
+              Inspector Mode OFF - turn on to highlight clickable trace areas
             </label>
           </div>
         )}
-        <section className="space-y-2 rounded-xl border border-border bg-muted/30 p-3">
-          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+
+        <section className="rounded-xl border border-brand-sky/30 bg-brand-skySoft/50 p-3 space-y-2">
+          <div className="flex items-center gap-2">
             <Route className="h-4 w-4 text-brand-sky" />
-            Current route
+            <span className="text-sm font-semibold text-foreground">Selected UI</span>
           </div>
-          <code className="block break-all rounded bg-background/80 px-2 py-1 font-mono text-xs text-foreground">
-            {currentPathname}
-          </code>
-          {routeMatch ? (
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Matched{' '}
-                <span className="font-semibold text-foreground">
-                  {routeMatch.entry.label}
-                </span>{' '}
-                through pattern{' '}
-                <code className="rounded bg-background px-1 py-0.5 font-mono text-[11px]">
-                  {routeMatch.pattern}
-                </code>
-                .
-              </p>
+          {selectedEntry ? (
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-brand-navy px-2.5 py-1 text-xs font-semibold text-white">
+                  {formatCategory(selectedEntry.category)}
+                </span>
+                <span className="text-sm font-semibold text-foreground">
+                  {clickedLabel || selectedEntry.label}
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <span>
+                  Selected UI: <span className="font-semibold text-foreground">{clickedLabel || selectedEntry.label}</span>
+                </span>
+                <span>
+                  Kind: <span className="font-semibold text-foreground">{clickedKind || 'trace topic'}</span>
+                </span>
+                <span>
+                  Matched by: <span className="font-semibold text-foreground">{formatSelectionSource(selectionSource)}</span>
+                </span>
+                <span>
+                  Trace topic: <span className="font-semibold text-foreground">{selectedEntry.label}</span>
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {selectedEntry.routePatterns.map((pattern) => (
+                  <code
+                    className="rounded-full border border-brand-sky/35 bg-background px-2 py-0.5 font-mono text-[11px] text-foreground"
+                    key={pattern}
+                  >
+                    {pattern}
+                  </code>
+                ))}
+              </div>
+              <code className="block break-all rounded bg-background/80 px-2 py-1 font-mono text-[11px] text-foreground">
+                {currentPathname}
+              </code>
               {isManualSelection ? (
                 <button
                   className="rounded-md border border-brand-sky/40 bg-brand-skySoft/60 px-2.5 py-1 text-xs font-semibold text-brand-navy transition hover:bg-brand-skySoft"
@@ -748,85 +1033,316 @@ export const DefenseTracePanel = ({
               ) : null}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              No route-specific trace entry matched this page. Use visible page
-              text with repository search, or use the browser Network tab to
-              identify the API helper path.
-            </p>
+            <div className="space-y-1">
+              <code className="block break-all rounded bg-background/80 px-2 py-1 font-mono text-[11px] text-foreground">
+                {currentPathname}
+              </code>
+              <p className="text-sm text-muted-foreground">
+                No route-specific trace entry matched this page. Use topic search below or enable Inspector Mode to click UI parts.
+              </p>
+            </div>
           )}
         </section>
 
-        <RecentApiActivity
-          activities={apiActivities}
-          onClear={onApiActivitiesClear}
-          onSelectedEntryIdChange={onSelectedEntryIdChange}
-          selectedEntry={selectedEntry}
-        />
-
-        <section className="space-y-3 rounded-xl border border-border bg-card p-3">
-          <label
-            className="flex items-center gap-2 text-sm font-semibold text-foreground"
-            htmlFor="defense-trace-search"
-          >
-            <Search className="h-4 w-4 text-brand-green" />
-            Topic search
-          </label>
-          <input
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-brand-sky focus:ring-2 focus:ring-brand-sky/25"
-            id="defense-trace-search"
-            onChange={(event) => setTopicSearch(event.target.value)}
-            placeholder="Search dashboard, voucher, prisma, role..."
-            type="search"
-            value={topicSearch}
+        {selectedEntry ? (
+          <QuestionAngleSelector
+            onQuestionAngleChange={onQuestionAngleChange}
+            questionAngle={questionAngle}
           />
-          <div className="space-y-1">
-            <p className="text-xs text-muted-foreground">
-              {filteredEntries.length} trace topic
-              {filteredEntries.length === 1 ? '' : 's'} available.
-            </p>
-            <div className="max-h-44 space-y-1 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
-              {filteredEntries.length > 0 ? (
-                filteredEntries.map((entry) => {
-                  const isSelected = entry.id === selectedEntryId;
+        ) : null}
 
-                  return (
-                    <button
-                      className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition ${
-                        isSelected
-                          ? 'border-brand-green/50 bg-brand-greenSoft/70 text-foreground'
-                          : 'border-border bg-muted/25 text-foreground hover:border-brand-sky/50 hover:bg-brand-skySoft/45'
-                      }`}
-                      key={entry.id}
-                      onClick={() => onSelectedEntryIdChange(entry.id)}
-                      type="button"
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate font-semibold">
-                          {entry.label}
-                        </span>
-                        <span className="block truncate text-[11px] text-muted-foreground">
-                          {formatCategory(entry.category)}
-                        </span>
+        {selectedEntry ? (
+          <QuestionAngleAnswerCard
+            apiActivities={apiActivities}
+            clickedLabel={clickedLabel}
+            entry={selectedEntry}
+            onWorkspaceRootChange={onWorkspaceRootChange}
+            questionAngle={questionAngle}
+            workspaceRoot={workspaceRoot}
+          />
+        ) : null}
+
+        {/* D. Trace ladder */}
+        {selectedEntry ? (
+          <TraceLayerLadder entry={selectedEntry} />
+        ) : null}
+
+        {/* E. Collapsed sections */}
+        {selectedEntry ? (
+          <>
+            <CollapsedSection
+              count={
+                dedupeFiles([
+                  ...selectedEntry.frontendRouteFiles,
+                  ...selectedEntry.frontendFeatureFiles,
+                ]).length
+              }
+              defaultOpen={false}
+              title="More frontend files"
+            >
+              <PathList
+                files={dedupeFiles([
+                  ...selectedEntry.frontendRouteFiles,
+                  ...selectedEntry.frontendFeatureFiles,
+                ])}
+                workspaceRoot={workspaceRoot}
+              />
+            </CollapsedSection>
+
+            {selectedEntry.frontendApiFiles.length > 0 ? (
+              <CollapsedSection count={selectedEntry.frontendApiFiles.length} defaultOpen={false} title="API helper files">
+                <PathList files={selectedEntry.frontendApiFiles} workspaceRoot={workspaceRoot} />
+              </CollapsedSection>
+            ) : null}
+
+            {selectedEntry.backendFiles.length > 0 ? (
+              <CollapsedSection count={selectedEntry.backendFiles.length} defaultOpen={false} title="Backend files">
+                <PathList files={selectedEntry.backendFiles} workspaceRoot={workspaceRoot} />
+              </CollapsedSection>
+            ) : null}
+
+            {selectedEntry.prismaModels.length > 0 ? (
+              <CollapsedSection defaultOpen={false} title="Database models">
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-1.5 p-1">
+                    {selectedEntry.prismaModels.map((model) => (
+                      <span
+                        className="rounded-full border border-border bg-background px-2 py-1 font-mono text-[11px] font-semibold text-foreground"
+                        key={model}
+                      >
+                        {model}
                       </span>
-                      {isSelected ? (
-                        <span className="shrink-0 rounded-full bg-brand-green px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                          Active
-                        </span>
-                      ) : null}
-                    </button>
-                  );
-                })
-              ) : (
-                <p className="rounded-lg border border-dashed border-border bg-muted/25 px-3 py-3 text-sm text-muted-foreground">
-                  No matching trace topic. Try a route label, visible screen
-                  text, API term, or Prisma model name.
-                </p>
-              )}
-            </div>
-          </div>
-        </section>
+                    ))}
+                  </div>
+                  <DefenseTraceCopyCommandButton
+                    command={createAngleSearchCommand({
+                      angle: 'database-model',
+                      clickedLabel,
+                      entry: selectedEntry,
+                    })}
+                    label="Copy search"
+                  />
+                </div>
+              </CollapsedSection>
+            ) : null}
 
-        <details className="group rounded-xl border border-border bg-card">
+            <RecentApiActivity
+              activities={apiActivities}
+              onClear={onApiActivitiesClear}
+              onSelectedEntryIdChange={onSelectedEntryIdChange}
+              selectedEntry={selectedEntry}
+            />
+
+            <CollapsedSection count={filteredEntries.length} defaultOpen={false} title="Topic search">
+              <div className="space-y-2">
+                <input
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-brand-sky focus:ring-2 focus:ring-brand-sky/25"
+                  id="defense-trace-search"
+                  onChange={(event) => setTopicSearch(event.target.value)}
+                  placeholder="Search dashboard, voucher, prisma, role..."
+                  type="search"
+                  value={topicSearch}
+                />
+                <div className="max-h-44 space-y-1 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
+                  {filteredEntries.length > 0 ? (
+                    filteredEntries.map((entry) => {
+                      const isSelected = entry.id === selectedEntryId;
+
+                      return (
+                        <button
+                          className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition ${
+                            isSelected
+                              ? 'border-brand-green/50 bg-brand-greenSoft/70 text-foreground'
+                              : 'border-border bg-muted/25 text-foreground hover:border-brand-sky/50 hover:bg-brand-skySoft/45'
+                          }`}
+                          key={entry.id}
+                          onClick={() => onSelectedEntryIdChange(entry.id)}
+                          type="button"
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate font-semibold">
+                              {entry.label}
+                            </span>
+                            <span className="block truncate text-[11px] text-muted-foreground">
+                              {formatCategory(entry.category)}
+                            </span>
+                          </span>
+                          {isSelected ? (
+                            <span className="shrink-0 rounded-full bg-brand-green px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                              Active
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <p className="rounded-lg border border-dashed border-border bg-muted/25 px-3 py-3 text-sm text-muted-foreground">
+                      No matching trace topic.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CollapsedSection>
+
+            <CollapsedSection defaultOpen={false} title="Study Notes / Implementation Notes">
+              <div className="space-y-3 p-1 text-sm leading-relaxed text-foreground">
+                <div>
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Presenter summary
+                  </h4>
+                  <p className="mt-1 rounded-lg border border-border bg-muted/30 p-3">{selectedEntry.presenterSummary}</p>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Stack context
+                  </h4>
+                  <p className="mt-1 rounded-lg border border-border bg-muted/30 p-3">{selectedEntry.stackContext}</p>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Beginner explanation
+                  </h4>
+                  <p className="mt-1">{selectedEntry.beginnerExplanation}</p>
+                </div>
+
+                {selectedEntry.searchCommands.length > 0 ? (
+                  <div>
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Search commands
+                    </h4>
+                    <SearchCommandList commands={selectedEntry.searchCommands} />
+                  </div>
+                ) : null}
+
+                <div>
+                  <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Edit impact
+                  </h4>
+                  <ul className="space-y-1 mt-1 rounded-lg border border-border bg-muted/30 p-3">
+                    {selectedEntry.editImpact.map((item) => (
+                      <li className="flex gap-2" key={item}>
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-green" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {selectedEntry.implementationNotes.length > 0 ? (
+                  <div>
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Implementation Notes
+                    </h4>
+                    <ul className="mt-1 space-y-1">
+                      {selectedEntry.implementationNotes.map((note) => (
+                        <li className="flex gap-2" key={note}>
+                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-sky" />
+                          <span>{note}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                {selectedEntry.studyNotes.length > 0 ? (
+                  <div>
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Study notes
+                    </h4>
+                    <ul className="mt-1 space-y-1">
+                      {selectedEntry.studyNotes.map((note) => (
+                        <li className="flex gap-2" key={note}>
+                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-green" />
+                          <span>{note}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                {selectedEntry.riskNotes.length > 0 ? (
+                  <div>
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Risk notes
+                    </h4>
+                    <ul className="mt-1 space-y-1">
+                      {selectedEntry.riskNotes.map((note) => (
+                        <li className="flex gap-2" key={note}>
+                          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-status-warning" />
+                          <span>{note}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
+            </CollapsedSection>
+          </>
+        ) : (
+          <>
+            <RecentApiActivity
+              activities={apiActivities}
+              onClear={onApiActivitiesClear}
+              onSelectedEntryIdChange={onSelectedEntryIdChange}
+              selectedEntry={selectedEntry}
+            />
+
+            <CollapsedSection count={filteredEntries.length} defaultOpen={true} title="Topic search">
+              <div className="space-y-2">
+                <input
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-brand-sky focus:ring-2 focus:ring-brand-sky/25"
+                  id="defense-trace-search"
+                  onChange={(event) => setTopicSearch(event.target.value)}
+                  placeholder="Search dashboard, voucher, prisma, role..."
+                  type="search"
+                  value={topicSearch}
+                />
+                <div className="max-h-44 space-y-1 overflow-y-auto pr-1 [scrollbar-gutter:stable]">
+                  {filteredEntries.length > 0 ? (
+                    filteredEntries.map((entry) => {
+                      const isSelected = entry.id === selectedEntryId;
+
+                      return (
+                        <button
+                          className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition ${
+                            isSelected
+                              ? 'border-brand-green/50 bg-brand-greenSoft/70 text-foreground'
+                              : 'border-border bg-muted/25 text-foreground hover:border-brand-sky/50 hover:bg-brand-skySoft/45'
+                          }`}
+                          key={entry.id}
+                          onClick={() => onSelectedEntryIdChange(entry.id)}
+                          type="button"
+                        >
+                          <span className="min-w-0">
+                            <span className="block truncate font-semibold">
+                              {entry.label}
+                            </span>
+                            <span className="block truncate text-[11px] text-muted-foreground">
+                              {formatCategory(entry.category)}
+                            </span>
+                          </span>
+                          {isSelected ? (
+                            <span className="shrink-0 rounded-full bg-brand-green px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                              Active
+                            </span>
+                          ) : null}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <p className="rounded-lg border border-dashed border-border bg-muted/25 px-3 py-3 text-sm text-muted-foreground">
+                      No matching trace topic.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CollapsedSection>
+          </>
+        )}
+
+        <details className="group rounded-xl border border-border bg-card/90">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-semibold text-foreground">
             <span className="flex items-center gap-2">
               <Settings className="h-4 w-4 text-brand-sky" />
@@ -872,30 +1388,14 @@ export const DefenseTracePanel = ({
               value={workspaceRoot}
             />
             <p className="text-xs leading-relaxed text-muted-foreground">
-              Set this once per machine. Example: your local repository root.
-              The value is stored only in this browser's localStorage.
+              Set this once per machine. The value is stored only in this browser localStorage.
             </p>
           </div>
         </details>
-
-        {selectedEntry ? (
-          <TraceEntryDetails entry={selectedEntry} workspaceRoot={workspaceRoot} />
-        ) : (
-          <section className="rounded-xl border border-dashed border-brand-sky/40 bg-brand-skySoft/40 p-4 text-sm leading-relaxed text-foreground">
-            <p className="font-semibold">No trace entry selected.</p>
-            <p className="mt-1 text-muted-foreground">
-              Search by visible page text in the repository, or use the browser
-              Network tab to identify which API helper is active for this
-              screen.
-            </p>
-          </section>
-        )}
       </div>
 
       <footer className="border-t border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
-        Press Ctrl + Alt + T to toggle Defense Trace. If a browser or system
-        shortcut conflicts, open the page with `?trace=1`. This overlay is
-        local, read-only, and hidden during normal demos unless enabled.
+        Press Ctrl + Alt + T to toggle. This overlay is local, read-only, and hidden during normal use unless enabled.
       </footer>
     </aside>
   );

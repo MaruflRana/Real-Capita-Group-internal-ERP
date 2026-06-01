@@ -17,11 +17,13 @@ const fileRef = (
   options: {
     line?: number;
     symbolName?: string;
+    rolePurpose?: string;
   } = {},
 ): DefenseTraceFileReference => ({
   relativePath,
   ...(options.line === undefined ? {} : { line: options.line }),
   ...(options.symbolName ? { symbolName: options.symbolName } : {}),
+  ...(options.rolePurpose ? { rolePurpose: options.rolePurpose } : {}),
   openStrategy: 'vscode-file-uri',
   copyStrategy: DEFAULT_COPY_STRATEGIES,
 });
@@ -49,26 +51,55 @@ export const defenseTraceRegistry = [
       'Total assets',
       'Operational health',
     ],
+    primaryFrontendFile: fileRef('apps/web/src/features/dashboard/dashboard-page.tsx', {
+      symbolName: 'DashboardPage',
+      rolePurpose: 'Main UI component',
+    }),
     frontendRouteFiles: [
-      fileRef('apps/web/src/app/(app)/dashboard/page.tsx'),
+      fileRef('apps/web/src/app/(app)/dashboard/page.tsx', {
+        rolePurpose: 'Route page',
+      }),
     ],
     frontendFeatureFiles: [
       fileRef('apps/web/src/features/dashboard/dashboard-page.tsx', {
         symbolName: 'DashboardPage',
+        rolePurpose: 'Main UI component',
       }),
-      fileRef('apps/web/src/features/dashboard/hooks.ts'),
-      fileRef('apps/web/src/features/dashboard/shared.tsx'),
-      fileRef('apps/web/src/features/dashboard/health-status-card.tsx'),
-      fileRef('apps/web/src/features/dashboard/utils.ts'),
+      fileRef('apps/web/src/features/dashboard/hooks.ts', {
+        rolePurpose: 'Dashboard hooks',
+      }),
+      fileRef('apps/web/src/features/dashboard/shared.tsx', {
+        rolePurpose: 'Shared dashboard components',
+      }),
+      fileRef('apps/web/src/features/dashboard/health-status-card.tsx', {
+        rolePurpose: 'Health status card',
+      }),
+      fileRef('apps/web/src/features/dashboard/utils.ts', {
+        rolePurpose: 'Dashboard utility functions',
+      }),
     ],
     frontendApiFiles: [
-      fileRef('apps/web/src/lib/api/dashboard.ts'),
-      fileRef('apps/web/src/lib/api/financial-reporting.ts'),
-      fileRef('apps/web/src/lib/api/accounting.ts'),
-      fileRef('apps/web/src/lib/api/crm-property-desk.ts'),
-      fileRef('apps/web/src/lib/api/hr-core.ts'),
-      fileRef('apps/web/src/lib/api/payroll.ts'),
-      fileRef('apps/web/src/lib/api/audit-documents.ts'),
+      fileRef('apps/web/src/lib/api/dashboard.ts', {
+        rolePurpose: 'API helper',
+      }),
+      fileRef('apps/web/src/lib/api/financial-reporting.ts', {
+        rolePurpose: 'Financial reporting API helper',
+      }),
+      fileRef('apps/web/src/lib/api/accounting.ts', {
+        rolePurpose: 'Accounting API helper',
+      }),
+      fileRef('apps/web/src/lib/api/crm-property-desk.ts', {
+        rolePurpose: 'CRM API helper',
+      }),
+      fileRef('apps/web/src/lib/api/hr-core.ts', {
+        rolePurpose: 'HR API helper',
+      }),
+      fileRef('apps/web/src/lib/api/payroll.ts', {
+        rolePurpose: 'Payroll API helper',
+      }),
+      fileRef('apps/web/src/lib/api/audit-documents.ts', {
+        rolePurpose: 'Audit documents API helper',
+      }),
     ],
     backendFiles: [],
     prismaModels: [
@@ -125,6 +156,9 @@ export const defenseTraceRegistry = [
     routePatterns: ['/login'],
     apiPatterns: ['auth/login', 'auth/me', 'auth/refresh', 'auth/logout'],
     uiTexts: ['Real Capita Group', 'Checking session', 'Select the company workspace'],
+    primaryFrontendFile: fileRef('apps/web/src/features/auth/login-page.tsx', {
+      symbolName: 'LoginPage',
+    }),
     frontendRouteFiles: [
       fileRef('apps/web/src/app/(public)/login/page.tsx'),
     ],
@@ -199,6 +233,7 @@ export const defenseTraceRegistry = [
     ],
     apiPatterns: ['auth/me', 'roles', 'users/:userId/roles', 'access'],
     uiTexts: ['Company Administrator', 'Company Accountant', 'Company HR'],
+    primaryFrontendFile: fileRef('apps/web/src/lib/access.ts'),
     frontendRouteFiles: [
       fileRef('apps/web/src/app/unauthorized/page.tsx'),
     ],
@@ -272,6 +307,7 @@ export const defenseTraceRegistry = [
     category: 'accounting',
     routePatterns: ['/accounting/chart-of-accounts'],
     uiTexts: ['Chart of Accounts', 'Account classes', 'Account groups'],
+    primaryFrontendFile: fileRef('apps/web/src/features/accounting/chart-of-accounts-page.tsx'),
     frontendRouteFiles: [
       fileRef('apps/web/src/app/(app)/accounting/chart-of-accounts/page.tsx'),
     ],
@@ -348,6 +384,7 @@ export const defenseTraceRegistry = [
       'accounting/vouchers/:voucherId/post',
     ],
     uiTexts: ['Vouchers', 'New voucher', 'Post voucher', 'Voucher detail'],
+    primaryFrontendFile: fileRef('apps/web/src/features/accounting/vouchers-page.tsx'),
     frontendRouteFiles: [
       fileRef('apps/web/src/app/(app)/accounting/vouchers/page.tsx'),
       fileRef('apps/web/src/app/(app)/accounting/vouchers/new/page.tsx'),
@@ -413,6 +450,7 @@ export const defenseTraceRegistry = [
       'accounting/reports/trial-balance/export',
     ],
     uiTexts: ['Trial Balance', 'Closing debit', 'Closing credit'],
+    primaryFrontendFile: fileRef('apps/web/src/features/financial-reporting/trial-balance-page.tsx'),
     frontendRouteFiles: [
       fileRef('apps/web/src/app/(app)/accounting/reports/trial-balance/page.tsx'),
     ],
@@ -488,6 +526,7 @@ export const defenseTraceRegistry = [
       'accounting/reports/business-overview/export',
     ],
     uiTexts: ['Business Performance Overview', 'Business result', 'Collection efficiency'],
+    primaryFrontendFile: fileRef('apps/web/src/features/financial-reporting/business-report-page.tsx'),
     frontendRouteFiles: [
       fileRef(
         'apps/web/src/app/(app)/accounting/reports/business-overview/page.tsx',
@@ -560,6 +599,7 @@ export const defenseTraceRegistry = [
     routePatterns: ['/crm-property-desk/customers'],
     apiPatterns: ['customers'],
     uiTexts: ['Customers', 'Customer', 'CRM & Property Desk'],
+    primaryFrontendFile: fileRef('apps/web/src/features/crm-property-desk/customers-page.tsx'),
     frontendRouteFiles: [
       fileRef('apps/web/src/app/(app)/crm-property-desk/customers/page.tsx'),
     ],
@@ -619,6 +659,7 @@ export const defenseTraceRegistry = [
     routePatterns: ['/crm-property-desk/customers/[customerId]'],
     apiPatterns: ['customers/:customerId/profile'],
     uiTexts: ['Customer Profile', 'Transaction History', 'Commercial timeline'],
+    primaryFrontendFile: fileRef('apps/web/src/features/crm-property-desk/customer-profile-page.tsx'),
     frontendRouteFiles: [
       fileRef(
         'apps/web/src/app/(app)/crm-property-desk/customers/[customerId]/page.tsx',
@@ -697,6 +738,7 @@ export const defenseTraceRegistry = [
       'attachments/references',
     ],
     uiTexts: ['Attachments', 'Upload attachment', 'Download access'],
+    primaryFrontendFile: fileRef('apps/web/src/features/audit-documents/attachments-page.tsx'),
     frontendRouteFiles: [
       fileRef('apps/web/src/app/(app)/audit-documents/attachments/page.tsx'),
       fileRef(
@@ -778,6 +820,7 @@ export const defenseTraceRegistry = [
       'hr/references',
     ],
     uiTexts: ['Employees', 'Attendance devices', 'Leave requests'],
+    primaryFrontendFile: fileRef('apps/web/src/features/hr-core/employees-page.tsx'),
     frontendRouteFiles: [
       fileRef('apps/web/src/app/(app)/hr/employees/page.tsx'),
       fileRef('apps/web/src/app/(app)/hr/attendance-devices/page.tsx'),
@@ -877,6 +920,7 @@ export const defenseTraceRegistry = [
       'payroll-runs/:payrollRunId/post',
     ],
     uiTexts: ['Payroll Runs', 'Salary Structures', 'Payroll Posting'],
+    primaryFrontendFile: fileRef('apps/web/src/features/payroll-core/payroll-runs-page.tsx'),
     frontendRouteFiles: [
       fileRef('apps/web/src/app/(app)/payroll/salary-structures/page.tsx'),
       fileRef('apps/web/src/app/(app)/payroll/runs/page.tsx'),
@@ -960,6 +1004,7 @@ export const defenseTraceRegistry = [
       'Audit & Documents',
       'CRM & Property Desk',
     ],
+    primaryFrontendFile: fileRef('apps/web/src/features/shell/app-shell.tsx'),
     frontendRouteFiles: [fileRef('apps/web/src/lib/routes.ts')],
     frontendFeatureFiles: [
       fileRef('apps/web/src/features/shell/app-shell.tsx'),
@@ -1010,6 +1055,7 @@ export const defenseTraceRegistry = [
     category: 'api-client',
     routePatterns: ['/api/v1/*'],
     uiTexts: ['Request failed', 'Unable to sign in'],
+    primaryFrontendFile: fileRef('apps/web/src/lib/api/client.ts'),
     frontendRouteFiles: [],
     frontendFeatureFiles: [
       fileRef('apps/web/src/components/providers/auth-provider.tsx'),
@@ -1076,6 +1122,7 @@ export const defenseTraceRegistry = [
     category: 'database',
     routePatterns: [],
     uiTexts: ['PostgreSQL', 'Prisma', 'Company scope'],
+    primaryFrontendFile: fileRef('prisma/schema.prisma'),
     frontendRouteFiles: [],
     frontendFeatureFiles: [],
     frontendApiFiles: [],

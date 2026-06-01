@@ -50,10 +50,14 @@ const createRipgrepCommand = (fileReference: DefenseTraceFileReference): string 
 
 const createGitGrepCommand = (fileReference: DefenseTraceFileReference): string => {
   if (fileReference.symbolName) {
-    return `git grep -n "${escapeDoubleQuotes(fileReference.symbolName)}" -- apps/web/src apps/api/src`;
+    return `git grep -n "${escapeDoubleQuotes(fileReference.symbolName)}" -- apps/web/src apps/api/src prisma`;
   }
 
-  return `git grep -n "${escapeDoubleQuotes(fileReference.relativePath)}" -- apps/web/src apps/api/src`;
+  const fileName =
+    fileReference.relativePath.split('/').pop()?.replace(/\.[^.]+$/, '') ??
+    fileReference.relativePath;
+
+  return `git grep -n "${escapeDoubleQuotes(fileName)}" -- apps/web/src apps/api/src prisma`;
 };
 
 export const buildAbsolutePath = (

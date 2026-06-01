@@ -502,10 +502,11 @@ export const DashboardPage = () => {
   ]);
 
   return (
-    <AppPage data-defense-trace="dashboard">
+    <AppPage data-defense-trace="dashboard" data-defense-trace-label="Dashboard page" data-defense-trace-kind="page">
       <section className="grid gap-5 2xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.65fr)]">
         <Card
           className="min-w-0 overflow-hidden border-brand-sky/40"
+          data-defense-trace="dashboard" data-defense-trace-label="Operational Home" data-defense-trace-kind="page header"
           data-testid="dashboard-context"
         >
           <CardHeader className="border-b border-brand-sky/40 bg-gradient-to-br from-brand-headerGradientStart via-card to-brand-headerGradientEnd/70">
@@ -514,7 +515,7 @@ export const DashboardPage = () => {
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
                   Operational home
                 </p>
-                <CardTitle className="mt-1 text-2xl leading-8">
+                <CardTitle className="mt-1 text-2xl leading-8" data-defense-trace="dashboard" data-defense-trace-label="Real Capita Group title" data-defense-trace-kind="company name">
                   {user.currentCompany.name}
                 </CardTitle>
               </div>
@@ -536,6 +537,7 @@ export const DashboardPage = () => {
             <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(160px,0.5fr)_minmax(160px,0.5fr)]">
               <div
                 className="min-w-0 rounded-lg border border-brand-green/40 bg-gradient-to-br from-card to-brand-greenSoft/90 p-3"
+                data-defense-trace="dashboard" data-defense-trace-label="Reporting Period" data-defense-trace-kind="period selector"
                 data-testid="dashboard-period-card"
               >
                 <label
@@ -567,7 +569,7 @@ export const DashboardPage = () => {
                 </p>
               </div>
 
-              <div className="min-w-0 rounded-lg border border-brand-sky/40 bg-brand-skySoft/85 p-3">
+              <div className="min-w-0 rounded-lg border border-brand-sky/40 bg-brand-skySoft/85 p-3" data-defense-trace="dashboard" data-defense-trace-label="Last Login" data-defense-trace-kind="session card">
                 <p className="text-xs font-semibold uppercase tracking-[0.10em] text-muted-foreground">
                   Last login
                 </p>
@@ -576,7 +578,7 @@ export const DashboardPage = () => {
                 </p>
               </div>
 
-              <div className="min-w-0 rounded-lg border border-brand-sky/40 bg-brand-skySoft/60 p-3">
+              <div className="min-w-0 rounded-lg border border-brand-sky/40 bg-brand-skySoft/60 p-3" data-defense-trace="dashboard" data-defense-trace-label="Workspaces" data-defense-trace-kind="access card">
                 <p className="text-xs font-semibold uppercase tracking-[0.10em] text-muted-foreground">
                   Workspaces
                 </p>
@@ -596,7 +598,7 @@ export const DashboardPage = () => {
           </CardContent>
         </Card>
 
-        <HealthStatusCard />
+        <HealthStatusCard data-defense-trace="dashboard" data-defense-trace-label="Application Health" data-defense-trace-kind="health card" />
       </section>
 
       <DashboardSection
@@ -614,6 +616,9 @@ export const DashboardPage = () => {
         description="Core executive indicators derived from the active company and reporting window."
         eyebrow="Summary"
         title="Executive KPIs"
+        data-defense-trace="dashboard"
+        data-defense-trace-label="Executive KPIs"
+        data-defense-trace-kind="section heading"
       >
         <DashboardIssueBanner issues={summaryQuery.data?.issues ?? []} />
 
@@ -649,8 +654,16 @@ export const DashboardPage = () => {
                                 ? 'border-rose-300/70 bg-gradient-to-br from-rose-50/40 to-brand-skySoft/30'
                                 : 'border-brand-sky/50 bg-gradient-to-br from-brand-skySoft/60 to-card'
                           }`}
+                          data-defense-trace="dashboard"
+                          data-defense-trace-label="Net Profit / Loss card"
+                          data-defense-trace-kind="KPI card"
                         >
-                          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                          <p
+                            className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+                            data-defense-trace="dashboard"
+                            data-defense-trace-label="Net Profit / Loss label"
+                            data-defense-trace-kind="KPI label"
+                          >
                             Net profit / loss
                           </p>
                           <p className={`mt-3 text-2xl font-bold tabular-nums ${
@@ -659,7 +672,11 @@ export const DashboardPage = () => {
                               : netPlKpi.tone === 'warning'
                                 ? 'text-rose-700'
                                 : 'text-foreground'
-                          }`}>
+                          }`}
+                            data-defense-trace="dashboard"
+                            data-defense-trace-label="Net Profit / Loss amount"
+                            data-defense-trace-kind="KPI value"
+                          >
                             {netPlKpi.value}
                           </p>
                           <div className="mt-3 flex items-center gap-2">
@@ -679,11 +696,26 @@ export const DashboardPage = () => {
                         </div>
                       ) : null}
                       {assetsKpi ? (
-                        <div className="rounded-xl border border-brand-sky/40 bg-brand-skySoft/50 p-5 shadow-sm">
-                          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                        <div
+                          className="rounded-xl border border-brand-sky/40 bg-brand-skySoft/50 p-5 shadow-sm"
+                          data-defense-trace="dashboard"
+                          data-defense-trace-label="Total Assets card"
+                          data-defense-trace-kind="KPI card"
+                        >
+                          <p
+                            className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+                            data-defense-trace="dashboard"
+                            data-defense-trace-label="Total Assets label"
+                            data-defense-trace-kind="KPI label"
+                          >
                             Total assets
                           </p>
-                          <p className="mt-3 text-xl font-bold tabular-nums text-foreground">
+                          <p
+                            className="mt-3 text-xl font-bold tabular-nums text-foreground"
+                            data-defense-trace="dashboard"
+                            data-defense-trace-label="Total Assets amount"
+                            data-defense-trace-kind="KPI value"
+                          >
                             {assetsKpi.value}
                           </p>
                           <p className="mt-2 text-xs text-muted-foreground">{assetsKpi.hint}</p>
@@ -702,6 +734,9 @@ export const DashboardPage = () => {
                                 ? 'border-rose-200/60 bg-rose-50/30'
                                 : 'border-brand-sky/35 bg-brand-skySoft/40'
                           }`}
+                          data-defense-trace="dashboard"
+                          data-defense-trace-label={`${kpi.label}`}
+                          data-defense-trace-kind="KPI mini card"
                           key={kpi.label}
                         >
                           <p className="text-xs font-medium text-muted-foreground">{kpi.label}</p>
@@ -722,6 +757,9 @@ export const DashboardPage = () => {
         description="Latest operational records across accessible modules."
         eyebrow="Activity"
         title="Recent records"
+        data-defense-trace="dashboard"
+        data-defense-trace-label="Recent records"
+        data-defense-trace-kind="section heading"
       >
         <DashboardIssueBanner issues={activityQuery.data?.issues ?? []} />
 

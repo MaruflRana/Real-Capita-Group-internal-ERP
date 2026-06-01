@@ -377,6 +377,54 @@ const getNavigationSearchScore = (
   return null;
 };
 
+const getNavigationDefenseTraceLabel = (href: string, itemLabel: string): string => {
+  if (href === APP_ROUTES.dashboard) {
+    return 'Dashboard navigation';
+  }
+
+  if (href === APP_ROUTES.accountingChartOfAccounts) {
+    return 'Chart of Accounts navigation';
+  }
+
+  if (href === APP_ROUTES.accountingVouchers) {
+    return 'Vouchers navigation';
+  }
+
+  if (href === APP_ROUTES.accountingReportsBusinessOverview) {
+    return 'Business Overview navigation';
+  }
+
+  if (href === APP_ROUTES.accountingReportsTrialBalance) {
+    return 'Trial Balance navigation';
+  }
+
+  if (href === APP_ROUTES.accountingReportsGeneralLedger) {
+    return 'General Ledger navigation';
+  }
+
+  if (href === APP_ROUTES.accountingReportsProfitLoss) {
+    return 'Profit & Loss navigation';
+  }
+
+  if (href === APP_ROUTES.accountingReportsBalanceSheet) {
+    return 'Balance Sheet navigation';
+  }
+
+  if (href === APP_ROUTES.crmPropertyDeskCustomers) {
+    return 'Customers navigation';
+  }
+
+  if (href === APP_ROUTES.crmPropertyDeskBookings) {
+    return 'Bookings navigation';
+  }
+
+  if (href === APP_ROUTES.crmPropertyDeskCollections) {
+    return 'Collections navigation';
+  }
+
+  return `${itemLabel} navigation`;
+};
+
 const getNavigationDefenseTraceId = (href: string) => {
   if (href === APP_ROUTES.dashboard) {
     return 'dashboard';
@@ -747,6 +795,8 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
               aria-label="Primary navigation"
               className="min-h-0 flex-1 space-y-4 overflow-y-auto px-3 py-4 [scrollbar-gutter:stable]"
               data-defense-trace="sidebar-navigation"
+              data-defense-trace-label="Sidebar navigation"
+              data-defense-trace-kind="navigation shell"
             >
               {visibleNavigation.map((section) => {
                 const sectionActive = section.items.some(
@@ -786,6 +836,11 @@ export const AppShell = ({ children }: { children: React.ReactNode }) => {
                             data-defense-trace={getNavigationDefenseTraceId(
                               item.href,
                             )}
+                            data-defense-trace-label={getNavigationDefenseTraceLabel(
+                              item.href,
+                              item.label,
+                            )}
+                            data-defense-trace-kind="navigation item"
                             href={item.href}
                             key={item.href}
                           >

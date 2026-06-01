@@ -1,5 +1,7 @@
 'use client';
 
+import type { ComponentPropsWithoutRef } from 'react';
+
 import { useQuery } from '@tanstack/react-query';
 import {
   Card,
@@ -12,7 +14,9 @@ import {
 import { fetchHealthStatus } from '../../lib/api/org-security';
 import { formatDateTime } from '../../lib/format';
 
-export const HealthStatusCard = () => {
+export const HealthStatusCard = ({
+  ...restProps
+}: ComponentPropsWithoutRef<typeof Card>) => {
   const healthQuery = useQuery({
     queryKey: ['dashboard-health'],
     queryFn: fetchHealthStatus,
@@ -20,7 +24,7 @@ export const HealthStatusCard = () => {
   });
 
   return (
-    <Card className="h-full min-w-0 overflow-hidden border-brand-sky/40">
+    <Card className="h-full min-w-0 overflow-hidden border-brand-sky/40" {...restProps}>
       <CardHeader className="border-b border-brand-sky/40 bg-gradient-to-br from-brand-headerGradientStart via-card to-brand-headerGradientEnd/70">
         <p className="text-xs font-semibold uppercase tracking-[0.32em] text-primary">
           System status

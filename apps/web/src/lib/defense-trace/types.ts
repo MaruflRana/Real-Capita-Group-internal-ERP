@@ -12,6 +12,13 @@ export type DefenseTraceCategory =
   | 'navigation'
   | 'payroll';
 
+export type DefenseTraceQuestionAngle =
+  | 'ui-frontend'
+  | 'api-call'
+  | 'backend-logic'
+  | 'database-model'
+  | 'full-flow';
+
 export type DefenseTraceOpenStrategy = 'vscode-file-uri';
 
 export type DefenseTraceCopyStrategy =
@@ -31,6 +38,7 @@ export interface DefenseTraceFileReference {
   relativePath: string;
   line?: number;
   symbolName?: string;
+  rolePurpose?: string;
   openStrategy: DefenseTraceOpenStrategy;
   copyStrategy: readonly DefenseTraceCopyStrategy[];
 }
@@ -48,6 +56,7 @@ export interface DefenseTraceEntry {
   routePatterns: readonly string[];
   apiPatterns?: readonly string[];
   uiTexts: readonly string[];
+  primaryFrontendFile: DefenseTraceFileReference;
   frontendRouteFiles: readonly DefenseTraceFileReference[];
   frontendFeatureFiles: readonly DefenseTraceFileReference[];
   frontendApiFiles: readonly DefenseTraceFileReference[];

@@ -1,6 +1,6 @@
 'use client';
 
-import type { ComponentType, ReactNode } from 'react';
+import type { ComponentType, HTMLAttributes, ReactNode } from 'react';
 
 import Link from 'next/link';
 import { AlertTriangle, ArrowRight } from 'lucide-react';
@@ -31,18 +31,20 @@ export const DashboardSection = ({
   description,
   action,
   children,
+  ...restProps
 }: {
   eyebrow: string;
   title: string;
   description: string;
   action?: ReactNode;
   children: ReactNode;
-}) => (
+} & HTMLAttributes<HTMLElement>) => (
   <PageSection
     action={action}
     description={description}
     eyebrow={eyebrow}
     title={title}
+    {...restProps}
   >
     {children}
   </PageSection>

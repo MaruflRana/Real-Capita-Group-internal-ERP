@@ -29,6 +29,7 @@ import { defenseTraceRegistry } from '../../lib/defense-trace/trace-registry';
 import type {
   DefenseTraceApiActivity,
   DefenseTraceEntry,
+  DefenseTraceQuestionAngle,
 } from '../../lib/defense-trace/types';
 import {
   DEFENSE_TRACE_ENABLED_STORAGE_KEY,
@@ -109,6 +110,9 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
   const [selectionSource, setSelectionSource] = useState<
     'route' | 'click' | 'search' | 'api'
   >('route');
+  const [clickedLabel, setClickedLabel] = useState<string>('');
+  const [clickedKind, setClickedKind] = useState<string>('');
+  const [questionAngle, setQuestionAngle] = useState<DefenseTraceQuestionAngle>('ui-frontend');
   const [apiActivities, setApiActivities] = useState<
     readonly DefenseTraceApiActivity[]
   >([]);
@@ -267,10 +271,13 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
     writeDefenseTraceWorkspaceSettings(normalizedRoot);
   }, []);
 
-  const selectTraceEntry = useCallback((entryId: string, source: 'click' | 'search' | 'api' = 'click') => {
+  const selectTraceEntry = useCallback((entryId: string, source: 'click' | 'search' | 'api' = 'click', label?: string, kind?: string) => {
     setSelectedEntryId(entryId);
     setManualSelection(Boolean(entryId));
     setSelectionSource(source);
+    setClickedLabel(label ?? '');
+    setClickedKind(kind ?? '');
+    setQuestionAngle('ui-frontend');
     setMinimized(false);
     setPanelVisible(true);
     persistPreferences({ nextMinimized: false });
@@ -280,6 +287,9 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
     setManualSelection(false);
     setSelectedEntryId(routeMatch?.entry.id ?? '');
     setSelectionSource('route');
+    setClickedLabel('');
+    setClickedKind('');
+    setQuestionAngle('ui-frontend');
   }, [routeMatch?.entry.id]);
 
   const clearApiActivities = useCallback(() => {
@@ -303,6 +313,8 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
 
       const traceElement = target.closest<HTMLElement>('[data-defense-trace]');
       const traceEntryId = traceElement?.dataset.defenseTrace;
+      const traceLabel = traceElement?.dataset.defenseTraceLabel ?? '';
+      const traceKind = traceElement?.dataset.defenseTraceKind ?? '';
 
       if (
         !traceEntryId ||
@@ -316,7 +328,7 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
         event.stopPropagation();
       }
 
-      selectTraceEntry(traceEntryId, 'click');
+      selectTraceEntry(traceEntryId, 'click', traceLabel, traceKind);
     };
 
     document.addEventListener('click', handleTraceAnchorClick, true);
@@ -358,7 +370,6 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
 
       if (!tooltipRef.current) {
         tooltipRef.current = document.createElement('div');
-        tooltipRef.current.textContent = 'Click to trace code';
         tooltipRef.current.setAttribute('role', 'tooltip');
         tooltipRef.current.style.cssText =
           'position:fixed;z-index:91;padding:4px 10px;font-size:11px;font-weight:600;' +
@@ -368,7 +379,10 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
         document.body.appendChild(tooltipRef.current);
       }
 
-      tooltipRef.current.textContent = 'Click to trace code';
+      const traceLabel = traceElement.dataset.defenseTraceLabel;
+      tooltipRef.current.textContent = traceLabel
+        ? `Click to trace: ${traceLabel}`
+        : 'Click to trace code';
 
       const offset = 12;
       const tooltipWidth = tooltipRef.current.offsetWidth;
@@ -463,6 +477,10 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
         <DefenseTracePanel
           currentPathname={pathname}
           apiActivities={apiActivities}
+          clickedLabel={clickedLabel}
+          clickedKind={clickedKind}
+          questionAngle={questionAngle}
+          onQuestionAngleChange={setQuestionAngle}
           entries={defenseTraceRegistry}
           isManualSelection={manualSelection}
           minimized={minimized}
