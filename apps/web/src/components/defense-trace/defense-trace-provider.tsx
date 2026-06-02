@@ -18,7 +18,13 @@ import {
 } from '../../lib/defense-trace/api-trace';
 import {
   matchDefenseTraceEntry,
+  matchDefenseTraceSelectedTarget,
 } from '../../lib/defense-trace/match-trace';
+import {
+  createDefenseTraceAnchorTarget,
+  createDefenseTraceAutoTarget,
+  findDefenseTraceInspectableElement,
+} from '../../lib/defense-trace/dom-inspector';
 import {
   DEFAULT_DEFENSE_TRACE_PREFERENCES,
   readDefenseTracePreferences,
@@ -30,6 +36,8 @@ import type {
   DefenseTraceApiActivity,
   DefenseTraceEntry,
   DefenseTraceQuestionAngle,
+  DefenseTraceSelectedTarget,
+  DefenseTraceSelectionSource,
 } from '../../lib/defense-trace/types';
 import {
   DEFENSE_TRACE_ENABLED_STORAGE_KEY,
@@ -107,9 +115,10 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
   const [workspaceRoot, setWorkspaceRoot] = useState('');
   const [selectedEntryId, setSelectedEntryId] = useState('');
   const [manualSelection, setManualSelection] = useState(false);
-  const [selectionSource, setSelectionSource] = useState<
-    'route' | 'click' | 'search' | 'api'
-  >('route');
+  const [selectionSource, setSelectionSource] =
+    useState<DefenseTraceSelectionSource>('route');
+  const [selectedTarget, setSelectedTarget] =
+    useState<DefenseTraceSelectedTarget | null>(null);
   const [clickedLabel, setClickedLabel] = useState<string>('');
   const [clickedKind, setClickedKind] = useState<string>('');
   const [questionAngle, setQuestionAngle] = useState<DefenseTraceQuestionAngle>('ui-frontend');
@@ -118,6 +127,7 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
   >([]);
   const routeMatch = useMemo(() => matchDefenseTraceEntry(pathname), [pathname]);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const hoveredElementRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     setHasMounted(true);
@@ -271,10 +281,11 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
     writeDefenseTraceWorkspaceSettings(normalizedRoot);
   }, []);
 
-  const selectTraceEntry = useCallback((entryId: string, source: 'click' | 'search' | 'api' = 'click', label?: string, kind?: string) => {
+  const selectTraceEntry = useCallback((entryId: string, source: DefenseTraceSelectionSource = 'anchor', label?: string, kind?: string) => {
     setSelectedEntryId(entryId);
     setManualSelection(Boolean(entryId));
     setSelectionSource(source);
+    setSelectedTarget(null);
     setClickedLabel(label ?? '');
     setClickedKind(kind ?? '');
     setQuestionAngle('ui-frontend');
@@ -287,6 +298,7 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
     setManualSelection(false);
     setSelectedEntryId(routeMatch?.entry.id ?? '');
     setSelectionSource('route');
+    setSelectedTarget(null);
     setClickedLabel('');
     setClickedKind('');
     setQuestionAngle('ui-frontend');
@@ -296,6 +308,30 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
     clearDefenseTraceBufferedApiActivities();
     setApiActivities([]);
   }, []);
+
+  const selectTraceTarget = useCallback(
+    (target: DefenseTraceSelectedTarget) => {
+      const match = matchDefenseTraceSelectedTarget(target);
+      const nextTarget: DefenseTraceSelectedTarget = {
+        ...target,
+        ...(match ? { traceEntryId: match.entry.id } : {}),
+        ...(match ? { matchReason: match.reason } : {}),
+        hasExactTraceMatch: match?.exact ?? false,
+      };
+
+      setSelectedEntryId(match?.entry.id ?? '');
+      setManualSelection(true);
+      setSelectionSource(nextTarget.selectedSource);
+      setSelectedTarget(nextTarget);
+      setClickedLabel(nextTarget.selectedLabel);
+      setClickedKind(nextTarget.selectedKind);
+      setQuestionAngle('ui-frontend');
+      setMinimized(false);
+      setPanelVisible(true);
+      persistPreferences({ nextMinimized: false });
+    },
+    [persistPreferences],
+  );
 
   useEffect(() => {
     if (!enabled) {
@@ -311,15 +347,24 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
+      if (target.closest('[data-defense-trace-panel]')) {
+        return;
+      }
+
+      const inspectableElement = findDefenseTraceInspectableElement(target);
+
+      if (!inspectableElement) {
+        return;
+      }
+
       const traceElement = target.closest<HTMLElement>('[data-defense-trace]');
       const traceEntryId = traceElement?.dataset.defenseTrace;
-      const traceLabel = traceElement?.dataset.defenseTraceLabel ?? '';
-      const traceKind = traceElement?.dataset.defenseTraceKind ?? '';
+      const hasValidTraceEntry = Boolean(
+        traceEntryId &&
+          defenseTraceRegistry.some((entry) => entry.id === traceEntryId),
+      );
 
-      if (
-        !traceEntryId ||
-        !defenseTraceRegistry.some((entry) => entry.id === traceEntryId)
-      ) {
+      if (!hasValidTraceEntry && !inspectorMode) {
         return;
       }
 
@@ -328,7 +373,23 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
         event.stopPropagation();
       }
 
-      selectTraceEntry(traceEntryId, 'click', traceLabel, traceKind);
+      if (traceElement && hasValidTraceEntry) {
+        selectTraceTarget(
+          createDefenseTraceAnchorTarget({
+            clickedElement: target,
+            currentRoute: pathname,
+            traceElement,
+          }),
+        );
+        return;
+      }
+
+      selectTraceTarget(
+        createDefenseTraceAutoTarget({
+          currentRoute: pathname,
+          element: inspectableElement,
+        }),
+      );
     };
 
     document.addEventListener('click', handleTraceAnchorClick, true);
@@ -336,7 +397,7 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       document.removeEventListener('click', handleTraceAnchorClick, true);
     };
-  }, [enabled, inspectorMode, selectTraceEntry]);
+  }, [enabled, inspectorMode, pathname, selectTraceTarget]);
 
   useEffect(() => {
     if (!enabled || !inspectorMode) {
@@ -344,6 +405,13 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
 
       if (existing && existing.parentNode) {
         existing.parentNode.removeChild(existing);
+      }
+
+      if (hoveredElementRef.current) {
+        hoveredElementRef.current.classList.remove(
+          'defense-trace-inspectable-hover',
+        );
+        hoveredElementRef.current = null;
       }
 
       return;
@@ -356,7 +424,7 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      const traceElement = target.closest<HTMLElement>('[data-defense-trace]');
+      const traceElement = findDefenseTraceInspectableElement(target);
       const existing = tooltipRef.current;
 
       if (!traceElement) {
@@ -365,7 +433,22 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
           tooltipRef.current = null;
         }
 
+        if (hoveredElementRef.current) {
+          hoveredElementRef.current.classList.remove(
+            'defense-trace-inspectable-hover',
+          );
+          hoveredElementRef.current = null;
+        }
+
         return;
+      }
+
+      if (hoveredElementRef.current !== traceElement) {
+        hoveredElementRef.current?.classList.remove(
+          'defense-trace-inspectable-hover',
+        );
+        traceElement.classList.add('defense-trace-inspectable-hover');
+        hoveredElementRef.current = traceElement;
       }
 
       if (!tooltipRef.current) {
@@ -379,10 +462,7 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
         document.body.appendChild(tooltipRef.current);
       }
 
-      const traceLabel = traceElement.dataset.defenseTraceLabel;
-      tooltipRef.current.textContent = traceLabel
-        ? `Click to trace: ${traceLabel}`
-        : 'Click to trace code';
+      tooltipRef.current.textContent = 'Click to trace code';
 
       const offset = 12;
       const tooltipWidth = tooltipRef.current.offsetWidth;
@@ -405,6 +485,13 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
         existing.parentNode.removeChild(existing);
         tooltipRef.current = null;
       }
+
+      if (hoveredElementRef.current) {
+        hoveredElementRef.current.classList.remove(
+          'defense-trace-inspectable-hover',
+        );
+        hoveredElementRef.current = null;
+      }
     };
 
     document.addEventListener('mousemove', handleMouseMove);
@@ -419,6 +506,13 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
       if (existing && existing.parentNode) {
         existing.parentNode.removeChild(existing);
         tooltipRef.current = null;
+      }
+
+      if (hoveredElementRef.current) {
+        hoveredElementRef.current.classList.remove(
+          'defense-trace-inspectable-hover',
+        );
+        hoveredElementRef.current = null;
       }
     };
   }, [enabled, inspectorMode]);
@@ -459,9 +553,9 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
   const selectedEntry = useMemo<DefenseTraceEntry | null>(
     () =>
       defenseTraceRegistry.find((entry) => entry.id === selectedEntryId) ??
-      routeMatch?.entry ??
+      (manualSelection ? null : routeMatch?.entry) ??
       null,
-    [routeMatch?.entry, selectedEntryId],
+    [manualSelection, routeMatch?.entry, selectedEntryId],
   );
 
   const showPanel = hasMounted && enabled && panelVisible;
@@ -498,6 +592,7 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
           routeMatch={routeMatch}
           selectedEntry={selectedEntry}
           selectedEntryId={selectedEntryId}
+          selectedTarget={selectedTarget}
           selectionSource={selectionSource}
           workspaceRoot={workspaceRoot}
         />
@@ -505,6 +600,7 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
       {showLauncher ? (
         <button
           className="fixed bottom-4 right-4 z-[89] flex items-center gap-2 rounded-lg border border-brand-sky/40 bg-card px-3 py-2 text-xs font-semibold text-foreground shadow-lg shadow-black/15 transition hover:border-brand-sky/70 hover:bg-brand-skySoft/40"
+          data-defense-trace-panel="true"
           onClick={openPanel}
           title="Open Defense Trace"
           type="button"
@@ -519,15 +615,18 @@ export const DefenseTraceProvider = ({ children }: { children: ReactNode }) => {
         <style>
           {`
             [data-defense-trace] {
-              outline: 2px solid hsl(var(--brand-sky) / 0.55);
+              outline: 1px solid hsl(var(--brand-sky) / 0.35);
               outline-offset: 3px;
               cursor: pointer;
               transition: outline-color 0.15s ease;
             }
 
-            [data-defense-trace]:hover {
+            .defense-trace-inspectable-hover {
               outline-color: hsl(var(--brand-green) / 0.8);
-              outline-width: 3px;
+              outline-style: solid;
+              outline-width: 2px;
+              outline-offset: 3px;
+              cursor: crosshair;
             }
           `}
         </style>

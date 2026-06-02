@@ -19,6 +19,23 @@ export type DefenseTraceQuestionAngle =
   | 'database-model'
   | 'full-flow';
 
+export type DefenseTraceSelectionSource =
+  | 'api'
+  | 'anchor'
+  | 'auto'
+  | 'route'
+  | 'search';
+
+export type DefenseTraceSelectedSource = 'anchor' | 'auto';
+
+export type DefenseTraceTargetMatchReason =
+  | 'anchor'
+  | 'href-path'
+  | 'route-fallback'
+  | 'trace-category'
+  | 'trace-label'
+  | 'ui-text';
+
 export type DefenseTraceOpenStrategy = 'vscode-file-uri';
 
 export type DefenseTraceCopyStrategy =
@@ -70,6 +87,22 @@ export interface DefenseTraceEntry {
   editImpact: readonly string[];
   studyNotes: readonly string[];
   riskNotes: readonly string[];
+}
+
+export interface DefenseTraceSelectedTarget {
+  selectedLabel: string;
+  selectedKind: string;
+  selectedSource: DefenseTraceSelectedSource;
+  currentRoute: string;
+  clickedText: string;
+  traceEntryId?: string;
+  tagName?: string;
+  ariaLabel?: string;
+  href?: string;
+  nearestHeading?: string;
+  nearestSection?: string;
+  matchReason?: DefenseTraceTargetMatchReason;
+  hasExactTraceMatch: boolean;
 }
 
 export interface DefenseTraceWorkspaceSettings {

@@ -1,5 +1,9 @@
 import { defenseTraceRegistry } from './trace-registry';
-import type { DefenseTraceEntry } from './types';
+import type {
+  DefenseTraceEntry,
+  DefenseTraceSelectedTarget,
+  DefenseTraceTargetMatchReason,
+} from './types';
 
 export interface DefenseTraceRouteMatch {
   entry: DefenseTraceEntry;
@@ -137,6 +141,17 @@ export const matchDefenseTraceEntry = (
 const normalizeSearchValue = (value: string): string =>
   value.trim().toLowerCase().replace(/\s+/g, ' ');
 
+const normalizePathValue = (value: string): string => {
+  if (!value) {
+    return '/';
+  }
+
+  const [pathOnly] = value.split(/[?#]/);
+  const normalized = pathOnly?.startsWith('/') ? pathOnly : `/${pathOnly}`;
+
+  return normalized.length > 1 ? normalized.replace(/\/+$/, '') : normalized;
+};
+
 const getEntrySearchText = (entry: DefenseTraceEntry): string =>
   [
     entry.label,
@@ -173,4 +188,172 @@ export const searchDefenseTraceEntries = (
 
     return terms.every((term) => searchText.includes(term));
   });
+};
+
+interface DefenseTraceTargetMatchCandidate {
+  entry: DefenseTraceEntry;
+  exact: boolean;
+  reason: DefenseTraceTargetMatchReason;
+  score: number;
+}
+
+export interface DefenseTraceTargetMatch {
+  entry: DefenseTraceEntry;
+  exact: boolean;
+  reason: DefenseTraceTargetMatchReason;
+}
+
+const scoreEntryTextMatch = (
+  entry: DefenseTraceEntry,
+  text: string,
+): DefenseTraceTargetMatchCandidate | null => {
+  const normalizedText = normalizeSearchValue(text);
+
+  if (!normalizedText || normalizedText.length < 2) {
+    return null;
+  }
+
+  const uiTextScore = entry.uiTexts.reduce<number>((bestScore, uiText) => {
+    const normalizedUiText = normalizeSearchValue(uiText);
+
+    if (!normalizedUiText) {
+      return bestScore;
+    }
+
+    if (normalizedUiText === normalizedText) {
+      return Math.max(bestScore, 7000 + normalizedUiText.length);
+    }
+
+    if (
+      normalizedUiText.includes(normalizedText) ||
+      normalizedText.includes(normalizedUiText)
+    ) {
+      return Math.max(bestScore, 6000 + normalizedUiText.length);
+    }
+
+    return bestScore;
+  }, 0);
+
+  if (uiTextScore > 0) {
+    return {
+      entry,
+      exact: true,
+      reason: 'ui-text',
+      score: uiTextScore,
+    };
+  }
+
+  const normalizedLabel = normalizeSearchValue(entry.label);
+
+  if (normalizedLabel === normalizedText) {
+    return {
+      entry,
+      exact: true,
+      reason: 'trace-label',
+      score: 5600 + normalizedLabel.length,
+    };
+  }
+
+  if (
+    normalizedLabel.includes(normalizedText) ||
+    normalizedText.includes(normalizedLabel)
+  ) {
+    return {
+      entry,
+      exact: true,
+      reason: 'trace-label',
+      score: 5000 + normalizedLabel.length,
+    };
+  }
+
+  const normalizedCategory = normalizeSearchValue(entry.category);
+
+  if (normalizedCategory === normalizedText) {
+    return {
+      entry,
+      exact: true,
+      reason: 'trace-category',
+      score: 4200 + normalizedCategory.length,
+    };
+  }
+
+  return null;
+};
+
+export const matchDefenseTraceSelectedTarget = (
+  target: DefenseTraceSelectedTarget,
+  entries: readonly DefenseTraceEntry[] = defenseTraceRegistry,
+): DefenseTraceTargetMatch | null => {
+  if (target.traceEntryId) {
+    const anchorEntry = entries.find((entry) => entry.id === target.traceEntryId);
+
+    if (anchorEntry) {
+      return {
+        entry: anchorEntry,
+        exact: true,
+        reason: 'anchor',
+      };
+    }
+  }
+
+  const href = target.href ? normalizePathValue(target.href) : '';
+
+  if (href) {
+    const hrefMatch = matchDefenseTraceEntry(href, entries);
+
+    if (hrefMatch) {
+      return {
+        entry: hrefMatch.entry,
+        exact: true,
+        reason: 'href-path',
+      };
+    }
+  }
+
+  const textCandidates = Array.from(
+    new Set(
+      [
+        target.clickedText,
+        target.selectedLabel,
+        target.nearestHeading ?? '',
+        target.nearestSection ?? '',
+      ]
+        .map(normalizeSearchValue)
+        .filter(Boolean),
+    ),
+  );
+
+  const textMatches = entries
+    .flatMap((entry) =>
+      textCandidates
+        .map((candidate) => scoreEntryTextMatch(entry, candidate))
+        .filter(
+          (
+            match,
+          ): match is DefenseTraceTargetMatchCandidate => match !== null,
+        ),
+    )
+    .sort((left, right) => right.score - left.score);
+
+  const bestTextMatch = textMatches[0];
+
+  if (bestTextMatch) {
+    return {
+      entry: bestTextMatch.entry,
+      exact: bestTextMatch.exact,
+      reason: bestTextMatch.reason,
+    };
+  }
+
+  const currentRouteMatch = matchDefenseTraceEntry(target.currentRoute, entries);
+
+  if (currentRouteMatch) {
+    return {
+      entry: currentRouteMatch.entry,
+      exact: false,
+      reason: 'route-fallback',
+    };
+  }
+
+  return null;
 };

@@ -31,6 +31,7 @@ import type {
   DefenseTraceFileReference,
   DefenseTraceQuestionAngle,
   DefenseTraceSearchCommand,
+  DefenseTraceSelectedTarget,
 } from '../../lib/defense-trace/types';
 import { buildAbsolutePath } from '../../lib/defense-trace/workspace-root';
 import {
@@ -46,11 +47,22 @@ const formatCategory = (category: string): string =>
     .join(' ');
 
 const formatSelectionSource = (source: string): string => {
-  if (source === 'click') return 'click';
+  if (source === 'anchor') return 'anchor';
+  if (source === 'auto') return 'auto';
   if (source === 'route') return 'route';
   if (source === 'search') return 'search';
   if (source === 'api') return 'API';
   return source;
+};
+
+const formatMatchReason = (reason?: string): string => {
+  if (reason === 'href-path') return 'link route';
+  if (reason === 'route-fallback') return 'current route fallback';
+  if (reason === 'trace-category') return 'trace category';
+  if (reason === 'trace-label') return 'trace label';
+  if (reason === 'ui-text') return 'UI text';
+  if (reason === 'anchor') return 'trace anchor';
+  return 'not matched';
 };
 
 const getPanelPositionClassName = (
@@ -173,15 +185,15 @@ const QUESTION_ANGLES: readonly {
   id: DefenseTraceQuestionAngle;
   label: string;
 }[] = [
-  { id: 'ui-frontend', label: 'UI / Frontend' },
-  { id: 'api-call', label: 'API Call' },
-  { id: 'backend-logic', label: 'Backend Logic' },
-  { id: 'database-model', label: 'Database Model' },
-  { id: 'full-flow', label: 'Full Flow' },
+  { id: 'ui-frontend', label: 'UI code' },
+  { id: 'api-call', label: 'Data/API' },
+  { id: 'backend-logic', label: 'Backend logic' },
+  { id: 'database-model', label: 'Database model' },
+  { id: 'full-flow', label: 'Full flow' },
 ];
 
 const getAngleTitle = (angle: DefenseTraceQuestionAngle): string => {
-  if (angle === 'api-call') return 'Where data comes from';
+  if (angle === 'api-call') return 'Open Data/API code';
   if (angle === 'backend-logic') return 'Backend logic';
   if (angle === 'database-model') return 'Database models';
   if (angle === 'full-flow') return 'Full code flow';
@@ -291,6 +303,58 @@ const getQuestionAngleFiles = (
 
 const escapeDoubleQuotes = (value: string): string => value.replace(/"/g, '\\"');
 
+const normalizeRoutePath = (pathname: string): string => {
+  const [pathOnly] = pathname.split(/[?#]/);
+  const normalized = pathOnly?.startsWith('/') ? pathOnly : `/${pathOnly ?? ''}`;
+
+  return normalized.length > 1 ? normalized.replace(/\/+$/, '') : normalized;
+};
+
+const getTargetRoutePath = (
+  currentPathname: string,
+  selectedTarget: DefenseTraceSelectedTarget | null,
+): string => {
+  const href = selectedTarget?.href;
+
+  if (href?.startsWith('/')) {
+    return normalizeRoutePath(href);
+  }
+
+  return normalizeRoutePath(currentPathname);
+};
+
+const createLikelyFrontendRouteFile = (routePath: string): string => {
+  const normalizedPath = normalizeRoutePath(routePath);
+  const appGroup = normalizedPath === '/login' ? '(public)' : '(app)';
+
+  if (normalizedPath === '/') {
+    return `apps/web/src/app/${appGroup}/page.tsx`;
+  }
+
+  return `apps/web/src/app/${appGroup}${normalizedPath}/page.tsx`;
+};
+
+const getRouteSearchSegment = (routePath: string): string => {
+  const segments = normalizeRoutePath(routePath).split('/').filter(Boolean);
+
+  return segments.at(-1) ?? segments.at(0) ?? 'dashboard';
+};
+
+const createFallbackClickedTextCommand = (
+  selectedTarget: DefenseTraceSelectedTarget,
+): string => {
+  const searchTerm =
+    selectedTarget.clickedText ||
+    selectedTarget.selectedLabel ||
+    selectedTarget.nearestHeading ||
+    selectedTarget.currentRoute;
+
+  return `git grep -n "${escapeDoubleQuotes(searchTerm)}" -- apps/web/src apps/api/src prisma`;
+};
+
+const createFallbackRouteSearchCommand = (routePath: string): string =>
+  `git grep -n "${escapeDoubleQuotes(getRouteSearchSegment(routePath))}" -- apps/web/src apps/api/src prisma`;
+
 const createOpenAllCommand = (
   files: readonly DefenseTraceFileReference[],
   workspaceRoot: string,
@@ -375,7 +439,7 @@ const QuestionAngleSelector = ({
 }) => (
   <section className="rounded-xl border border-border bg-card/90 p-3">
     <p className="text-sm font-semibold text-foreground">
-      Choose what faculty asked
+      Trace focus
     </p>
     <div className="mt-2 grid gap-2 sm:grid-cols-2">
       {QUESTION_ANGLES.map((angle) => {
@@ -602,6 +666,86 @@ const QuestionAngleAnswerCard = ({
           </div>
         </div>
       ) : null}
+    </section>
+  );
+};
+
+const AutoFallbackTraceCard = ({
+  currentPathname,
+  selectedTarget,
+}: {
+  currentPathname: string;
+  selectedTarget: DefenseTraceSelectedTarget;
+}) => {
+  const routePath = getTargetRoutePath(currentPathname, selectedTarget);
+  const likelyRouteFile = createLikelyFrontendRouteFile(routePath);
+  const clickedTextCommand = createFallbackClickedTextCommand(selectedTarget);
+  const routeSearchCommand = createFallbackRouteSearchCommand(routePath);
+
+  return (
+    <section className="space-y-3 rounded-xl border border-status-warning/40 bg-status-warning/10 p-3">
+      <div className="space-y-1">
+        <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          <Search className="h-4 w-4 text-status-warning" />
+          Start from selected UI
+        </h3>
+        <p className="text-xs leading-relaxed text-muted-foreground">
+          No exact trace topic matched. Start with UI text search or current route file.
+        </p>
+      </div>
+
+      <div className="grid gap-2 text-xs text-muted-foreground">
+        <div>
+          Selected UI label:{' '}
+          <span className="font-semibold text-foreground">
+            {selectedTarget.selectedLabel}
+          </span>
+        </div>
+        <div>
+          Current route:{' '}
+          <code className="rounded bg-background/80 px-1.5 py-0.5 font-mono text-foreground">
+            {currentPathname}
+          </code>
+        </div>
+        <div>
+          Likely frontend route file:{' '}
+          <code className="break-all rounded bg-background/80 px-1.5 py-0.5 font-mono text-foreground">
+            {likelyRouteFile}
+          </code>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="rounded-lg border border-border bg-background/70 p-2">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-xs font-semibold text-foreground">
+              Search clicked text
+            </p>
+            <DefenseTraceCopyCommandButton
+              command={clickedTextCommand}
+              label="Copy"
+            />
+          </div>
+          <code className="mt-2 block break-all rounded bg-muted/40 px-2 py-1 font-mono text-[11px] leading-relaxed text-foreground">
+            {clickedTextCommand}
+          </code>
+        </div>
+
+        <div className="rounded-lg border border-border bg-background/70 p-2">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-xs font-semibold text-foreground">
+              Search route segment
+            </p>
+            <DefenseTraceCopyCommandButton
+              command={routeSearchCommand}
+              label="Copy"
+            />
+          </div>
+          <code className="mt-2 block break-all rounded bg-muted/40 px-2 py-1 font-mono text-[11px] leading-relaxed text-foreground">
+            {routeSearchCommand}
+          </code>
+        </div>
+      </div>
     </section>
   );
 };
@@ -847,6 +991,7 @@ export const DefenseTracePanel = ({
   routeMatch,
   selectedEntry,
   selectedEntryId,
+  selectedTarget,
   selectionSource,
   workspaceRoot,
 }: {
@@ -873,6 +1018,7 @@ export const DefenseTracePanel = ({
   routeMatch: DefenseTraceRouteMatch | null;
   selectedEntry: DefenseTraceEntry | null;
   selectedEntryId: string;
+  selectedTarget: DefenseTraceSelectedTarget | null;
   selectionSource: string;
   workspaceRoot: string;
 }) => {
@@ -881,11 +1027,22 @@ export const DefenseTracePanel = ({
     () => searchDefenseTraceEntries(topicSearch, entries),
     [entries, topicSearch],
   );
+  const selectedUiLabel =
+    selectedTarget?.selectedLabel ||
+    clickedLabel ||
+    selectedEntry?.label ||
+    routeMatch?.entry.label ||
+    'No selection';
+  const selectedUiKind =
+    selectedTarget?.selectedKind || clickedKind || 'trace topic';
+  const shouldShowFallbackCard =
+    Boolean(selectedTarget) && selectedTarget?.hasExactTraceMatch === false;
 
   if (minimized) {
     return (
       <div
         className={`fixed z-[90] w-[min(360px,calc(100vw-2rem))] rounded-xl border border-brand-sky/40 bg-card p-3 text-card-foreground shadow-2xl shadow-black/20 ${getMinimizedPositionClassName(panelPosition)}`}
+        data-defense-trace-panel="true"
       >
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
@@ -893,7 +1050,7 @@ export const DefenseTracePanel = ({
               Defense Trace
             </p>
             <p className="truncate text-sm font-semibold">
-              {clickedLabel || selectedEntry?.label || routeMatch?.entry.label || 'No selection'}
+              {selectedUiLabel}
             </p>
           </div>
           <div className="flex shrink-0 gap-1">
@@ -921,6 +1078,7 @@ export const DefenseTracePanel = ({
   return (
     <aside
       className={`fixed z-[90] flex flex-col overflow-hidden rounded-2xl border border-brand-sky/40 bg-card text-card-foreground shadow-2xl shadow-black/20 ${getPanelPositionClassName(panelPosition)}`}
+      data-defense-trace-panel="true"
     >
       <header className="border-b border-border bg-gradient-to-r from-brand-navy via-brand-blue to-brand-green p-4 text-white">
         <div className="flex items-start justify-between gap-3">
@@ -955,7 +1113,7 @@ export const DefenseTracePanel = ({
         {/* A. Inspector instruction */}
         {inspectorMode ? (
           <div className="rounded-xl border border-brand-sky/30 bg-brand-skySoft/50 px-3 py-2.5 text-sm text-foreground">
-            <p className="font-semibold">Click a highlighted UI part to trace its code.</p>
+            <p className="font-semibold">Click any UI part to trace its code.</p>
             <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
               <input
                 checked={inspectorMode}
@@ -963,7 +1121,7 @@ export const DefenseTracePanel = ({
                 onChange={(event) => onInspectorModeChange(event.target.checked)}
                 type="checkbox"
               />
-              Inspector Mode ON - outlines and click-to-trace are active
+              Inspector Mode ON - click-to-trace is active
             </label>
           </div>
         ) : (
@@ -975,7 +1133,7 @@ export const DefenseTracePanel = ({
                 onChange={(event) => onInspectorModeChange(event.target.checked)}
                 type="checkbox"
               />
-              Inspector Mode OFF - turn on to highlight clickable trace areas
+              Inspector Mode OFF - turn on to inspect visible UI parts
             </label>
           </div>
         )}
@@ -985,43 +1143,75 @@ export const DefenseTracePanel = ({
             <Route className="h-4 w-4 text-brand-sky" />
             <span className="text-sm font-semibold text-foreground">Selected UI</span>
           </div>
-          {selectedEntry ? (
+          {selectedEntry || selectedTarget ? (
             <div className="space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-brand-navy px-2.5 py-1 text-xs font-semibold text-white">
-                  {formatCategory(selectedEntry.category)}
-                </span>
+                {selectedEntry ? (
+                  <span className="rounded-full bg-brand-navy px-2.5 py-1 text-xs font-semibold text-white">
+                    {formatCategory(selectedEntry.category)}
+                  </span>
+                ) : null}
                 <span className="text-sm font-semibold text-foreground">
-                  {clickedLabel || selectedEntry.label}
+                  {selectedUiLabel}
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                 <span>
-                  Selected UI: <span className="font-semibold text-foreground">{clickedLabel || selectedEntry.label}</span>
+                  Selected UI: <span className="font-semibold text-foreground">{selectedUiLabel}</span>
                 </span>
                 <span>
-                  Kind: <span className="font-semibold text-foreground">{clickedKind || 'trace topic'}</span>
+                  Kind: <span className="font-semibold text-foreground">{selectedUiKind}</span>
                 </span>
                 <span>
                   Matched by: <span className="font-semibold text-foreground">{formatSelectionSource(selectionSource)}</span>
                 </span>
+                {selectedTarget ? (
+                  <span>
+                    Match: <span className="font-semibold text-foreground">{formatMatchReason(selectedTarget.matchReason)}</span>
+                  </span>
+                ) : null}
+                {selectedTarget?.traceEntryId ? (
+                  <span>
+                    Trace id: <span className="font-mono font-semibold text-foreground">{selectedTarget.traceEntryId}</span>
+                  </span>
+                ) : null}
+                {selectedTarget?.clickedText ? (
+                  <span>
+                    Clicked text: <span className="font-semibold text-foreground">{selectedTarget.clickedText}</span>
+                  </span>
+                ) : null}
                 <span>
-                  Trace topic: <span className="font-semibold text-foreground">{selectedEntry.label}</span>
+                  Trace topic: <span className="font-semibold text-foreground">{selectedEntry?.label ?? 'No exact topic'}</span>
                 </span>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {selectedEntry.routePatterns.map((pattern) => (
-                  <code
-                    className="rounded-full border border-brand-sky/35 bg-background px-2 py-0.5 font-mono text-[11px] text-foreground"
-                    key={pattern}
-                  >
-                    {pattern}
-                  </code>
-                ))}
-              </div>
+              {selectedTarget?.nearestHeading ? (
+                <p className="text-xs text-muted-foreground">
+                  Nearest heading:{' '}
+                  <span className="font-semibold text-foreground">
+                    {selectedTarget.nearestHeading}
+                  </span>
+                </p>
+              ) : null}
+              {selectedEntry ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedEntry.routePatterns.map((pattern) => (
+                    <code
+                      className="rounded-full border border-brand-sky/35 bg-background px-2 py-0.5 font-mono text-[11px] text-foreground"
+                      key={pattern}
+                    >
+                      {pattern}
+                    </code>
+                  ))}
+                </div>
+              ) : null}
               <code className="block break-all rounded bg-background/80 px-2 py-1 font-mono text-[11px] text-foreground">
                 {currentPathname}
               </code>
+              {selectedTarget?.href ? (
+                <code className="block break-all rounded bg-background/80 px-2 py-1 font-mono text-[11px] text-foreground">
+                  Link target: {selectedTarget.href}
+                </code>
+              ) : null}
               {isManualSelection ? (
                 <button
                   className="rounded-md border border-brand-sky/40 bg-brand-skySoft/60 px-2.5 py-1 text-xs font-semibold text-brand-navy transition hover:bg-brand-skySoft"
@@ -1044,17 +1234,22 @@ export const DefenseTracePanel = ({
           )}
         </section>
 
-        {selectedEntry ? (
+        {selectedEntry || selectedTarget ? (
           <QuestionAngleSelector
             onQuestionAngleChange={onQuestionAngleChange}
             questionAngle={questionAngle}
           />
         ) : null}
 
-        {selectedEntry ? (
+        {selectedTarget && shouldShowFallbackCard ? (
+          <AutoFallbackTraceCard
+            currentPathname={currentPathname}
+            selectedTarget={selectedTarget}
+          />
+        ) : selectedEntry ? (
           <QuestionAngleAnswerCard
             apiActivities={apiActivities}
-            clickedLabel={clickedLabel}
+            clickedLabel={selectedTarget?.selectedLabel ?? clickedLabel}
             entry={selectedEntry}
             onWorkspaceRootChange={onWorkspaceRootChange}
             questionAngle={questionAngle}
