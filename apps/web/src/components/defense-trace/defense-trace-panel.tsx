@@ -25,6 +25,7 @@ import {
   type DefenseTraceRouteMatch,
 } from '../../lib/defense-trace/match-trace';
 import type { DefenseTracePanelPosition } from '../../lib/defense-trace/preferences';
+import { resolveRouteSource, type RouteSourceResolverResult } from '../../lib/defense-trace/route-source-resolver';
 import type {
   DefenseTraceApiActivity,
   DefenseTraceEntry,
@@ -678,9 +679,130 @@ const AutoFallbackTraceCard = ({
   selectedTarget: DefenseTraceSelectedTarget;
 }) => {
   const routePath = getTargetRoutePath(currentPathname, selectedTarget);
-  const likelyRouteFile = createLikelyFrontendRouteFile(routePath);
+  const routeSourceResult = resolveRouteSource(
+    routePath,
+    selectedTarget.clickedText ?? selectedTarget.selectedLabel,
+  );
   const clickedTextCommand = createFallbackClickedTextCommand(selectedTarget);
   const routeSearchCommand = createFallbackRouteSearchCommand(routePath);
+
+  if (routeSourceResult) {
+    return (
+      <section className="space-y-3 rounded-xl border border-brand-sky/40 bg-brand-skySoft/30 p-3">
+        <div className="space-y-1">
+          <h3 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Search className="h-4 w-4 text-brand-sky" />
+            Inferred source guide
+          </h3>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            No exact trace topic matched. Source locations inferred from current route.
+          </p>
+        </div>
+
+        <div className="grid gap-2 text-xs text-muted-foreground">
+          <div>
+            Selected UI label:{' '}
+            <span className="font-semibold text-foreground">
+              {selectedTarget.selectedLabel}
+            </span>
+          </div>
+          <div>
+            Current route:{' '}
+            <code className="rounded bg-background/80 px-1.5 py-0.5 font-mono text-foreground">
+              {currentPathname}
+            </code>
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="rounded-lg border border-border bg-background/70 p-2">
+            <p className="text-xs font-semibold text-foreground">
+              Likely UI route
+            </p>
+            <code className="mt-1 block break-all rounded bg-muted/40 px-2 py-1 font-mono text-[11px] leading-relaxed text-foreground">
+              {routeSourceResult.likelyRouteFile}
+            </code>
+          </div>
+
+          <div className="rounded-lg border border-border bg-background/70 p-2">
+            <p className="text-xs font-semibold text-foreground">
+              Likely feature area
+            </p>
+            <code className="mt-1 block break-all rounded bg-muted/40 px-2 py-1 font-mono text-[11px] leading-relaxed text-foreground">
+              {routeSourceResult.likelyFeatureFolder}
+            </code>
+          </div>
+
+          <div className="rounded-lg border border-border bg-background/70 p-2">
+            <p className="text-xs font-semibold text-foreground">
+              Likely API helper
+            </p>
+            <code className="mt-1 block break-all rounded bg-muted/40 px-2 py-1 font-mono text-[11px] leading-relaxed text-foreground">
+              {routeSourceResult.likelyApiHelper}
+            </code>
+          </div>
+
+          {routeSourceResult.backendCandidates.length > 0 ? (
+            <div className="rounded-lg border border-border bg-background/70 p-2">
+              <p className="text-xs font-semibold text-foreground">
+                Backend search
+              </p>
+              <div className="mt-1 space-y-1">
+                {routeSourceResult.backendCandidates.map((candidate) => (
+                  <code
+                    className="block break-all rounded bg-muted/40 px-2 py-1 font-mono text-[11px] leading-relaxed text-foreground"
+                    key={candidate}
+                  >
+                    {candidate}
+                  </code>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {routeSourceResult.prismaModels.length > 0 ? (
+            <div className="rounded-lg border border-border bg-background/70 p-2">
+              <p className="text-xs font-semibold text-foreground">
+                Data models
+              </p>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {routeSourceResult.prismaModels.map((model) => (
+                  <span
+                    className="rounded-full border border-border bg-background px-2 py-1 font-mono text-[11px] font-semibold text-foreground"
+                    key={model}
+                  >
+                    {model}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="space-y-2">
+          {routeSourceResult.gitGrepCommands.map((grepCommand) => (
+            <div
+              className="rounded-lg border border-border bg-background/70 p-2"
+              key={`${grepCommand.label}-${grepCommand.command}`}
+            >
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-xs font-semibold text-foreground">
+                  {grepCommand.label}
+                </p>
+                <DefenseTraceCopyCommandButton
+                  command={grepCommand.command}
+                  label="Copy"
+                />
+              </div>
+              <code className="mt-2 block break-all rounded bg-muted/40 px-2 py-1 font-mono text-[11px] leading-relaxed text-foreground">
+                {grepCommand.command}
+              </code>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="space-y-3 rounded-xl border border-status-warning/40 bg-status-warning/10 p-3">
@@ -710,7 +832,7 @@ const AutoFallbackTraceCard = ({
         <div>
           Likely frontend route file:{' '}
           <code className="break-all rounded bg-background/80 px-1.5 py-0.5 font-mono text-foreground">
-            {likelyRouteFile}
+            {createLikelyFrontendRouteFile(routePath)}
           </code>
         </div>
       </div>
